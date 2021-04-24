@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Make",
+            "type": "shell",
+            "command": "make",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "i-mongo-store Normal",
+            "type": "shell",
+            "command": "./exec"
+        },
+        {
+            "label": "i-mongo-store Valgrind",
+            "type": "shell",
+            "command": "./vexec"
+        },
+        {
+            "label": "i-mongo-store Helgrind",
+            "type": "shell",
+            "command": "./hexec"
+        }
+    ]
+}
