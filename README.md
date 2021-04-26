@@ -15,7 +15,7 @@
 Por que pide parámetros por consola
 
 ````powershell
-./mi-ram-hq /home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/mi-ram-hq/cfg/mi-ram-hq.config /home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/mi-ram-hq/cfg/mi-ram-hq.log
+./mi-ram-hq cfg/mi-ram-hq.config cfg/mi-ram-hq.log
 ````
 
 
