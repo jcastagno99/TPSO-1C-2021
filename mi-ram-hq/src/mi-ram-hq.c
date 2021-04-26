@@ -1,40 +1,14 @@
 
-#include "mi-ram-hq.h"
+#include "mi-ram-hq-lib.h"
 
-int main(void)
+int main(int argc, char*argv[])
 {
-	void iterator(char* value)
-	{
-		printf("%s\n", value);
-	}
+	//Al levantar el modulo, primer argumento: path del archivo de config
+	//segundo argumento: path donde quiero crear el log del modulo
+	mi_ram_hq_configuracion = leer_config_mi_ram_hq(argv[1]);
+	logger_ram_hq = iniciar_logger_mi_ram_hq(argv[2]);
 
-	logger = log_create("log.log", "Servidor", 1, LOG_LEVEL_DEBUG);
-
-	int server_fd = iniciar_servidor();
-	log_info(logger, "Servidor listo para recibir al cliente");
-	int cliente_fd = esperar_cliente(server_fd);
-
-	t_list* lista;
-	while(1)
-	{
-		int cod_op = recibir_operacion(cliente_fd);
-		switch(cod_op)
-		{
-		case MENSAJE:
-			recibir_mensaje(cliente_fd);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(cliente_fd);
-			printf("Me llegaron los siguientes valores:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(logger, "el cliente se desconecto. Terminando servidor");
-			return EXIT_FAILURE;
-		default:
-			log_warning(logger, "Operacion desconocida. No quieras meter la pata");
-			break;
-		}
-	}
-	return EXIT_SUCCESS;
+	memoria_principal = malloc(mi_ram_hq_configuracion->TAMANIO_MEMORIA);
+	
+	esperar_conexion(mi_ram_hq_configuracion->PUERTO);
 }

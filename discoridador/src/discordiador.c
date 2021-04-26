@@ -54,13 +54,13 @@ int main(void)
 
 	//enviar_mensaje(clave,conexion);
 
-	t_paquete* paquete = crear_paquete();
+	//t_paquete* paquete = crear_paquete();
 
-	llenar_paquete(paquete,logger);
-	enviar_paquete(paquete,conexion);
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+	//llenar_paquete(paquete,logger);
+	//enviar_paquete(paquete,conexion);
+	//free(paquete->buffer->stream);
+	//free(paquete->buffer);
+	//free(paquete);
 
 	//paquete(conexion);
 
