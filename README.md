@@ -30,4 +30,4 @@ Por que pide parámetros por consola
 | **Damian Teplitz** | [@dteplitz](https://www.github.com/dteplitz) | 158.780-8 | dteplitz@frba.utn.edu.ar | K3154
 | **Santiago Feijoo** | [@SantiagoIvan](https://github.com/SantiagoIvan) | 152.288-7 | santiago.feijoo96@gmail.com | K3153
 | **Cristian Cali** | [@julchat](https://www.github.com/julchat) | 167.318-0 | crcali@est.frba.utn.edu.ar | K3052
-| **Cambiar** | [@GastonGonzalezS](https://www.github.com/GastonGonzalezS) | 156.255-1 | ggonzalezsapia@gmail.com | K3
+| **Juan Manuel Castagno** | [@jcastagno99](https://www.github.com/jcastagno99) | 167863-2 | Juan-Castagno@Hotmail.com | K3054
