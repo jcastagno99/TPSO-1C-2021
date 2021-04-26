@@ -2,6 +2,14 @@
 
 <p align="center"><img src="oviedo.jpg" width="200px"/></p>
 
+#### Ubicación del Proyecto dentro de la VM
+
+````javascript
+/home/utnso/workspace
+````
+
+
+
 #### Ejecución del  mi-ram-hq
 
 Por que pide parámetros por consola
@@ -9,10 +17,6 @@ Por que pide parámetros por consola
 ````powershell
 ./mi-ram-hq /home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/mi-ram-hq/cfg/mi-ram-hq.config /home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/mi-ram-hq/cfg/mi-ram-hq.log
 ````
-
-
-
-
 
 
 
