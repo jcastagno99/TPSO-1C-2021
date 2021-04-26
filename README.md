@@ -29,5 +29,5 @@ Por que pide parámetros por consola
 | **Gianpier Yupanqui** | [@gianpieryup](https://www.github.com/gianpieryup) | 159.207-5 | gianpieryup@gmail.com | K3054
 | **Cambiar** | [@AlvaroMaser](https://www.github.com/AlvaroMaser) | 159.373-0 | alvaro199x@gmail.com | K
 | **Cambiar** | [@josebarreto97](https://www.github.com/josebarreto97) | 155.872-9 | joseb1997@hotmail.com | K30
-| **Cambiar** | [@GuillermoSBR](https://www.github.com/GuillermoSBR) | 157.275-1 | guillermoperronelopez@gmail.com | K30
+| **Cristian Cali** | [@julchat](https://www.github.com/julchat) | 167.318-0 | crcali@est.frba.utn.edu.ar | K3052
 | **Cambiar** | [@GastonGonzalezS](https://www.github.com/GastonGonzalezS) | 156.255-1 | ggonzalezsapia@gmail.com | K3
