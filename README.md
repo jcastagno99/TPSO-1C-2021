@@ -18,6 +18,9 @@ Por que pide parámetros por consola
 ./mi-ram-hq cfg/mi-ram-hq.config cfg/mi-ram-hq.log
 ````
 
+````powershell
+./i-mongo-store cfg/i-mongo-store.config cfg/i-mongo-store.log
+````
 
 
 

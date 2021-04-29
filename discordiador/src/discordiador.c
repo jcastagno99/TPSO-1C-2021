@@ -11,9 +11,12 @@ int main(void)
 { 
 	
 	/*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
-	int conexion;
-	char* ip;
-	char* puerto;
+	int conexion_mi_ram_hq;
+	char* ip_mi_ram_hq;
+	char* puerto_mi_ram_hq;
+	int conexion_i_mongo_store;
+	char* ip_i_mongo_store;
+	char* puerto_i_mongo_store;
 	//char* valor;
 
 	t_log* logger;
@@ -38,33 +41,18 @@ int main(void)
 
 	//antes de continuar, tenemos que asegurarnos que el servidor esté corriendo porque lo necesitaremos para lo que sigue.
 
-	//crear conexion
+	//crear conexiones
 
-	ip = config_get_string_value(config,"IP_MI_RAM_HQ");
+	ip_mi_ram_hq = config_get_string_value(config,"IP_MI_RAM_HQ");
+	puerto_mi_ram_hq = config_get_string_value(config,"PUERTO_MI_RAM_HQ");
+	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq,puerto_mi_ram_hq);
 
-	puerto = config_get_string_value(config,"PUERTO_MI_RAM_HQ");
+	// ss
+	ip_i_mongo_store = config_get_string_value(config,"IP_I_MONGO_STORE");
+	puerto_i_mongo_store = config_get_string_value(config,"PUERTO_I_MONGO_STORE");
+	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store,puerto_i_mongo_store);
 
-	conexion = crear_conexion(ip,puerto);
-
-	//enviar CLAVE al servirdor
-
-	//char* clave;
-
-	//clave = config_get_string_value(config,"CLAVE");
-
-	//enviar_mensaje(clave,conexion);
-
-	//t_paquete* paquete = crear_paquete();
-
-	//llenar_paquete(paquete,logger);
-	//enviar_paquete(paquete,conexion);
-	//free(paquete->buffer->stream);
-	//free(paquete->buffer);
-	//free(paquete);
-
-	//paquete(conexion);
-
-	terminar_programa(conexion, logger, config);
+	terminar_programa(conexion_mi_ram_hq,conexion_i_mongo_store, logger, config);
 	
 }
 
@@ -114,10 +102,11 @@ void llenar_paquete(t_paquete* paquete,t_log* logger)
 
 }
 
-void terminar_programa(int conexion, t_log* logger, t_config* config)
+void terminar_programa(int conexion_mi_ram_hq,int conexion_i_mongo_store, t_log* logger, t_config* config)
 {
 	//Y por ultimo, para cerrar, hay que liberar lo que utilizamos (conexion, log y config) con las funciones de las commons y del TP mencionadas en el enunciado
 	log_destroy(logger);
 	config_destroy(config);
-	liberar_conexion(conexion);
+	liberar_conexion(conexion_mi_ram_hq);
+	liberar_conexion(conexion_i_mongo_store);
 }

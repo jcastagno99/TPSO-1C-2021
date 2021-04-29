@@ -17,6 +17,6 @@ t_log* iniciar_logger(void);
 t_config* leer_config(void);
 void leer_consola(t_log*);
 void paquete(int);
-void terminar_programa(int, t_log*, t_config*);
+void terminar_programa(int,int, t_log*, t_config*);
 
 #endif /* DISCORDIADOR_H */

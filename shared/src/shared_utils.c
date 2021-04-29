@@ -30,7 +30,7 @@ int crear_conexion(char *ip, char* puerto)
 	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
 	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
-		printf("error");
+		printf("error\n");
 
 	freeaddrinfo(server_info);
 
@@ -68,7 +68,7 @@ void crear_buffer(t_paquete* paquete)
 t_paquete* crear_super_paquete(void)
 {
 	//me falta un malloc!
-	t_paquete* paquete;
+	t_paquete* paquete=NULL;
 
 	//descomentar despues de arreglar
 	//paquete->codigo_operacion = PAQUETE;
