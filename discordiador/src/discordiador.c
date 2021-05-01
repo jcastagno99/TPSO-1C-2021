@@ -34,7 +34,9 @@ int main(void)
 
 	//Loggear valor de config
 	//log_info(logger,valor);
-	//leer_consola(logger);
+	pthread_t hilo_consola; 
+	pthread_create(&hilo_consola,NULL,(void*)leer_consola,(void*) logger);
+	pthread_join(hilo_consola,NULL);
 
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
@@ -83,30 +85,11 @@ void leer_consola(t_log* logger)
 
 }
 
-void llenar_paquete(t_paquete* paquete,t_log* logger)
-{
-	//Ahora toca lo divertido!
-	log_info(logger,"Bienvenido! por favor ingrese los mensajes que quiera enviar al servidor: ");
-	char* leido;
-	leido = readline(">");
-	while(*leido != '\0'){
-
-		log_info(logger,"Voy a cargar al paquete el siguiente valor: %s",leido);
-		agregar_a_paquete(paquete,leido,strlen(leido)+1);
-		free(leido);
-		leido = readline(">");
-	}
-
-	free(leido);
-	
-
-}
-
 void terminar_programa(int conexion_mi_ram_hq,int conexion_i_mongo_store, t_log* logger, t_config* config)
 {
 	//Y por ultimo, para cerrar, hay que liberar lo que utilizamos (conexion, log y config) con las funciones de las commons y del TP mencionadas en el enunciado
 	log_destroy(logger);
 	config_destroy(config);
-	liberar_conexion(conexion_mi_ram_hq);
-	liberar_conexion(conexion_i_mongo_store);
+	close(conexion_mi_ram_hq);
+	close(conexion_i_mongo_store);
 }

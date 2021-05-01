@@ -12,5 +12,10 @@
 		{
 			"path": "shared"
 		}
-	]
+	],
+	"settings": {
+		"files.associations": {
+			"discordiador.h": "c"
+		}
+	}
 }

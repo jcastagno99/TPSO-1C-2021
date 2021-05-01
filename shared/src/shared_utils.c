@@ -1,18 +1,83 @@
 #include "shared_utils.h"
 
+//--------------------------------SERIALIZADORES------------------------------------
+
 void* serializar_paquete(t_paquete* paquete, int bytes)
 {
-	void * magic = malloc(bytes);
+	void * paquete_listo = malloc(bytes);
 	int desplazamiento = 0;
 
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+	memcpy(paquete_listo + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
 	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
+	memcpy(paquete_listo + desplazamiento, &(paquete->size), sizeof(int));
 	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
+	memcpy(paquete_listo + desplazamiento, paquete->stream, paquete->size);
+	desplazamiento+= paquete->size;
 
-	return magic;
+	free(paquete->stream);
+	free(paquete);
+
+	return paquete_listo;
+}
+
+void* serializar_pid_con_tareas(pid_con_tareas* pid_con_tareas)
+{
+	int cantidad_elementos_lista  = pid_con_tareas->tareas->elements_count;
+	tarea* auxiliar;
+	int tamanio_total_nombre = 0;
+	for(int i=0; i<cantidad_elementos_lista; i++){
+		auxiliar = list_get(pid_con_tareas->tareas,i);
+		tamanio_total_nombre += strlen(auxiliar->nombre_tarea) + 1;
+	}
+	void* mensaje_listo = malloc(4+cantidad_elementos_lista*(10)+tamanio_total_nombre);
+	int desplazamiento = 0;
+
+	memcpy(mensaje_listo + desplazamiento, pid_con_tareas->pid,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+
+	uint16_t tamanio_nombre_tarea;
+	for(int i = 0; i<cantidad_elementos_lista; i++){
+		auxiliar = list_get(pid_con_tareas->tareas,i);
+		tamanio_nombre_tarea = strlen(auxiliar->nombre_tarea) +1;
+		memcpy(mensaje_listo + desplazamiento,&(tamanio_nombre_tarea),(sizeof(uint16_t)));
+		desplazamiento += sizeof(uint16_t);
+		memcpy(mensaje_listo + desplazamiento,auxiliar->nombre_tarea,tamanio_nombre_tarea);
+		desplazamiento += tamanio_nombre_tarea;
+		memcpy(mensaje_listo + desplazamiento, &auxiliar->cantidad_parametro,sizeof(uint16_t));
+		desplazamiento += sizeof(uint16_t);
+		memcpy(mensaje_listo + desplazamiento, &auxiliar->parametro,sizeof(uint16_t));
+		desplazamiento += sizeof(uint16_t);
+		memcpy(mensaje_listo + desplazamiento, &auxiliar->pos_x,sizeof(uint16_t));
+		desplazamiento += sizeof(uint16_t);
+		memcpy(mensaje_listo + desplazamiento, &auxiliar->pos_y,sizeof(uint16_t));
+		desplazamiento += sizeof(uint16_t);
+		memcpy(mensaje_listo + desplazamiento, &auxiliar->tiempo,sizeof(uint16_t));
+		desplazamiento += sizeof(uint16_t);
+		free(auxiliar->nombre_tarea);
+	}
+	list_destroy_and_destroy_elements(pid_con_tareas->tareas,free);
+	return mensaje_listo;
+}
+
+//---------------------------------DESERIALIZADORES---------------------------------------------
+
+t_paquete* deserializar_paquete(op_code* opcode, uint32_t* size, void* stream)
+{
+	t_paquete* paquete_listo = malloc(sizeof(t_paquete));
+	paquete_listo->stream = malloc(*size);
+	int desplazamiento = 0; 
+
+	memcpy(&(paquete_listo->codigo_operacion),opcode,sizeof(op_code));
+	desplazamiento += sizeof(op_code);
+	memcpy(&(paquete_listo->size),size,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete_listo->stream,stream,paquete_listo->size);
+
+	free(opcode);
+	free(size);
+	free(stream);
+
+	return paquete_listo;
 }
 
 int crear_conexion(char *ip, char* puerto)
@@ -37,81 +102,3 @@ int crear_conexion(char *ip, char* puerto)
 	return socket_cliente;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-
-	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
-
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-	send(socket_cliente, a_enviar, bytes, 0);
-
-	free(a_enviar);
-	eliminar_paquete(paquete);
-}
-
-
-void crear_buffer(t_paquete* paquete)
-{
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = 0;
-	paquete->buffer->stream = NULL;
-}
-
-t_paquete* crear_super_paquete(void)
-{
-	//me falta un malloc!
-	t_paquete* paquete=NULL;
-
-	//descomentar despues de arreglar
-	//paquete->codigo_operacion = PAQUETE;
-	//crear_buffer(paquete);
-	return paquete;
-}
-
-t_paquete* crear_paquete(void)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PAQUETE;
-	crear_buffer(paquete);
-	return paquete;
-}
-
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
-{
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
-
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
-
-	paquete->buffer->size += tamanio + sizeof(int);
-}
-
-void enviar_paquete(t_paquete* paquete, int socket_cliente)
-{
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-	send(socket_cliente, a_enviar, bytes, 0);
-
-	free(a_enviar);
-}
-
-void eliminar_paquete(t_paquete* paquete)
-{
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-}
-
-void liberar_conexion(int socket_cliente)
-{
-	close(socket_cliente);
-}
