@@ -12,6 +12,7 @@
 #include <commons/collections/list.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <errno.h>
 
 typedef enum
 {
@@ -44,7 +45,9 @@ typedef enum
 	RESPUESTA_REGISTRAR_COMIENZO_TAREA,
 	RESPUESTA_REGISTRAR_FIN_TAREA,
 	RESPUESTA_REGISTRAR_MOVIMIENTO_A_SABOTAJE,
-	RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO
+	RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO,
+	PRUEBA,
+	SIN_CONEXION
 } op_code;
 
 typedef enum
@@ -136,10 +139,22 @@ typedef struct
 	tarea tarea;
 }tripulante_con_tarea;
 
+typedef struct
+{
+	uint32_t tamanio;
+	char* contenido;
+}struct_prueba;
 
+//------------------------------------------FIRMAS DE FUNCIONES------------------------------------------
 
 int crear_conexion(char *ip, char *puerto);
 void *serializar_paquete(t_paquete *paquete, int bytes);
 t_paquete *deserializar_paquete(op_code *opcode, uint32_t *size, void *stream);
+t_paquete* recibir_paquete(int socket_hilo);
+int enviar_paquete(int socket, op_code op_code,uint32_t size, void* stream);
+t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream);
+void liberar_paquete(t_paquete* paquete);
+t_paquete* error(int res);
+char* deserializar_prueba(void* stream);
 
 #endif

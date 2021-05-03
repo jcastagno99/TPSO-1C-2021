@@ -80,10 +80,35 @@ void crear_hilo_para_manejar_suscripciones(t_list* lista_hilos, int socket){
 	list_add(lista_hilos, &hilo_conectado);
 }
 
-//Socket envio es para enviar la respuesta, de momento no lo uso
-void* manejar_suscripciones_mi_ram_hq(int* socket_envio){
-    log_info(logger_ram_hq,"Se creó el hilo correctamente");
-    close(*socket_envio);
-	free(socket_envio);
+void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
+	log_info(logger_ram_hq,"Se creó el hilo correctamente");
+	t_paquete* paquete = recibir_paquete(*socket_hilo);
+	switch(paquete->codigo_operacion){
+		case INICIALIZAR_TRIPULANTE: {
+			break;
+		}
+		case ACTUALIZAR_UBICACION: {
+			break;
+		}
+		case OBTENER_ESTADO: {
+			break;
+		}
+		case OBTENER_UBICACION: {
+			break;
+		}
+		case PRUEBA:{
+			char* mensaje_prueba = deserializar_prueba(paquete->stream);
+			log_info(logger_ram_hq,"Me llego el mensaje: %s ",mensaje_prueba);
+			free(mensaje_prueba);
+			break;
+		}
+		default: {
+			break;
+		}
+		// faltan contemplar algunos cases
+	}
+    close(*socket_hilo);
+	free(socket_hilo);
+	liberar_paquete(paquete);
 	return NULL;
 }

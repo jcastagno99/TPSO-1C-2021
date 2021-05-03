@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/mi-ram-hq",
-            "args": ["-test"],
+            "args": ["cfg/mi-ram-hq.config","cfg/mi-ram-hq.log", "-test"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

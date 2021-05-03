@@ -20,7 +20,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	return paquete_listo;
 }
 
-void* serializar_pid_con_tareas(pid_con_tareas* pid_con_tareas)
+/*void* serializar_pid_con_tareas(pid_con_tareas* pid_con_tareas)
 {
 	int cantidad_elementos_lista  = pid_con_tareas->tareas->elements_count;
 	tarea* auxiliar;
@@ -57,7 +57,7 @@ void* serializar_pid_con_tareas(pid_con_tareas* pid_con_tareas)
 	}
 	list_destroy_and_destroy_elements(pid_con_tareas->tareas,free);
 	return mensaje_listo;
-}
+}*/
 
 //---------------------------------DESERIALIZADORES---------------------------------------------
 
@@ -102,3 +102,101 @@ int crear_conexion(char *ip, char* puerto)
 	return socket_cliente;
 }
 
+//-----------------------------------------MANEJO DE PAQUETES------------------------------------------------------------
+
+//Primero se recibe el op_code
+//Acuerdo para que el SIZE del paquete solo toma encuenta el SIZE del STREAM (no toma ninguno de los UINT)
+//Esta funcion deja el paquete listo para enviar a deserializar (lo que seria el void*)
+t_paquete* recibir_paquete(int socket){
+	t_paquete * paquete = malloc(sizeof(t_paquete));
+	int res = recv(socket,&paquete->codigo_operacion,sizeof(op_code),0);
+	printf("el codigo de operacion es: %i ", paquete->codigo_operacion);
+	if (res <= 0 ){
+		close(socket);
+		free(paquete);
+		return error(res);
+	}
+	
+
+	res = recv(socket,&paquete->size,sizeof(uint32_t),0);
+	printf("el size del paquete es: %i ",paquete->size);
+	if(res <= 0){
+		close(socket);
+		free(paquete);
+		return error(res);
+	}
+
+	paquete->stream = malloc(paquete->size);
+	res = recv(socket,paquete->stream,paquete->size,0);
+
+
+	if(res <= 0){
+		close(socket);
+		free(paquete);
+		free(paquete->stream);
+		return error(res);
+	}
+
+	
+	return paquete;
+}
+
+int enviar_paquete(int socket, op_code op_code,uint32_t size, void* stream){
+	t_paquete* paquete = crear_paquete(op_code,size,stream);
+	int res = send(socket, &(paquete->codigo_operacion) , sizeof(op_code), 0);
+
+	if(res >= 0){
+		void* buffer = malloc(paquete->size);
+		memcpy(buffer,&paquete->size,sizeof(uint32_t));
+		memcpy(buffer + sizeof(uint32_t),paquete->stream,size);
+		res = send(socket,buffer,paquete->size + sizeof(uint32_t),0);
+		if(res <0){
+			perror("ERROR ENVIANDO MENSAJE");
+			res = -errno;
+		}
+		free(buffer);
+	}else{
+		perror("ERROR ENVIANDO MENSAJE");
+		res = -errno;
+	}
+	liberar_paquete(paquete);
+
+	return res;
+
+}
+
+t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream){
+	t_paquete* paquete = (t_paquete*)malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = op_code;
+	paquete->size = size;
+	paquete->stream = malloc(size);
+	
+	memcpy(paquete->stream,stream,size);
+
+	free(stream);
+
+	return paquete;
+}
+
+t_paquete* error(int res){
+	op_code op_code = res == 0? SIN_CONEXION : ERROR;
+	int32_t err = -errno;
+	return crear_paquete(op_code,sizeof(int32_t),&err);
+}
+
+void liberar_paquete(t_paquete* paquete){
+	if(paquete != NULL){
+		if(paquete->stream != NULL){
+			free(paquete->stream);
+		}
+		free(paquete);
+	}
+}
+
+
+char* deserializar_prueba(void* stream){
+	uint32_t size = 5;
+	char* auxiliar = malloc(size);
+	memcpy(auxiliar,stream,size);
+	return auxiliar;
+}

@@ -11,7 +11,7 @@ int main(void)
 { 
 	
 	/*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
-	int conexion_mi_ram_hq;
+	
 	char* ip_mi_ram_hq;
 	char* puerto_mi_ram_hq;
 	int conexion_i_mongo_store;
@@ -34,9 +34,7 @@ int main(void)
 
 	//Loggear valor de config
 	//log_info(logger,valor);
-	pthread_t hilo_consola; 
-	pthread_create(&hilo_consola,NULL,(void*)leer_consola,(void*) logger);
-	pthread_join(hilo_consola,NULL);
+	
 
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
@@ -53,6 +51,10 @@ int main(void)
 	ip_i_mongo_store = config_get_string_value(config,"IP_I_MONGO_STORE");
 	puerto_i_mongo_store = config_get_string_value(config,"PUERTO_I_MONGO_STORE");
 	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store,puerto_i_mongo_store);
+
+	pthread_t hilo_consola; 
+	pthread_create(&hilo_consola,NULL,(void*)leer_consola_prueba,(void*) logger);
+	pthread_join(hilo_consola,NULL);
 
 	terminar_programa(conexion_mi_ram_hq,conexion_i_mongo_store, logger, config);
 	
@@ -83,6 +85,23 @@ void leer_consola(t_log* logger)
 
 	free(leido);
 
+}
+
+void leer_consola_prueba(t_log* logger){
+	char* leido;
+	leido = readline(">");
+	while(*leido != '\0'){
+
+		log_info(logger,leido);
+		struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
+		una_prueba->tamanio = strlen(leido)+1;
+		una_prueba->contenido = leido;
+		enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
+		free(leido);
+		leido = readline(">");
+	}
+
+	free(leido);
 }
 
 void terminar_programa(int conexion_mi_ram_hq,int conexion_i_mongo_store, t_log* logger, t_config* config)

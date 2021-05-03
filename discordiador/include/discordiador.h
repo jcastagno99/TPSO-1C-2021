@@ -12,10 +12,12 @@
 
 #include "shared_utils.h"
 
+int conexion_mi_ram_hq;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 void leer_consola(t_log*);
+void leer_consola_prueba(t_log*);
 void paquete(int);
 void terminar_programa(int,int, t_log*, t_config*);
 

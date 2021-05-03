@@ -20,6 +20,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/config.h>
+#include <shared_utils.h>
 
 #define MAX_CLIENTS 128
 
@@ -58,4 +59,5 @@ void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
 
+//asda
 #endif /* MI_RAM_HQ_LIB_H */
