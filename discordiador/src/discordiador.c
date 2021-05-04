@@ -63,12 +63,12 @@ int main(void)
 
 t_log* iniciar_logger(void)
 {
-	return log_create("/home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/discordiador/cfg/discordiador.log","discordiador.log",1,LOG_LEVEL_INFO);
+	return log_create("cfg/discordiador.log","discordiador.log",1,LOG_LEVEL_INFO);
 }
 
 t_config* leer_config(void)
 {
-	return config_create("/home/utnso/workspace/tp-2021-1c-S-quito-de-Oviedo/discordiador/cfg/discordiador.config");
+	return config_create("cfg/discordiador.config");
 }
 
 void leer_consola(t_log* logger)
