@@ -83,6 +83,7 @@ void crear_hilo_para_manejar_suscripciones(t_list* lista_hilos, int socket){
 void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 	log_info(logger_ram_hq,"Se creó el hilo correctamente");
 	t_paquete* paquete = recibir_paquete(*socket_hilo);
+	while(1){ //SACAR ESTA BARBARIDAD ES SOLO PARA PROBAR AHORA
 	switch(paquete->codigo_operacion){
 		case INICIALIZAR_TRIPULANTE: {
 			break;
@@ -106,9 +107,13 @@ void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 			break;
 		}
 		// faltan contemplar algunos cases
+		
 	}
+	liberar_paquete(paquete);//MOVER ESTO PARA ABAJO AL SACAR EL WHILE(1)
+	paquete = recibir_paquete(*socket_hilo); //SACAR ESTO
+}
     close(*socket_hilo);
 	free(socket_hilo);
-	liberar_paquete(paquete);
+	
 	return NULL;
 }

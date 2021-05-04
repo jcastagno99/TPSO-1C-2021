@@ -77,7 +77,7 @@ typedef enum
 typedef struct
 {
 	op_code codigo_operacion;
-	uint32_t size;
+	size_t size;
 	void *stream;
 } t_paquete;
 
@@ -90,19 +90,19 @@ typedef struct
 typedef struct
 {
 	uint32_t tid;
-	uint16_t pos_x;
-	uint16_t pos_y;
+	uint32_t pos_x;
+	uint32_t pos_y;
 	uint32_t pid;
 } nuevo_tripulante;
 
 typedef struct
 {
 	char *nombre_tarea;
-	uint16_t cantidad_parametro;
-	uint16_t parametro;
-	uint16_t pos_x;
-	uint16_t pos_y;
-	uint16_t tiempo;
+	uint32_t cantidad_parametro;
+	uint32_t parametro;
+	uint32_t pos_x;
+	uint32_t pos_y;
+	uint32_t tiempo;
 } tarea;
 
 typedef struct
@@ -120,18 +120,18 @@ typedef struct
 typedef struct
 {
 	uint32_t tid;
-	uint16_t pos_x;
-	uint16_t pos_y;
+	uint32_t pos_x;
+	uint32_t pos_y;
 }tripulante_y_posicion;
 
 typedef struct
 {
 	uint32_t tid;
-	uint16_t pos_x_vieja;
-	uint16_t pos_y_vieja;
-	uint16_t pos_x_nueva;
-	uint16_t pos_y_nueva;
-}actualizar_posicion_tripulante;
+	uint32_t pos_x_vieja;
+	uint32_t pos_y_vieja;
+	uint32_t pos_x_nueva;
+	uint32_t pos_y_nueva;
+}movimiento_tripulante;
 
 typedef struct
 {
@@ -156,5 +156,38 @@ t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream);
 void liberar_paquete(t_paquete* paquete);
 t_paquete* error(int res);
 char* deserializar_prueba(void* stream);
+
+//serializacion y deserializacion
+void* pserializar_nuevo_tripulante(uint32_t tid, uint32_t posx, uint32_t posy, uint32_t pid);
+void* serializar_nuevo_tripulante(nuevo_tripulante tripulante);
+void* pserializar_respuesta_ok_fail(char caracter);
+void* serializar_respuesta_ok_fail(respuesta_ok_fail resultado);
+void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
+void* serializar_tarea(tarea tarea);
+void* pserializar_respuesta_verificar_finalizacion(char okfail, char sino);
+void* serializar_respuesta_verificar_finalizacion(respuesta_ok_fail res, resultado_verificacion siono);
+void* pserializar_posicion(uint32_t posx, uint32_t posy);
+void* serializar_posicion(posicion pos);
+void* pserializar_tripulante_y_posicion(uint32_t tid, uint32_t posx, uint32_t posy);
+void* serializar_tripulante_y_posicion(tripulante_y_posicion trip);
+void* pserializar_movimiento_tripulante(uint32_t tid,uint32_t xv,uint32_t yv,uint32_t xn,uint32_t yn);
+void* serializar_movimiento_tripulante(movimiento_tripulante trip);
+void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
+void* pserializar_tripulante_con_tarea(uint32_t tid, tarea tarea);
+void* serializar_tripulante_con_tarea(tripulante_con_tarea tct);
+void* serializar_pid_con_tareas(pid_con_tareas pid_con_tareas);
+nuevo_tripulante deserializar_nuevo_tripulante(void* stream);
+respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream);
+tarea deserializar_tarea(void* stream);
+respuesta_verificar_finalizacion deserializar_respuesta_verificar_finalizacion(void* stream);
+posicion deserializar_posicion (void* stream);
+tripulante_y_posicion deserializar_tripulante_y_posicion(void* stream);
+movimiento_tripulante deserializar_movimiento_tripulante(void* stream);
+tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream);
+pid_con_tareas deserializar_pid_con_tareas(void* stream);
+tarea* deserializar_tarea_alt(void* stream,uint32_t longitud);
+
+
+
 
 #endif
