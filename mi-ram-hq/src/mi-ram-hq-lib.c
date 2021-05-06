@@ -86,6 +86,11 @@ void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 	while(1){ //SACAR ESTA BARBARIDAD ES SOLO PARA PROBAR AHORA
 	switch(paquete->codigo_operacion){
 		case INICIALIZAR_TRIPULANTE: {
+			pid_con_tareas tripulante_con_tarea = deserializar_pid_con_tareas(paquete->stream);
+			 //TODO : Armar la funcion que contiene la logica de Inicializar_Tripulante
+			respuesta_ok_fail resultado = RESPUESTA_OK;
+			void* respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(socket_hilo,RESPUESTA_INICIALIZAR_TRIPULANTE,sizeof(respuesta_ok_fail),respuesta);
 			break;
 		}
 		case ACTUALIZAR_UBICACION: {

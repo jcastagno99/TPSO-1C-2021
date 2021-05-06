@@ -19,6 +19,34 @@ int main(void)
 	char* puerto_i_mongo_store;
 	//char* valor;
 
+	tarea1.cantidad_parametro = 1;
+	tarea1.nombre_tarea = "tarea1";
+	tarea1.parametro = 1;
+	tarea1.pos_x = 10;
+	tarea1.pos_y = 12;
+	tarea1.tiempo = 5;
+
+	tarea2.cantidad_parametro = 1;
+	tarea2.nombre_tarea = "tarea2";
+	tarea2.parametro = 1;
+	tarea2.pos_x = 25;
+	tarea2.pos_y = 27;
+	tarea2.tiempo = 10;
+
+	t_list* tareas = list_create();
+	tarea* auxiliar1 = malloc(sizeof(tarea));
+	tarea* auxiliar2 = malloc(sizeof(tarea));
+	*auxiliar1 = tarea1;
+	*auxiliar2 = tarea2;
+	list_add(tareas,auxiliar1);
+	list_add(tareas,auxiliar2);
+
+	uint32_t pid = 100;
+
+	pid_con_tareas mensaje;
+	mensaje.pid = pid;
+	mensaje.tareas = tareas;
+
 	t_log* logger;
 	t_config* config;
 
@@ -93,10 +121,10 @@ void leer_consola_prueba(t_log* logger){
 	while(*leido != '\0'){
 
 		log_info(logger,leido);
-		struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
-		una_prueba->tamanio = strlen(leido)+1;
-		una_prueba->contenido = leido;
-		enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
+		//struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
+		//una_prueba->tamanio = strlen(leido)+1;
+		//una_prueba->contenido = leido;
+		//enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
 		leido = readline(">");
 	}
 }
