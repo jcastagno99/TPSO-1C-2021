@@ -1645,3 +1645,6 @@
 [INFO] 12:55:58:542 MI-RAM-HQ/(7765:7777): Se creó el hilo correctamente
 [INFO] 12:56:05:169 MI-RAM-HQ/(7765:7777): Me llego el mensaje: jota 
 [INFO] 12:56:16:102 MI-RAM-HQ/(7765:7777): Me llego el mensaje: perroectamen 
+[INFO] 12:08:55:863 MI-RAM-HQ/(5534:5534): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 12:09:45:633 MI-RAM-HQ/(5534:5534): NUEVA CONEXIÓN!
+[INFO] 12:09:45:634 MI-RAM-HQ/(5534:5600): Se creó el hilo correctamente

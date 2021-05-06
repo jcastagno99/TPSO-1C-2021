@@ -1,11 +1,5 @@
-/*
- * main.c
- *
- *  Created on: 28 feb. 2019
- *      Author: utnso
- */
-
 #include "discordiador.h"
+#include "consola.h"
 
 int main(void)
 { 
@@ -41,20 +35,18 @@ int main(void)
 	list_add(tareas,auxiliar1);
 	list_add(tareas,auxiliar2);
 
+	/*  [TODO] lo comente por que aun no se a usado
 	uint32_t pid = 100;
 
 	pid_con_tareas mensaje;
 	mensaje.pid = pid;
 	mensaje.tareas = tareas;
+	*/
 
 	t_log* logger;
 	t_config* config;
 
 	logger = iniciar_logger();
-
-	//Loggear "soy un log"
-	//log_info(logger,"soy un log");
-
 	config = leer_config();
 
 	//asignar valor de config a la variable valor
@@ -102,11 +94,12 @@ t_config* leer_config(void)
 void leer_consola(t_log* logger)
 {
 	char* leido;
-	//El primero te lo dejo de yapa
+
 	leido = readline(">");
 	while(*leido != '\0'){
-
 		log_info(logger,leido);
+		
+		
 		free(leido);
 		leido = readline(">");
 	}
@@ -121,6 +114,8 @@ void leer_consola_prueba(t_log* logger){
 	while(*leido != '\0'){
 
 		log_info(logger,leido);
+		validacion_sintactica(leido); // VALIDACION SINTACTICA
+
 		//struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
 		//una_prueba->tamanio = strlen(leido)+1;
 		//una_prueba->contenido = leido;
