@@ -51,7 +51,7 @@ void validacion_sintactica(char*text){
                 
                 //Por ahora voy a enviar mensaje de que "cree" una patota y enviar un mensaje por cada tripulante que creo
                 uint32_t pid = crear_tareas_enviar_patota_test();
-                for(int i;i<atoi(str_split[1]);i++){
+                for(int i = 0;i<atoi(str_split[1]);i++){
                     //le paso i para que tenga un tid, pero habria que pasarle el de el hilo
                     crear_tripulante(pid,i);
                 }
