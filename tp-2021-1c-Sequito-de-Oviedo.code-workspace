@@ -15,7 +15,8 @@
 	],
 	"settings": {
 		"files.associations": {
-			"discordiador.h": "c"
+			"discordiador.h": "c",
+			"string.h": "c"
 		}
 	}
 }

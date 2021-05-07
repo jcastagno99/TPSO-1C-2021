@@ -13,7 +13,7 @@ int main(void)
 	char* puerto_i_mongo_store;
 	//char* valor;
 
-	tarea1.cantidad_parametro = 1;
+/*	tarea1.cantidad_parametro = 1;
 	tarea1.nombre_tarea = "tarea1";
 	tarea1.parametro = 1;
 	tarea1.pos_x = 10;
@@ -34,7 +34,7 @@ int main(void)
 	*auxiliar2 = tarea2;
 	list_add(tareas,auxiliar1);
 	list_add(tareas,auxiliar2);
-
+*/
 	/*  [TODO] lo comente por que aun no se a usado
 	uint32_t pid = 100;
 

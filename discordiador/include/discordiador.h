@@ -14,8 +14,8 @@
 
 int conexion_mi_ram_hq;
 
-tarea tarea1;
-tarea tarea2;
+//tarea tarea1;
+//tarea tarea2;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
