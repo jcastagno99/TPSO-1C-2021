@@ -16,13 +16,13 @@
 
 typedef enum
 {
-	INICIALIZAR_PATOTA,
-	INICIALIZAR_TRIPULANTE,
+	INICIAR_PATOTA,
+	INICIAR_TRIPULANTE,
 	EXPULSAR_TRIPULANTE,
 	ACTUALIZAR_ESTADO,
 	OBTENER_ESTADO,
 	VERIFICAR_FINALIZACION,
-	OBTENER_TAREA,
+	OBTENER_PROXIMA_TAREA,
 	ACTUALIZAR_UBICACION,
 	OBTENER_UBICACION,
 	INICIAR_SABOTAJE,
@@ -31,13 +31,13 @@ typedef enum
 	REGISTRAR_FIN_TAREA,
 	REGISTRAR_MOVIMIENTO_A_SABOTAJE,
 	REGISTRAR_SABOTAJE_RESUELTO,
-	RESPUESTA_INICIALIZAR_PATOTA,
-	RESPUESTA_INICIALIZAR_TRIPULANTE,
+	RESPUESTA_INICIAR_PATOTA,
+	RESPUESTA_INICIAR_TRIPULANTE,
 	RESPUESTA_EXPULSAR_TRIPULANTE,
 	RESPUESTA_ACTUALIZAR_ESTADO,
 	RESPUESTA_OBTENER_ESTADO,
 	RESPUESTA_VERIFICAR_FINALIZACION,
-	RESPUESTA_OBTENER_TAREA,
+	RESPUESTA_OBTENER_PROXIMA_TAREA,
 	RESPUESTA_ACTUALIZAR_UBICACION,
 	RESPUESTA_OBTENER_UBICACION,
 	RESPUESTA_INICIAR_SABOTAJE,
@@ -139,11 +139,6 @@ typedef struct
 	tarea tarea;
 }tripulante_con_tarea;
 
-typedef struct
-{
-	uint32_t tamanio;
-	char* contenido;
-}struct_prueba;
 
 //------------------------------------------FIRMAS DE FUNCIONES------------------------------------------
 
@@ -176,6 +171,8 @@ void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t can
 void* pserializar_tripulante_con_tarea(uint32_t tid, tarea tarea);
 void* serializar_tripulante_con_tarea(tripulante_con_tarea tct);
 void* serializar_pid_con_tareas(pid_con_tareas pid_con_tareas);
+void* serializar_pid(uint32_t pid);
+void* serializar_estado(estado estado);
 nuevo_tripulante deserializar_nuevo_tripulante(void* stream);
 respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream);
 tarea deserializar_tarea(void* stream);
@@ -186,6 +183,8 @@ movimiento_tripulante deserializar_movimiento_tripulante(void* stream);
 tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream);
 pid_con_tareas deserializar_pid_con_tareas(void* stream);
 tarea* deserializar_tarea_alt(void* stream,uint32_t longitud);
+uint32_t deserializar_pid(void* stream);
+estado deserializar_estado(void* stream);
 
 
 

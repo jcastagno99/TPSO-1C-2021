@@ -172,12 +172,12 @@ uint32_t crear_tareas_enviar_patota_test(){
     uint32_t size_paquete = sizeof(uint32_t)+(lista_tareas -> elements_count * sizeof(t_link_element));
 
     //envio el paquete
-    enviar_paquete(conexion_mi_ram_hq,INICIALIZAR_PATOTA,size_paquete,info);
+    enviar_paquete(conexion_mi_ram_hq,INICIAR_PATOTA,size_paquete,info);
 
     //recibo respuesta
     t_paquete * paquete_recibido =recibir_paquete(conexion_mi_ram_hq);
 
-    if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIALIZAR_PATOTA){
+    if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIAR_PATOTA){
         printf("Recibi opcode de respuesta ok");
         //desserializo la respuesta
         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
@@ -212,11 +212,11 @@ void crear_tripulante(uint32_t pid,int n){
 
     void * info = serializar_nuevo_tripulante(tripulante);
 
-    enviar_paquete(conexion_mi_ram_hq,INICIALIZAR_TRIPULANTE,sizeof(nuevo_tripulante),info);
+    enviar_paquete(conexion_mi_ram_hq,INICIAR_TRIPULANTE,sizeof(nuevo_tripulante),info);
 
     t_paquete * paquete_recibido =recibir_paquete(conexion_mi_ram_hq);
 
-    if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIALIZAR_TRIPULANTE){
+    if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIAR_TRIPULANTE){
         printf("Recibi opcode de respuesta ok");
         //desserializo la respuesta
         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);

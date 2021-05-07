@@ -266,6 +266,18 @@ void* serializar_pid_con_tareas(pid_con_tareas pid_con_tareas)
 	return mensaje_listo;
 }
 
+void* serializar_pid(uint32_t pid){
+	void* stream = malloc(sizeof(uint32_t));
+	memcpy(stream,&pid,sizeof(uint32_t));
+	return stream;
+}
+
+void* serializar_estado(estado estado){
+	void* stream = malloc(sizeof(estado));
+	memcpy(stream,&estado,sizeof(estado));
+	return stream;
+}
+
 //---------------------------------DESERIALIZADORES---------------------------------------------
 
 t_paquete* deserializar_paquete(op_code* opcode, uint32_t* size, void* stream)
@@ -438,6 +450,20 @@ tarea* deserializar_tarea_alt(void* stream,uint32_t longitud){
 	return tarea;
 }
 
+uint32_t deserializar_pid(void* stream){
+	uint32_t pid = malloc(sizeof(uint32_t));
+	memcpy(&pid,stream,sizeof(uint32_t));
+	return pid;
+}
+
+estado deserializar_estado(void* stream){
+	estado estado = malloc(sizeof(estado));
+	memcpy(&estado,stream,sizeof(estado));
+	return estado;
+}
+
+//------------------------------------------------CONEXIONES-----------------------------------------------
+
 int crear_conexion(char *ip, char* puerto)
 {
 	struct addrinfo hints;
@@ -548,10 +574,3 @@ void liberar_paquete(t_paquete* paquete){
 	}
 }
 
-
-char* deserializar_prueba(void* stream){
-	uint32_t size = 5;
-	char* auxiliar = malloc(size);
-	memcpy(auxiliar,stream,size);
-	return auxiliar;
-}

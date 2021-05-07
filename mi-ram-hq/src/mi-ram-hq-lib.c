@@ -85,34 +85,63 @@ void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 	t_paquete* paquete = recibir_paquete(*socket_hilo);
 	while(1){ //SACAR ESTA BARBARIDAD ES SOLO PARA PROBAR AHORA
 	switch(paquete->codigo_operacion){
-		case INICIALIZAR_TRIPULANTE: {
-			pid_con_tareas tripulante_con_tarea = deserializar_pid_con_tareas(paquete->stream);
-			 //TODO : Armar la funcion que contiene la logica de Inicializar_Tripulante
-			respuesta_ok_fail resultado = RESPUESTA_OK;
+		case INICIAR_PATOTA: {
+			pid_con_tareas patota_con_tareas = deserializar_pid_con_tareas(paquete->stream);
+			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
+			respuesta_ok_fail resultado = iniciar_patota(patota_con_tareas);
 			void* respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(socket_hilo,RESPUESTA_INICIALIZAR_TRIPULANTE,sizeof(respuesta_ok_fail),respuesta);
+			enviar_paquete(socket_hilo,RESPUESTA_INICIAR_PATOTA,sizeof(respuesta_ok_fail),respuesta);
+			break;
+		}
+		case INICIAR_TRIPULANTE: {
+			nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
+			 //TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
+			respuesta_ok_fail resultado = iniciar_tripulante(nuevo_tripulante);
+			void* respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(socket_hilo,RESPUESTA_INICIAR_TRIPULANTE,sizeof(respuesta_ok_fail),respuesta);
 			break;
 		}
 		case ACTUALIZAR_UBICACION: {
+			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
+			 //TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
+			respuesta_ok_fail resultado = actualizar_ubicacion(tripulante_y_posicion);
+			void* respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(socket_hilo,RESPUESTA_ACTUALIZAR_UBICACION,sizeof(respuesta_ok_fail),respuesta);
 			break;
 		}
+		case OBTENER_PROXIMA_TAREA: {
+			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+			tarea proxima_tarea = obtener_proxima_tarea(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+			void* respuesta = serializar_tarea(proxima_tarea);
+			enviar_paquete(socket_hilo,RESPUESTA_OBTENER_PROXIMA_TAREA,sizeof(tarea),respuesta); 
+			break;
+		}
+		case EXPULSAR_TRIPULANTE: {
+			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+			respuesta_ok_fail resultado = expulsar_tripulante(tripulante_pid);
+			void* respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(socket_hilo,RESPUESTA_EXPULSAR_TRIPULANTE,sizeof(respuesta_ok_fail),respuesta); 
+		}
 		case OBTENER_ESTADO: {
+			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			estado estado = obtener_estado(tripulante_pid);
+			void* respuesta = serializar_estado(estado);
+			enviar_paquete(socket_hilo,RESPUESTA_OBTENER_ESTADO,sizeof(estado),respuesta);
 			break;
 		}
 		case OBTENER_UBICACION: {
-			break;
-		}
-		case PRUEBA:{
-			char* mensaje_prueba = deserializar_prueba(paquete->stream);
-			log_info(logger_ram_hq,"Me llego el mensaje: %s ",mensaje_prueba);
-			free(mensaje_prueba);
+			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
+			posicion posicion = obtener_ubicacion(tripulante_pid);
+			void* respuesta = serializar_posicion(posicion);
+			enviar_paquete(socket_hilo,RESPUESTA_OBTENER_UBICACION,sizeof(posicion),respuesta); 
 			break;
 		}
 		default: {
 			break;
 		}
-		// faltan contemplar algunos cases
-		
 	}
 	liberar_paquete(paquete);//MOVER ESTO PARA ABAJO AL SACAR EL WHILE(1)
 	paquete = recibir_paquete(*socket_hilo); //SACAR ESTO

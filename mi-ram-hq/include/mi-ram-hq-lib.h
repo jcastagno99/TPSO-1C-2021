@@ -58,6 +58,14 @@ int iniciar_servidor_mi_ram_hq(int);
 void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
+respuesta_ok_fail iniciar_patota(pid_con_tareas);
+respuesta_ok_fail iniciar_tripulante(nuevo_tripulante);
+respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion);
+tarea obtener_proxima_tarea(uint32_t);
+respuesta_ok_fail expulsar_tripulante(uint32_t);
+estado obtener_estado(uint32_t);
+posicion obtener_ubicacion(uint32_t);
 
-//asda
+
+
 #endif /* MI_RAM_HQ_LIB_H */
