@@ -200,8 +200,6 @@ uint32_t crear_tareas_enviar_patota_test(){
     free(nueva_tarea2);
     list_destroy(lista_tareas);
     liberar_paquete(paquete_recibido);
-    //es asi esto?
-    free(info);
 
     return 1234;
 }
@@ -235,5 +233,5 @@ void crear_tripulante(uint32_t pid,int n){
     else{
         printf("Recibi opcode de respuesta INVALIDO");
     } 
-
+    liberar_paquete(paquete_recibido);
 }
