@@ -451,7 +451,7 @@ tarea* deserializar_tarea_alt(void* stream,uint32_t longitud){
 }
 
 uint32_t deserializar_pid(void* stream){
-	uint32_t pid = malloc(sizeof(uint32_t));
+	uint32_t pid;// = malloc(sizeof(uint32_t)); [IGUAL QUE ABAJO, el malloc devuelve un puntero pero no estas declarando un puntero]
 	memcpy(&pid,stream,sizeof(uint32_t));
 	return pid;
 }

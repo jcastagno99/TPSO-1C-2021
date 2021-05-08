@@ -2,5 +2,5 @@
 FILE=mi-ram-hq
 make $FILE
 if test -f "./$FILE"; then
-    ./$FILE
+    ./$FILE cfg/mi-ram-hq.config cfg/mi-ram-hq.log
 fi

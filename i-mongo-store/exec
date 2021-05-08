@@ -2,5 +2,5 @@
 FILE=i-mongo-store
 make $FILE
 if test -f "./$FILE"; then
-    ./$FILE
+    ./$FILE cfg/i-mongo-store.config cfg/i-mongo-store.log
 fi
