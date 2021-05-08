@@ -53,7 +53,7 @@ void validacion_sintactica(char*text){
                 uint32_t pid = crear_tareas_enviar_patota_test();
                 for(int i = 0;i<atoi(str_split[1]);i++){
                     //le paso i para que tenga un tid, pero habria que pasarle el de el hilo
-                    crear_tripulante(pid,i);
+                    crear_tripulante_test(pid,i);
                 }
                 
                 
@@ -101,7 +101,7 @@ void validacion_sintactica(char*text){
 
     }else if (strcmp(str_split[0],"PAUSAR_PLANIFICACION") == 0 )
     {
-        printf("Posible intento de pausar planificacion");
+        printf("Posible intento de pausar planificacion\n");
         if (str_split[1]==NULL){
             printf("PAUSAR_PLANIFICACION : OK\n");
             // [TODO]
@@ -178,21 +178,21 @@ uint32_t crear_tareas_enviar_patota_test(){
     t_paquete * paquete_recibido =recibir_paquete(conexion_mi_ram_hq);
 
     if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIAR_PATOTA){
-        printf("Recibi opcode de respuesta ok");
+        printf("Recibi opcode de respuesta okfail\n");
         //desserializo la respuesta
         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
 
         //analizo respuesta
         if(respuesta == RESPUESTA_OK) {
-            printf("Recibi respuesta OK");
+            printf("Recibi respuesta OK\n");
         }else if(respuesta == RESPUESTA_FAIL) {
-            printf("Recibi respuesta FAIL");
+            printf("Recibi respuesta FAIL\n");
         }else{
-            printf("Recibi respuesta INVALIDA");
+            printf("Recibi respuesta INVALIDA\n");
         }
     }
     else{
-        printf("Recibi opcode de respuesta INVALIDO");
+        printf("Recibi opcode de respuesta INVALIDO\n");
     }    
     //esto deberia ser el pid de la patota creada
 
@@ -203,7 +203,7 @@ uint32_t crear_tareas_enviar_patota_test(){
 
     return 1234;
 }
-void crear_tripulante(uint32_t pid,int n){
+void crear_tripulante_test(uint32_t pid,int n){
     nuevo_tripulante tripulante;
     tripulante.pid = pid;
     tripulante.pos_x = 0;
@@ -217,21 +217,21 @@ void crear_tripulante(uint32_t pid,int n){
     t_paquete * paquete_recibido =recibir_paquete(conexion_mi_ram_hq);
 
     if(paquete_recibido -> codigo_operacion == RESPUESTA_INICIAR_TRIPULANTE){
-        printf("Recibi opcode de respuesta ok");
+        printf("Recibi opcode de respuesta okfail\n");
         //desserializo la respuesta
         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
 
         //analizo respuesta
         if(respuesta == RESPUESTA_OK) {
-            printf("Recibi respuesta OK");
+            printf("Recibi respuesta OK\n");
         }else if(respuesta == RESPUESTA_FAIL) {
-            printf("Recibi respuesta FAIL");
+            printf("Recibi respuesta FAIL\n");
         }else{
-            printf("Recibi respuesta INVALIDA");
+            printf("Recibi respuesta INVALIDA\n");
         }
     }
     else{
-        printf("Recibi opcode de respuesta INVALIDO");
+        printf("Recibi opcode de respuesta INVALIDO\n");
     } 
     liberar_paquete(paquete_recibido);
 }
