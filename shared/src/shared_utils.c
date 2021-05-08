@@ -457,11 +457,10 @@ uint32_t deserializar_pid(void* stream){
 }
 
 estado deserializar_estado(void* stream){
-	estado estado = malloc(sizeof(estado));
-	memcpy(&estado,stream,sizeof(estado));
-	return estado;
+	estado estadoRta;
+	memcpy(&estadoRta,stream,sizeof(estado));
+	return estadoRta;
 }
-
 //------------------------------------------------CONEXIONES-----------------------------------------------
 
 int crear_conexion(char *ip, char* puerto)

@@ -151,3 +151,39 @@ void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 	
 	return NULL;
 }
+
+respuesta_ok_fail iniciar_patota(pid_con_tareas patota_con_tareas){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+respuesta_ok_fail iniciar_tripulante(nuevo_tripulante tripulante){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion tripulante_con_posicion){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+tarea obtener_proxima_tarea(uint32_t tripulante_pid){
+	tarea proxima_tarea;
+	return proxima_tarea;
+}
+respuesta_ok_fail expulsar_tripulante(uint32_t tripulante_pid){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+estado obtener_estado(uint32_t tripulante_pid){
+	estado estado_obtenido;
+	//TODO
+	return estado_obtenido;
+}
+posicion obtener_ubicacion(uint32_t tripulante_pid){
+	posicion ubicacion_obtenida;
+	//TODO
+	return ubicacion_obtenida;
+}
+ 
