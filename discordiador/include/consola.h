@@ -16,7 +16,8 @@ typedef enum
     EJECT_CREW,
     INIT_PLANIFICATION,
     PAUSE_PLANIFICATION,
-    GET_BINNACLE
+    GET_BINNACLE,
+    NO_VALIDO
 } Comando_Discordiador;
 
 Comando_Discordiador obtener_comando(char *);

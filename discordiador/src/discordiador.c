@@ -120,8 +120,11 @@ void leer_consola_prueba(t_log* logger){
 		//una_prueba->tamanio = strlen(leido)+1;
 		//una_prueba->contenido = leido;
 		//enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
+		free(leido);
 		leido = readline(">");
 	}
+	
+	free(leido);
 }
 
 void terminar_programa(int conexion_mi_ram_hq,int conexion_i_mongo_store, t_log* logger, t_config* config)

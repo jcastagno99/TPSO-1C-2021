@@ -1,5 +1,3 @@
-
-
 #ifndef DISCORDIADOR_H
 #define DISCORDIADOR_H
 

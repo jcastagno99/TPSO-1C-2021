@@ -14,6 +14,7 @@ Comando_Discordiador obtener_comando(char *comando)
         return PAUSE_PLANIFICATION;
     if (strcmp(comando, "OBTENER_BITACORA") == 0)
         return GET_BINNACLE;
+    return NO_VALIDO; //Para el warning
 }
 
 void liberar_lista_string(char **lista)
@@ -239,9 +240,10 @@ uint32_t crear_tareas_enviar_patota_test()
     }
     //esto deberia ser el pid de la patota creada
 
+    //free(nueva_tarea->nombre_tarea); esto primero
     free(nueva_tarea);
     free(nueva_tarea2);
-    list_destroy(lista_tareas);
+    list_destroy(lista_tareas);//esto cuando lo generalizemos usaremos la funcion de las commons
     liberar_paquete(paquete_recibido);
 
     return 1234;

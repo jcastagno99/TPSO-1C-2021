@@ -92,3 +92,11 @@
 [INFO] 14:07:24:993 discordiador.log/(9509:9512): INICIAR_PATOTA 5 /home/utnso/tareas/tareasPatota5.txt 1|1 3|4
 [INFO] 14:07:48:320 discordiador.log/(9509:9512): test
 [INFO] 14:08:01:251 discordiador.log/(9509:9512): INICIAR_PATOTA 5 /home/utnso/tareas/tareasPatota5.txt 1|1 3|4
+[INFO] 23:05:08:18 discordiador.log/(5886:5887): Hola
+[INFO] 23:05:14:384 discordiador.log/(5886:5887): INICIAR_PATOTA
+[INFO] 23:05:26:701 discordiador.log/(5886:5887): LISTAR_TRIPULANTES
+[INFO] 23:06:32:334 discordiador.log/(5886:5887): INICIAR_PATOTA 5 /home/utnso/tareas/tareasPatota5.txt 1|1 3|4
+[INFO] 23:08:48:495 discordiador.log/(6052:6053): LISTAR_TRI
+[INFO] 23:08:56:343 discordiador.log/(6052:6053): LISTAR_TRIPULANTES
+[INFO] 23:10:35:859 discordiador.log/(6141:6142): LISTAR_TRIPULANTES
+[INFO] 23:10:38:753 discordiador.log/(6141:6142): PPOP

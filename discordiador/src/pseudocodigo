@@ -1,0 +1,82 @@
+[GIANPIER] Aqui pondre las cosas que se me ocurran hasta que hagamos puesta en comun
+
+La creacion de la patota con sus hilos(tripulantes) esto esta echo ?
+
+[tarea] // todas estas estructuras estan definidas en shared_utils.h
+[tripulante] 
+[nueva_patota]
+pid_con_tareas nueva_patota;
+nueva_patota.pid = 1234;
+nueva_patota.tareas = lista_tareas;
+
+
+void crear_tripulante(uint32_t pid, int n,pos_x,pos_y)
+{
+    nuevo_tripulante tripulante;
+    tripulante.pid = pid;
+    tripulante.pos_x = pos_x;
+    tripulante.pos_y = pos_y;
+    tripulante.tid = n;
+
+    ... Toda la serializacion y respuesta que escribio [DAMI]
+}
+
+// El path viene del tercer parametro del comando "INICIAR_PATOTA"
+// lo separamos en 2 funciones "crear_tareas" y "enviar_patota" ???
+uint32_t crear_tareas_enviar_patota(char* path){
+
+    // Formato de las lineas del txt que tienen las tareas
+    // TAREA PARAMETROS;POS X;POS Y;TIEMPO
+    // [Poner las bibliotecas de consola| creo que esto de la funciones ira en otro archivo.c distinto a consola??]
+
+    FILE *archivo;
+    archivo = fopen("prueba.txt","r");
+    char caracteres[100];
+    
+    // [LISTA]
+ 	t_list * lista_tareas = list_create();
+
+    while (feof(archivo) == 0){
+ 		fgets(caracteres,100,archivo);
+        char** str_spl = string_split(caracteres, ";")
+        // sacar el primer parametro y separar el parametro y bla bla...
+        tarea *nueva_tarea = malloc(sizeof(tarea));
+
+        char *nombre_de_tarea = string_duplicate("Poner en donde estara"); // Esto para liberar la memoria de str_spl
+
+        nueva_tarea->nombre_tarea = nombre_de_tarea;
+        //Esto no se si es esta longitud de toda la tarea o solo la del nombre de la tarea
+        nueva_tarea->cantidad_parametro = ;
+        nueva_tarea->parametro = ;
+        nueva_tarea->pos_x = ;
+        nueva_tarea->pos_y = ;
+        nueva_tarea->tiempo = ;
+
+        list_add(lista_tareas, nueva_tarea);
+        liberar_lista_string(str_spl); // esta en consola.c
+ 	}
+    fclose(archivo);
+
+
+    .. lo de enviar patota a memoria para que me lo valide
+}
+
+
+[SUPER FUNCION DE "iniciar planificación]
+debemos tener 5 colas [LISTO/EJECUTANDO/...] usando t_queue de las commons
+Estas colas se agregaran en un inicio cuando "crear_tripulante" y se agregaran en la cola de NEW
+// obviamente consideramos que i-mongo nos da lo que pedimos
+
+int estado=0;// variable global
+void iniciar_planificacion(){
+    estado++;
+    while(estado==1){
+       // el juego de las colas y estados
+       // no sabo, como se sigue :C [HELP]
+    }
+
+}
+
+void pausar_planificacion(){
+    estado--;
+}
