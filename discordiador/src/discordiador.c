@@ -1,5 +1,6 @@
 #include "discordiador.h"
 #include "consola.h"
+#include "funciones.h"
 
 int main(void)
 { 
@@ -11,22 +12,19 @@ int main(void)
 	int conexion_i_mongo_store;
 	char* ip_i_mongo_store;
 	char* puerto_i_mongo_store;
-	//char* valor;
-
+	
 /*	tarea1.cantidad_parametro = 1;
 	tarea1.nombre_tarea = "tarea1";
 	tarea1.parametro = 1;
 	tarea1.pos_x = 10;
 	tarea1.pos_y = 12;
 	tarea1.tiempo = 5;
-
 	tarea2.cantidad_parametro = 1;
 	tarea2.nombre_tarea = "tarea2";
 	tarea2.parametro = 1;
 	tarea2.pos_x = 25;
 	tarea2.pos_y = 27;
 	tarea2.tiempo = 10;
-
 	t_list* tareas = list_create();
 	tarea* auxiliar1 = malloc(sizeof(tarea));
 	tarea* auxiliar2 = malloc(sizeof(tarea));
@@ -35,6 +33,7 @@ int main(void)
 	list_add(tareas,auxiliar1);
 	list_add(tareas,auxiliar2);
 */
+
 	/*  [TODO] lo comente por que aun no se a usado
 	uint32_t pid = 100;
 
@@ -49,25 +48,23 @@ int main(void)
 	logger = iniciar_logger();
 	config = leer_config();
 
+	//char* valor;
 	//asignar valor de config a la variable valor
 	//valor = config_get_string_value(config,"CLAVE");
 
 	//Loggear valor de config
 	//log_info(logger,valor);
 	
+	crear_tareas();
 
+	/*----------- CONEXIONES -----------*/
 
-	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
-
-	//antes de continuar, tenemos que asegurarnos que el servidor esté corriendo porque lo necesitaremos para lo que sigue.
-
-	//crear conexiones
-
+	// Crear conexion para MI_RAM_HQ
 	ip_mi_ram_hq = config_get_string_value(config,"IP_MI_RAM_HQ");
 	puerto_mi_ram_hq = config_get_string_value(config,"PUERTO_MI_RAM_HQ");
 	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq,puerto_mi_ram_hq);
 
-	// ss
+	// Crear conexion para I_MONGO_STORE
 	ip_i_mongo_store = config_get_string_value(config,"IP_I_MONGO_STORE");
 	puerto_i_mongo_store = config_get_string_value(config,"PUERTO_I_MONGO_STORE");
 	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store,puerto_i_mongo_store);

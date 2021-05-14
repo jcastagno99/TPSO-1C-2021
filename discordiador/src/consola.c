@@ -1,4 +1,5 @@
 #include "consola.h"
+//#include "funciones.h"
 
 Comando_Discordiador obtener_comando(char *comando)
 {
@@ -17,6 +18,7 @@ Comando_Discordiador obtener_comando(char *comando)
     return NO_VALIDO; //Para el warning
 }
 
+/*  Podria quitar esta funcion dado que tambien esta definida en "funciones.h"
 void liberar_lista_string(char **lista)
 {
     int i = 0;
@@ -26,7 +28,7 @@ void liberar_lista_string(char **lista)
         i++;
     }
     free(lista);
-}
+}*/
 
 bool posicion_validas_tripulantes(char **str_split)
 {
@@ -100,6 +102,7 @@ void validacion_sintactica(char *text)
             printf("LISTAR_TRIPULANTES : OK\n");
             // [TODO]
             // no encontre mensaje listar tripulantes, lo tenemos en el discordiador ya esto?
+            
         }
         else
             printf("LISTAR_TRIPULANTES : no contiene parametros\n");
@@ -162,9 +165,9 @@ void validacion_sintactica(char *text)
     default:
         printf("COMANDO NO VALIDO\n");
         break;
-
-        liberar_lista_string(str_split);
     }
+    // Para liberar una ves se termino el case
+    liberar_lista_string(str_split);
 }
 
 uint32_t crear_tareas_enviar_patota_test()
