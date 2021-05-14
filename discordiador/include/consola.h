@@ -30,6 +30,6 @@ void validacion_sintactica(char *text);
 
 uint32_t crear_tareas_enviar_patota_test();
 
-void crear_tripulante_test(uint32_t, int);
+void crear_tripulante_test(uint32_t, int,int,int);
 
 #endif

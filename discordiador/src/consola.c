@@ -17,6 +17,13 @@ Comando_Discordiador obtener_comando(char *comando)
         return GET_BINNACLE;
     return NO_VALIDO; //Para el warning
 }
+int longitud_lista_string(char**lista){
+   int i=0;
+   while (lista[i]!= NULL){
+        i++;
+   }     
+   return i; 
+}
 
 /*  Podria quitar esta funcion dado que tambien esta definida en "funciones.h"
 void liberar_lista_string(char **lista)
@@ -58,7 +65,7 @@ void validacion_sintactica(char *text)
 {
     char **str_split = string_split(text, " ");
     Comando_Discordiador comando = obtener_comando(str_split[0]);
-
+  
     switch (comando)
     {
     //el nombre del enum lo puse en ingles porque en español ya estaba utilizado para los
@@ -67,7 +74,9 @@ void validacion_sintactica(char *text)
         printf("Posible intento de comando iniciar patota\n");
         if (str_split[1] != NULL && str_split[2] != NULL && posicion_validas_tripulantes(str_split))
         {
-            if (atoi(str_split[1]) != 0)
+            int cant_tripulantes = atoi(str_split[1]);
+            int tripu_pos_inicial_no_nula = longitud_lista_string(str_split) - 3;
+            if (cant_tripulantes != 0)
             {
                 printf("INICIAR_PATOTA : OK\n");
                 // [TODO]
@@ -82,11 +91,19 @@ void validacion_sintactica(char *text)
 
                 //Por ahora voy a enviar mensaje de que "cree" una patota y enviar un mensaje por cada tripulante que creo
                 uint32_t pid = crear_tareas_enviar_patota_test();
-                for (int i = 0; i < atoi(str_split[1]); i++)
+                for (int i = 0; i < cant_tripulantes; i++)
                 {
+                    if (i < tripu_pos_inicial_no_nula){
+                        char **posiciones = string_split(str_split[i+3], "|");
+                        crear_tripulante_test(pid, i, atoi(posiciones[0]), atoi(posiciones[1]) );
+                        liberar_lista_string(posiciones);
+                    }
+                    else // Se crea un tripulante con las posiciones (0|0)
+                        crear_tripulante_test(pid,i,0,0);
+
                     //le paso i para que tenga un tid, pero habria que pasarle el de el hilo
-                    crear_tripulante_test(pid, i);
-                }
+                    //crear_tripulante_test(pid,0) ;                    
+                }                
             }
             else
                 printf("INICIAR_PATOTA : id tripulante no es un [int]\n");
@@ -251,14 +268,16 @@ uint32_t crear_tareas_enviar_patota_test()
 
     return 1234;
 }
-void crear_tripulante_test(uint32_t pid, int n)
-{
+void crear_tripulante_test(uint32_t pid, int tid,int pos_x,int pos_y)
+{   // Le agrege a parametros podemos usarlo
+    // [EN SHARED UTILS HAY UNA FUNCION que hace hasta la linea 273] pserializar_nuevo_tripulante
     nuevo_tripulante tripulante;
     tripulante.pid = pid;
-    tripulante.pos_x = 0;
-    tripulante.pos_y = 0;
-    tripulante.tid = n;
+    tripulante.pos_x = pos_x;
+    tripulante.pos_y = pos_y;
+    tripulante.tid = tid;
 
+    printf("Nuevo tripulante: pid=%d | tid=%d | posx=%d | posy=%d\n",pid,tid,pos_x,pos_y);
     void *info = serializar_nuevo_tripulante(tripulante);
 
     enviar_paquete(conexion_mi_ram_hq, INICIAR_TRIPULANTE, sizeof(nuevo_tripulante), info);
@@ -290,4 +309,5 @@ void crear_tripulante_test(uint32_t pid, int n)
         printf("Recibi opcode de respuesta INVALIDO\n");
     }
     liberar_paquete(paquete_recibido);
+    // NO DEBERIA TIRAR UN FREE DE *info que es un puntero? [linea 272]
 }

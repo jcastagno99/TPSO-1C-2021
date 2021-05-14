@@ -8,6 +8,8 @@ void liberar_lista_string(char**lista){
     } 
     free(lista); 
 }
+
+
 void tarea_destroy(tarea* t) {
 	free(t->nombre_tarea);
 	free(t);
