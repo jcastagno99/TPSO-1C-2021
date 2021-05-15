@@ -152,6 +152,19 @@ void* manejar_suscripciones_mi_ram_hq(int* socket_hilo){
 	return NULL;
 }
 
+void crear_estructura_administrativa(){
+	patotas = list_create();
+	if(strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION")){
+		//Siquiera hay algo para inicializar?
+	}
+	else if(strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"PAGINACION")){
+		//crear_estructuras_administrativas_paginacion;
+	}
+	else{
+		log_error(logger_ram_hq,"El esquema de memoria no es soportado por el sistema");
+	}
+}
+
 respuesta_ok_fail iniciar_patota(pid_con_tareas patota_con_tareas){
 	respuesta_ok_fail respuesta;
 	//TODO
