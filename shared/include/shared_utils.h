@@ -60,7 +60,6 @@ typedef enum
 {
 	RESPUESTA_SI,
 	RESPUESTA_NO
-
 } resultado_verificacion;
 
 typedef enum

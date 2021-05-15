@@ -2,23 +2,13 @@
 
 <p align="center"><img src="oviedo.jpg" width="200px"/></p>
 
-#### Ubicación del Proyecto dentro de la VM
 
-````javascript
-/home/utnso/workspace
-````
+**#### Ejecución del  mi-ram-hq e i-mongo-store**
 
-
-
-#### Ejecución del  mi-ram-hq
-
-Por que pide parámetros por consola
+Pide parámetros por consola usar `./exec` en estos módulos para ejecutar o:
 
 ````powershell
 ./mi-ram-hq cfg/mi-ram-hq.config cfg/mi-ram-hq.log
-````
-
-````powershell
 ./i-mongo-store cfg/i-mongo-store.config cfg/i-mongo-store.log
 ````
 

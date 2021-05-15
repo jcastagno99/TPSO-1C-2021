@@ -1,5 +1,6 @@
 #include "discordiador.h"
 #include "consola.h"
+#include "funciones.h"
 
 int main(void)
 {
@@ -11,19 +12,18 @@ int main(void)
 	char *puerto_escucha_sabotaje;
 
 	/*	tarea1.cantidad_parametro = 1;
+  tarea1.cantidad_parametro = 1;
 	tarea1.nombre_tarea = "tarea1";
 	tarea1.parametro = 1;
 	tarea1.pos_x = 10;
 	tarea1.pos_y = 12;
 	tarea1.tiempo = 5;
-
 	tarea2.cantidad_parametro = 1;
 	tarea2.nombre_tarea = "tarea2";
 	tarea2.parametro = 1;
 	tarea2.pos_x = 25;
 	tarea2.pos_y = 27;
 	tarea2.tiempo = 10;
-
 	t_list* tareas = list_create();
 	tarea* auxiliar1 = malloc(sizeof(tarea));
 	tarea* auxiliar2 = malloc(sizeof(tarea));
@@ -32,6 +32,7 @@ int main(void)
 	list_add(tareas,auxiliar1);
 	list_add(tareas,auxiliar2);
 */
+
 	/*  [TODO] lo comente por que aun no se a usado
 	uint32_t pid = 100;
 
@@ -57,6 +58,8 @@ int main(void)
 	ip_i_mongo_store = config_get_string_value(config, "IP_I_MONGO_STORE");
 	puerto_i_mongo_store = config_get_string_value(config, "PUERTO_I_MONGO_STORE");
 	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+  
+  crear_tareas();
 
 	pthread_t hilo_consola;
 	pthread_create(&hilo_consola, NULL, (void *)leer_consola_prueba, (void *)logger);
@@ -179,8 +182,11 @@ void leer_consola_prueba(t_log *logger)
 		//una_prueba->tamanio = strlen(leido)+1;
 		//una_prueba->contenido = leido;
 		//enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
+		free(leido);
 		leido = readline(">");
 	}
+	
+	free(leido);
 }
 
 void terminar_programa(int conexion_mi_ram_hq, int conexion_i_mongo_store, t_log *logger, t_config *config)
