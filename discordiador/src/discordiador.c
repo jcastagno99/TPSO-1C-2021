@@ -3,17 +3,16 @@
 #include "funciones.h"
 
 int main(void)
-{ 
-	
-	/*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
-	
-	char* ip_mi_ram_hq;
-	char* puerto_mi_ram_hq;
+{
+	char *ip_mi_ram_hq;
+	char *puerto_mi_ram_hq;
 	int conexion_i_mongo_store;
-	char* ip_i_mongo_store;
-	char* puerto_i_mongo_store;
-	
-/*	tarea1.cantidad_parametro = 1;
+	char *ip_i_mongo_store;
+	char *puerto_i_mongo_store;
+	char *puerto_escucha_sabotaje;
+
+	/*	tarea1.cantidad_parametro = 1;
+  tarea1.cantidad_parametro = 1;
 	tarea1.nombre_tarea = "tarea1";
 	tarea1.parametro = 1;
 	tarea1.pos_x = 10;
@@ -42,75 +41,141 @@ int main(void)
 	mensaje.tareas = tareas;
 	*/
 
-	t_log* logger;
-	t_config* config;
-
 	logger = iniciar_logger();
 	config = leer_config();
 
-	//char* valor;
-	//asignar valor de config a la variable valor
-	//valor = config_get_string_value(config,"CLAVE");
+	//puerto de escucha para los sabotajes
+	puerto_escucha_sabotaje = config_get_string_value(config, "PUERTO_ESCUCHA_SABOTAJE");
+	pthread_t hilo_server;
+	pthread_create(&hilo_server, NULL, esperar_conexiones, atoi(puerto_escucha_sabotaje));
 
-	//Loggear valor de config
-	//log_info(logger,valor);
-	
-	crear_tareas();
+	//crear conexiones
+	ip_mi_ram_hq = config_get_string_value(config, "IP_MI_RAM_HQ");
+	puerto_mi_ram_hq = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
+	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
 
-	/*----------- CONEXIONES -----------*/
+	// ss
+	ip_i_mongo_store = config_get_string_value(config, "IP_I_MONGO_STORE");
+	puerto_i_mongo_store = config_get_string_value(config, "PUERTO_I_MONGO_STORE");
+	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+  
+  crear_tareas();
 
-	// Crear conexion para MI_RAM_HQ
-	ip_mi_ram_hq = config_get_string_value(config,"IP_MI_RAM_HQ");
-	puerto_mi_ram_hq = config_get_string_value(config,"PUERTO_MI_RAM_HQ");
-	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq,puerto_mi_ram_hq);
+	pthread_t hilo_consola;
+	pthread_create(&hilo_consola, NULL, (void *)leer_consola_prueba, (void *)logger);
+	pthread_join(hilo_consola, NULL);
 
-	// Crear conexion para I_MONGO_STORE
-	ip_i_mongo_store = config_get_string_value(config,"IP_I_MONGO_STORE");
-	puerto_i_mongo_store = config_get_string_value(config,"PUERTO_I_MONGO_STORE");
-	conexion_i_mongo_store = crear_conexion(ip_i_mongo_store,puerto_i_mongo_store);
-
-	pthread_t hilo_consola; 
-	pthread_create(&hilo_consola,NULL,(void*)leer_consola_prueba,(void*) logger);
-	pthread_join(hilo_consola,NULL);
-
-	terminar_programa(conexion_mi_ram_hq,conexion_i_mongo_store, logger, config);
-	
+	terminar_programa(conexion_mi_ram_hq, conexion_i_mongo_store, logger, config);
 }
 
-
-t_log* iniciar_logger(void)
+t_log *iniciar_logger(void)
 {
-	return log_create("cfg/discordiador.log","discordiador.log",1,LOG_LEVEL_INFO);
+	return log_create("cfg/discordiador.log", "discordiador.log", 1, LOG_LEVEL_INFO);
 }
 
-t_config* leer_config(void)
+t_config *leer_config(void)
 {
 	return config_create("cfg/discordiador.config");
 }
 
-void leer_consola(t_log* logger)
+void *esperar_conexiones(int puerto)
 {
-	char* leido;
+	t_list *hilos = list_create();
+	int socket_escucha = iniciar_servidor_discordiador(puerto);
+	int socket_cliente;
+	log_info(logger, "SERVIDOR LEVANTADO! ESCUCHANDO EN %i", puerto);
+	struct sockaddr cliente;
+	socklen_t len = sizeof(cliente);
+	do
+	{
+		socket_cliente = accept(socket_escucha, &cliente, &len);
+		if (socket_cliente > 0)
+		{
+			log_info(logger, "NUEVA CONEXIÓN!");
+			crear_hilo_para_manejar_suscripciones(hilos, socket_cliente);
+		}
+		else
+		{
+			log_error(logger, "ERROR ACEPTANDO CONEXIONES: %s", strerror(errno));
+		}
+	} while (1);
+}
+
+int iniciar_servidor_discordiador(int puerto)
+{
+	int socket_v;
+	int val = 1;
+	struct sockaddr_in servaddr;
+
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = INADDR_ANY;
+	servaddr.sin_port = htons(puerto);
+
+	socket_v = socket(AF_INET, SOCK_STREAM, 0);
+	if (socket_v < 0)
+	{
+		char *error = strerror(errno);
+		perror(error);
+		free(error);
+		return EXIT_FAILURE;
+	}
+
+	setsockopt(socket_v, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+
+	if (bind(socket_v, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
+	{
+		return EXIT_FAILURE;
+	}
+	if (listen(socket_v, MAX_CLIENTS) < 0)
+	{
+		return EXIT_FAILURE;
+	}
+
+	return socket_v;
+}
+
+void crear_hilo_para_manejar_suscripciones(t_list *lista_hilos, int socket)
+{
+	int *socket_hilo = malloc(sizeof(int));
+	*socket_hilo = socket;
+	pthread_t hilo_conectado;
+	pthread_create(&hilo_conectado, NULL, (void *)manejar_suscripciones_discordiador, socket_hilo);
+	list_add(lista_hilos, &hilo_conectado);
+}
+
+void *manejar_suscripciones_discordiador(int *socket_hilo)
+{
+	log_info(logger, "Se creó el hilo correctamente. Socket fd %i", *socket_hilo);
+	//LLENAME
+	//CON AGUA
+	close(*socket_hilo);
+	free(socket_hilo);
+}
+
+void leer_consola(t_log *logger)
+{
+	char *leido;
 
 	leido = readline(">");
-	while(*leido != '\0'){
-		log_info(logger,leido);
-		
-		
+	while (*leido != '\0')
+	{
+		log_info(logger, leido);
+
 		free(leido);
 		leido = readline(">");
 	}
 
 	free(leido);
-
 }
 
-void leer_consola_prueba(t_log* logger){
-	char* leido;
+void leer_consola_prueba(t_log *logger)
+{
+	char *leido;
 	leido = readline(">");
-	while(*leido != '\0'){
+	while (*leido != '\0')
+	{
 
-		log_info(logger,leido);
+		log_info(logger, leido);
 		validacion_sintactica(leido); // VALIDACION SINTACTICA
 
 		//struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
@@ -124,7 +189,7 @@ void leer_consola_prueba(t_log* logger){
 	free(leido);
 }
 
-void terminar_programa(int conexion_mi_ram_hq,int conexion_i_mongo_store, t_log* logger, t_config* config)
+void terminar_programa(int conexion_mi_ram_hq, int conexion_i_mongo_store, t_log *logger, t_config *config)
 {
 	//Y por ultimo, para cerrar, hay que liberar lo que utilizamos (conexion, log y config) con las funciones de las commons y del TP mencionadas en el enunciado
 	log_destroy(logger);
