@@ -16,7 +16,8 @@
 	"settings": {
 		"files.associations": {
 			"discordiador.h": "c",
-			"string.h": "c"
+			"string.h": "c",
+			"i-mongo-store-lib.h": "c"
 		}
 	}
 }

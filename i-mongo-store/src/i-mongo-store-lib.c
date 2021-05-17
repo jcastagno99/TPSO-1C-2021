@@ -9,7 +9,8 @@ i_mongo_store_config* leer_config_i_mongo_store(char* path){
     config_i_mongo_store_aux->PUNTO_MONTAJE = config_get_string_value(config_aux,"PUNTO_MONTAJE");
 	config_i_mongo_store_aux->PUERTO = config_get_int_value(config_aux,"PUERTO");
 	config_i_mongo_store_aux->TIEMPO_SINCRONIZACION = config_get_int_value(config_aux,"TIEMPO_SINCRONIZACION");
-
+	config_i_mongo_store_aux->IP_DISCORDIADOR = config_get_string_value(config_aux,"IP_DISCORDIADOR");
+	config_i_mongo_store_aux->PUERTO_DISCORDIADOR = config_get_int_value(config_aux,"PUERTO_SABOTAJE_DISCORDIADOR");
     return config_i_mongo_store_aux;
     // No hace falta liberar memoria
 }
@@ -82,4 +83,66 @@ void* manejar_suscripciones_i_mongo_store(int* socket_envio){
     close(*socket_envio);
 	free(socket_envio);
 	return NULL;
+}
+
+void inicializar_filesystem(uint32_t block_size, uint32_t block_amount){
+	crear_directorio(i_mongo_store_configuracion->PUNTO_MONTAJE);
+	inicializar_superbloque(block_size,block_amount);
+	inicializar_blocks(block_size,block_amount);
+	crear_directorio(carpeta_files);
+	crear_directorio(carpeta_bitacoras);
+	log_info(logger_i_mongo_store, "FILESYSTEM INICIALIZADO DE 0 CON EXITO");
+}
+
+void inicializar_superbloque(uint32_t block_size, uint32_t block_amount){
+	int fd = open(ruta_superbloque,O_CREAT | O_RDWR, (mode_t) 0777);
+	if(fd==-1){
+		no_pude_abrir_archivo(ruta_superbloque);
+		exit(-1);
+	}
+	fallocate(fd,0,0,2*sizeof(uint32_t)+block_amount);
+	superbloque = mmap(NULL, 2*sizeof(uint32_t)+block_amount, PROT_WRITE | PROT_READ, MAP_SHARED,fd,0);
+	if(superbloque==MAP_FAILED){
+		no_pude_mapear_archivo(ruta_superbloque);
+		exit(-1);
+	}
+	memcpy(superbloque,&block_size,sizeof(uint32_t));
+	memcpy(superbloque+sizeof(uint32_t),&block_amount,sizeof(uint32_t));
+	int offset = 2*sizeof(uint32_t);
+	bool estado = 0;
+	for(int i = 0; i<block_amount;i++){
+		memcpy(superbloque+offset,&estado,sizeof(bool));
+		offset+=sizeof(bool);
+	}
+	msync(superbloque,2*sizeof(uint32_t)+block_amount,0);
+}
+
+void inicializar_blocks(uint32_t block_size, uint32_t block_amount){
+	int fd = open(ruta_blocks, O_CREAT | O_RDWR, (mode_t) 0777);
+	if(fd==-1){
+		no_pude_abrir_archivo(ruta_blocks);
+	}
+	fallocate(fd,0,0,block_size*block_amount);
+	superbloque = mmap(NULL, block_size*block_amount, PROT_WRITE | PROT_READ, MAP_SHARED,fd,0);
+	if(superbloque==MAP_FAILED){
+		no_pude_mapear_archivo(ruta_blocks);
+		exit(-1);
+	}
+}
+
+void crear_directorio(char* carpeta){
+	int res = mkdir(carpeta, (mode_t) 0777);
+	if(res == -1){
+		log_error(logger_i_mongo_store,"No pude crear la carpeta %s",carpeta);
+		exit(-1);
+	}
+}
+
+
+void no_pude_abrir_archivo(char* ruta_archivo){
+	log_error(logger_i_mongo_store,"No se pudo abrir el archivo %s",ruta_archivo);
+}
+
+void no_pude_mapear_archivo(char* ruta_archivo){
+	log_error(logger_i_mongo_store,"No se pudo mapear el archivo %s",ruta_archivo);
 }
