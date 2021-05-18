@@ -1,7 +1,7 @@
 
 #ifndef I_MONGO_STORE_LIB_H
 #define I_MONGO_STORE_LIB_H
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,7 +31,7 @@ typedef struct
 	char* PUNTO_MONTAJE;
 	int PUERTO;
 	int TIEMPO_SINCRONIZACION;
-	int IP_DISCORDIADOR;
+	char* IP_DISCORDIADOR;
 	int PUERTO_DISCORDIADOR;
 }i_mongo_store_config;
 
