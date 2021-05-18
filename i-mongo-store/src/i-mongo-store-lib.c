@@ -123,8 +123,8 @@ void inicializar_blocks(uint32_t block_size, uint32_t block_amount){
 		no_pude_abrir_archivo(ruta_blocks);
 	}
 	fallocate(fd,0,0,block_size*block_amount);
-	superbloque = mmap(NULL, block_size*block_amount, PROT_WRITE | PROT_READ, MAP_SHARED,fd,0);
-	if(superbloque==MAP_FAILED){
+	blocks = mmap(NULL, block_size*block_amount, PROT_WRITE | PROT_READ, MAP_SHARED,fd,0);
+	if(blocks==MAP_FAILED){
 		no_pude_mapear_archivo(ruta_blocks);
 		exit(-1);
 	}
