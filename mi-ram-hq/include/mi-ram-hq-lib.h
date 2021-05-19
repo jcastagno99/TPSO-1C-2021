@@ -67,6 +67,14 @@ typedef struct
 
 }t_tripulante_en_memoria;
 
+typedef struct
+{
+	bool libre;
+	void* inicio_segmento;
+	uint32_t tamanio_segmento;
+
+}t_segmento_de_memoria;
+
 //------------Variables Globales------------
 
 mi_ram_hq_config* mi_ram_hq_configuracion;
@@ -78,6 +86,8 @@ void* memoria_swap;
 t_list* patotas;
 pthread_mutex_t mutex_memoria;
 pthread_mutex_t mutex_swap;
+
+t_list* segmentos_memoria;
 
 
 //------------Firmas de funciones------------
@@ -92,15 +102,21 @@ void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
 
-respuesta_ok_fail iniciar_patota(pid_con_tareas);
-respuesta_ok_fail iniciar_tripulante(nuevo_tripulante);
-respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion);
-tarea obtener_proxima_tarea(uint32_t);
-respuesta_ok_fail expulsar_tripulante(uint32_t);
-estado obtener_estado(uint32_t);
-posicion obtener_ubicacion(uint32_t);
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas);
+respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante);
+respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion);
+tarea obtener_proxima_tarea_segmentacion(uint32_t);
+respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t);
+estado obtener_estado_segmentacion(uint32_t);
+posicion obtener_ubicacion_segmentacion(uint32_t);
 
-
+respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
+respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
+respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion);
+tarea obtener_proxima_tarea_paginacion(uint32_t);
+respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
+estado obtener_estado_paginacion(uint32_t);
+posicion obtener_ubicacion_paginacion(uint32_t);
 
 
 #endif /* MI_RAM_HQ_LIB_H */
