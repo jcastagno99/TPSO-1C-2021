@@ -278,6 +278,39 @@ void* serializar_estado(estado estado){
 	return stream;
 }
 
+
+void* pserializar_operacion_recurso(char* recurso, uint32_t cantidad){
+	operacion_recurso op_con_recurso;
+	op_con_recurso.recurso = recurso;
+	op_con_recurso.cantidad = cantidad;
+	return serializar_operacion_recurso(op_con_recurso);
+}
+
+void* serializar_operacion_recurso(operacion_recurso recurso_con_cantidad){
+	void* stream;
+	uint32_t longitud = strlen(recurso_con_cantidad.recurso)+1;
+	stream = malloc(2* sizeof(uint32_t) + longitud);
+	memcpy(stream,&longitud,sizeof(uint32_t));
+	int offset = sizeof(uint32_t);
+	memcpy(stream+offset,recurso_con_cantidad.recurso,longitud);
+	offset+= longitud;
+	memcpy(stream+offset,&recurso_con_cantidad.cantidad,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	return stream;
+}
+
+void* serializar_recurso(char* recurso){
+	uint32_t longitud = strlen(recurso)+1;
+	void* stream = malloc(sizeof(uint32_t)+longitud);
+	memcpy(stream,&longitud,sizeof(uint32_t));
+	int offset = sizeof(uint32_t);
+	memcpy(stream+offset,recurso,longitud);
+	offset+= longitud;
+	return stream;
+}
+
+
+
 //---------------------------------DESERIALIZADORES---------------------------------------------
 
 t_paquete* deserializar_paquete(op_code* opcode, uint32_t* size, void* stream)
@@ -460,6 +493,32 @@ estado deserializar_estado(void* stream){
 	estado estadoRta;
 	memcpy(&estadoRta,stream,sizeof(estado));
 	return estadoRta;
+}
+
+operacion_recurso deserializar_operacion_recurso(void* stream){
+	operacion_recurso rec_c_cantidad;
+	uint32_t offset = 0;
+	uint32_t longitud;
+	memcpy(&longitud,stream+offset,sizeof(uint32_t));
+	offset+=sizeof(uint32_t);
+	rec_c_cantidad.recurso = malloc(longitud);
+	memcpy(rec_c_cantidad.recurso,stream+offset,longitud);
+	offset+=longitud;
+	memcpy(&rec_c_cantidad.cantidad,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	return rec_c_cantidad;
+}
+
+char* deserializar_recurso(void* stream){
+	char* recurso;
+	uint32_t longitud;
+	uint32_t offset = 0;
+	memcpy(&longitud,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	recurso = malloc(longitud);
+	memcpy(recurso,stream+offset,longitud);
+	offset+=longitud;
+	return recurso;
 }
 //------------------------------------------------CONEXIONES-----------------------------------------------
 

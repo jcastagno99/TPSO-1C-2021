@@ -91,6 +91,10 @@ void crear_hilo_para_manejar_suscripciones(t_list *lista_hilos, int socket)
 void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 {
 	log_info(logger_i_mongo_store, "Se creó el hilo correctamente");
+	t_paquete *paquete = recibir_paquete(*socket_envio);
+	switch(paquete->codigo_operacion){
+
+	}
 	close(*socket_envio);
 	free(socket_envio);
 	return NULL;

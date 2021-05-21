@@ -47,7 +47,10 @@ typedef enum
 	RESPUESTA_REGISTRAR_MOVIMIENTO_A_SABOTAJE,
 	RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO,
 	PRUEBA,
-	SIN_CONEXION
+	SIN_CONEXION,
+	GENERAR_RECURSO,
+	CONSUMIR_RECURSO,
+	VACIAR_RECURSO
 } op_code;
 
 typedef enum
@@ -138,7 +141,10 @@ typedef struct
 	tarea tarea;
 }tripulante_con_tarea;
 
-
+typedef struct{
+	char* recurso;
+	uint32_t cantidad;
+}operacion_recurso;
 //------------------------------------------FIRMAS DE FUNCIONES------------------------------------------
 
 int crear_conexion(char *ip, char *puerto);
@@ -172,6 +178,10 @@ void* serializar_tripulante_con_tarea(tripulante_con_tarea tct);
 void* serializar_pid_con_tareas(pid_con_tareas pid_con_tareas);
 void* serializar_pid(uint32_t pid);
 void* serializar_estado(estado estado);
+void* serializar_operacion_recurso(operacion_recurso recurso_con_cantidad);
+void* pserializar_operacion_recurso(char* recurso, uint32_t cantidad);
+void* serializar_recurso(char* recurso);
+
 nuevo_tripulante deserializar_nuevo_tripulante(void* stream);
 respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream);
 tarea deserializar_tarea(void* stream);
@@ -184,6 +194,8 @@ pid_con_tareas deserializar_pid_con_tareas(void* stream);
 tarea* deserializar_tarea_alt(void* stream,uint32_t longitud);
 uint32_t deserializar_pid(void* stream);
 estado deserializar_estado(void* stream);
+operacion_recurso deserializar_operacion_recurso(void* stream);
+char* deserializar_recurso(void* stream);
 
 
 
