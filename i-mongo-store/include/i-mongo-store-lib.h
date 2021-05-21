@@ -70,7 +70,7 @@ void crear_directorio(char* carpeta);
 void no_pude_abrir_archivo(char*);
 void no_pude_mapear_archivo(char*);
 void inicializar_rutas(char* montaje);
-
+bool existe_archivo(char* archivo);
 //-----------------Parsing-----------------
 char* a_mayusc_primera_letra(char* palabra);
 
