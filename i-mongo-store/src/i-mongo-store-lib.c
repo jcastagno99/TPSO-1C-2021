@@ -92,9 +92,40 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 {
 	log_info(logger_i_mongo_store, "Se creó el hilo correctamente");
 	t_paquete *paquete = recibir_paquete(*socket_envio);
+	void* stream = paquete->stream;
 	switch(paquete->codigo_operacion){
+		case GENERAR_RECURSO :{
+			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
+			op_c_rec.recurso = a_mayusc_primera_letra(op_c_rec.recurso);
+			if(existe_recurso(op_c_rec.recurso)){
 
+			}
+		}
+		case CONSUMIR_RECURSO :{
+			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
+			op_c_rec.recurso = a_mayusc_primera_letra(op_c_rec.recurso);
+		}
+		case VACIAR_RECURSO :{
+			char* rec = deserializar_recurso(stream);
+			rec = a_mayusc_primera_letra(rec);
+		}
+		case REGISTRAR_MOVIMIENTO : {
+
+		}
+		case REGISTRAR_COMIENZO_TAREA : {
+
+		}
+		case REGISTRAR_FIN_TAREA : {
+
+		}
+		case REGISTRAR_MOVIMIENTO_A_SABOTAJE : {
+
+		}
+		case REGISTRAR_SABOTAJE_RESUELTO : {
+
+		}
 	}
+	liberar_paquete(paquete);
 	close(*socket_envio);
 	free(socket_envio);
 	return NULL;
@@ -179,4 +210,36 @@ void no_pude_abrir_archivo(char *ruta_archivo)
 void no_pude_mapear_archivo(char *ruta_archivo)
 {
 	log_error(logger_i_mongo_store, "No se pudo mapear el archivo %s", ruta_archivo);
+}
+
+char* a_mayusc_primera_letra(char* palabra){
+	for(int i = 0; palabra[i]; i++){
+		if(i == 0){
+			palabra[i] = toupper(palabra[i]);
+		}
+		else{
+			palabra[i] = tolower(palabra[i]);
+		}
+	}
+	return palabra;
+}
+
+bool existe_recurso(char* recurso){
+	char* archivo = malloc(strlen(carpeta_files)+strlen(recurso)+strlen(".ims")+1);
+	memcpy(archivo, carpeta_files, strlen(carpeta_files)+1);
+	strcat(archivo,recurso);
+	strcat(archivo,".ims");
+
+	DIR* dir = opendir(archivo);
+	if(dir){
+		closedir(dir);
+		return 1;
+	} else if (ENOENT == errno){
+		log_error(logger_i_mongo_store, "La ruta %s se quiso abrir pero no existe", archivo);
+		return 0;
+	} else{
+		log_error(logger_i_mongo_store, "La ruta %s se quiso abrir. Existe pero hubo otro fallo", archivo);
+		return 1;
+	}
+	return 0;
 }

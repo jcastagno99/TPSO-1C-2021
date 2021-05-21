@@ -22,6 +22,8 @@
 #include <commons/config.h>
 #include <fcntl.h>
 #include <shared_utils.h>
+#include <ctype.h>
+#include <dirent.h>
 #define MAX_CLIENTS 128
 
 
@@ -68,5 +70,8 @@ void crear_directorio(char* carpeta);
 void no_pude_abrir_archivo(char*);
 void no_pude_mapear_archivo(char*);
 void inicializar_rutas(char* montaje);
+
+//-----------------Parsing-----------------
+char* a_mayusc_primera_letra(char* palabra);
 
 #endif /* I_MONGO_STORE_LIB_H */

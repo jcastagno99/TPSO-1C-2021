@@ -19,10 +19,10 @@ void inicializar_rutas(char* montaje){
 	ruta_blocks = malloc(strlen(montaje)+strlen("/Blocks.ims")+1);
 	memcpy(ruta_blocks,montaje,strlen(montaje)+1);
 	strcat(ruta_blocks,"/Blocks.ims");
-	carpeta_files = malloc(strlen(montaje)+strlen("/Files")+1);
+	carpeta_files = malloc(strlen(montaje)+strlen("/Files/")+1);
 	memcpy(carpeta_files,montaje,strlen(montaje)+1);
-	strcat(carpeta_files,"/Files");
-	carpeta_bitacoras = malloc(strlen(montaje)+strlen("/Bitacoras")+1);
+	strcat(carpeta_files,"/Files/");
+	carpeta_bitacoras = malloc(strlen(montaje)+strlen("/Bitacoras/")+1);
 	memcpy(carpeta_bitacoras,montaje,strlen(montaje)+1);
-	strcat(carpeta_bitacoras, "/Bitacoras");
+	strcat(carpeta_bitacoras, "/Bitacoras/");
 }
