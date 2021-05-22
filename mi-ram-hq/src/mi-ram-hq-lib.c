@@ -267,30 +267,81 @@ void crear_estructura_administrativa()
 	}
 }
 
+//------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
+
+//Para COMPACTAR, necesito liberar los semaforos de los segmentos?
+//Como actualizo los segmentos_de_memoria en el caso inicial? cuando mi memoria es un unico segmento LIBRE
+//Es necesario eliminar los elementos de las listas si yo les hago free?
+//Añadir las firmas de las funciones al lib.h
+
 respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 {
-	respuesta_ok_fail respuesta = RESPUESTA_OK;
 	//Es necesario bloquear la lista de patotas? no se modifican luego de inicializarlas
-	t_tabla_de_segmento* patota = buscar_patota(patota_con_tareas.pid); //TODO
+	t_tabla_de_segmento* patota = buscar_patota(patota_con_tareas.pid);
 	if(patota){
-		log_error(logger_ram_hq,"La patota de pid %i ya existe",patota_con_tareas.pid);
-		respuesta = RESPUESTA_FAIL;
+		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",patota_con_tareas.pid);
+		free(patota_con_tareas.tareas);
+	  //free(patota_con_tareas);
+		return RESPUESTA_FAIL;
 	}
+	patota = malloc(sizeof(t_tabla_de_segmento));
+	patota->segmento_pcb = NULL;
+	patota->segmento_tarea = NULL;
+	patota->segmentos_tripulantes = list_create();
+	patota->mutex_segmentos_tripulantes = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(patota->mutex_segmentos_tripulantes,NULL);
+	list_add(patotas,patota);
 	//TODO: usar un semaforo
 	t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb();
-	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
-	if(!(segmento_a_usar_pcb && segmento_a_usar_tareas)){
-		log_info(logger_ram_hq,"No encontre segmentos disponibles, voy a compactar");
+	if(!segmento_a_usar_pcb){
 		//TODO: compactar
-		t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb(patota_con_tareas.pid);
-		t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
-		if(!(segmento_a_usar_pcb && segmento_a_usar_tareas)){
-			log_error(logger_ram_hq,"No se encontraron segmentos disponibles despues de compactar");
-			respuesta = RESPUESTA_FAIL;
+		log_info(logger_ram_hq,"No encontre un segmento disponible para el PCB de PID: &i , voy a compactar",patota_con_tareas.pid);
+		segmento_a_usar_pcb = buscar_segmento_pcb();
+		if(!segmento_a_usar_pcb){
+			//TODO liberar semaforo
+			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el PCB aun luego de compactar, solicitud rechazada");
+			free(patota->segmentos_tripulantes);
+			free(patota->mutex_segmentos_tripulantes);
+			free(patota);
+			//Eliminar el elemento de la lista? necesito su indice...
+			return RESPUESTA_FAIL;
 		}
 	}
-	return respuesta;
+	log_info(logger_ram_hq,"Encontre un segmento para el PCB de PID: &i , empieza en: &i ",patota_con_tareas.pid,(int) segmento_a_usar_pcb->inicio_segmento);
+	t_segmento* segmento_pcb = malloc(sizeof(t_segmento));
+	segmento_pcb->base = segmento_a_usar_pcb->inicio_segmento;
+	segmento_pcb->tamanio = segmento_a_usar_pcb->tamanio_segmento;
+	segmento_pcb->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(segmento_pcb->mutex_segmento,NULL);
+	patota->segmento_pcb = segmento_pcb;
+	//TODO: usar un semaforo
+	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
+	if(!segmento_a_usar_tareas){
+		log_info(logger_ram_hq,"No encontre un segmento disponible para las tareas, voy a compactar");
+		//TODO: compactar
+		t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
+		if(!segmento_a_usar_tareas){
+			//TODO: liberar semaforo
+			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada");
+			free(segmento_pcb->mutex_segmento);
+			free(segmento_pcb);
+			free(patota->segmentos_tripulantes);
+			free(patota->mutex_segmentos_tripulantes);
+			free(patota);
+			segmento_a_usar_pcb->libre = true;
+			return RESPUESTA_FAIL;
+		}
+	}
+	log_info(logger_ram_hq,"Encontre un segmento para las tareas, empieza en: &i ",(int) segmento_a_usar_pcb->inicio_segmento);
+	t_segmento* segmento_tarea = malloc(sizeof(t_segmento));
+	segmento_tarea->base = segmento_a_usar_tareas->inicio_segmento;
+	segmento_tarea->tamanio = segmento_a_usar_tareas->tamanio_segmento;
+	segmento_tarea->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_initi(segmento_tarea->mutex_segmento);
+	patota->segmento_tarea = segmento_tarea;
+	return RESPUESTA_OK;
 }
+
 respuesta_ok_fail iniciar_tripulante(nuevo_tripulante tripulante)
 {
 	respuesta_ok_fail respuesta;
@@ -331,14 +382,33 @@ posicion obtener_ubicacion(uint32_t tripulante_pid)
 
 //-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
 
+t_tabla_de_segmento* buscar_patota(uint32_t pid){
+	t_tabla_de_segmento* auxiliar;
+	uint32_t pid_auxiliar;
+	for(int i=0; i<patotas->elements_count; i++){
+		auxiliar = list_get(patotas,i);
+		memcpy(&pid_auxiliar,auxiliar->segmento_pcb->base,sizeof(uint32_t));
+		if(pid_auxiliar == pid){
+			return auxiliar;
+		}
+	}
+	return NULL;
+}
+
 //TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
 
 t_segmento_de_memoria* buscar_segmento_pcb(){
+	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar;
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
-			auxiliar = list_get(segmentos_memoria,i);
-			if(auxiliar->tamanio_segmento >= 2*(sizeof(uint32_t)) && auxiliar->libre){
+			iterador = list_get(segmentos_memoria,i);
+			if(iterador->tamanio_segmento >= 2*(sizeof(uint32_t)) && iterador->libre){
+				auxiliar->inicio_segmento = iterador->inicio_segmento;
+				auxiliar->tamanio_segmento = 2*(sizeof(uint32_t)); 
+				auxiliar->libre = false;
+				iterador->inicio_segmento += 2*(sizeof(uint32_t));
+				iterador->tamanio_segmento -= 2*(sizeof(uint32_t));
 				return auxiliar;
 			}
 		}
@@ -349,33 +419,28 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			auxiliar = list_get(segmentos_memoria,i);
 			if((auxiliar->tamanio_segmento >= 2*(sizeof(uint32_t))) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
+				auxiliar->libre = false;
 				vencedor = auxiliar;
 			}
 		}
 		return vencedor;
 	}
-	
+	return NULL;
 };
 
-	/*char *nombre_tarea;
-	uint32_t cantidad_parametro;
-	uint32_t parametro;
-	uint32_t pos_x;
-	uint32_t pos_y;
-	uint32_t tiempo;*/
-
-t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){
-	uint32_t tamanio_tareas = 5*(sizeof(uint32_t))*(tareas->elements_count);
-	tarea* auxiliar_tarea;
+t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
+	uint32_t tamanio_tareas = 0;
+	char* auxiliar_tarea;
 	for(int i=0; i<tareas->elements_count; i++){
 		auxiliar_tarea = list_get(tareas,i);
-		tamanio_tareas += sizeof(strlen(auxiliar_tarea->nombre_tarea));
+		tamanio_tareas += strlen(auxiliar_tarea) + 1;
 	}
 	t_segmento_de_memoria* auxiliar;
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			auxiliar = list_get(segmentos_memoria,i);
-			if(auxiliar->tamanio_segmento >= tamanio_tareas){
+			if(auxiliar->tamanio_segmento >= tamanio_tareas && auxiliar->libre){
+				auxiliar->libre = false;
 				return auxiliar;
 			}
 		}
@@ -385,12 +450,12 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			auxiliar = list_get(segmentos_memoria,i);
-			if((auxiliar->tamanio_segmento >= tamanio_tareas) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento)){
+			if((auxiliar->tamanio_segmento >= tamanio_tareas) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
+				auxiliar->libre = false;
 				vencedor = auxiliar;
 			}
 		}
 		return vencedor;
 	}
-	
+	return NULL;
 };
-

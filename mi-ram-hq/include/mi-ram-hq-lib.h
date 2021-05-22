@@ -41,31 +41,22 @@ typedef struct
 
 typedef struct
 {
-	uint32_t pid;
-	uint32_t direccion_tareas;
-	t_list* segmentos;
-	pthread_mutex_t mutex_segmentos;
+	t_segmento* segmento_pcb;
+	t_segmento* segmento_tarea;
+	t_list* segmentos_tripulantes;
+	pthread_mutex_t* mutex_segmentos_tripulantes;
 
 }t_tabla_de_segmento;
 
 typedef struct
 {
 	void* base;
-	void* offset;
-	t_tripulante_en_memoria* tripulante;
+	uint32_t tamanio;
+	uint32_t numero_segmento;
+	pthread_mutex_t* mutex_segmento;
 
 }t_segmento;
 
-typedef struct
-{
-	uint32_t tid;
-	char estado;
-	uint32_t pos_x;
-	uint32_t pos_y;
-	uint32_t proxima_instruccion;
-	uint32_t direccion_pcb;
-
-}t_tripulante_en_memoria;
 
 typedef struct
 {
