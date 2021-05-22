@@ -267,7 +267,7 @@ void crear_estructura_administrativa()
 	}
 }
 
-respuesta_ok_fail iniciar_patota(pid_con_tareas patota_con_tareas)
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 {
 	respuesta_ok_fail respuesta = RESPUESTA_OK;
 	//Es necesario bloquear la lista de patotas? no se modifican luego de inicializarlas
@@ -277,10 +277,17 @@ respuesta_ok_fail iniciar_patota(pid_con_tareas patota_con_tareas)
 		respuesta = RESPUESTA_FAIL;
 	}
 	//TODO: usar un semaforo
-	t_segmento_de_memoria* segmento_a_usar = buscar_segmento_para(patota_con_tareas.pid); //En un inicio first fit, cuando actualicen enunciado lo modifico
-	if(!segmento_a_usar){
+	t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb();
+	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
+	if(!(segmento_a_usar_pcb && segmento_a_usar_tareas)){
+		log_info(logger_ram_hq,"No encontre segmentos disponibles, voy a compactar");
 		//TODO: compactar
-		segmento_a_usar = buscar_segmento_para(patota_con_tareas.pid); //Esperar respuesta a consulta en github
+		t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb(patota_con_tareas.pid);
+		t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
+		if(!(segmento_a_usar_pcb && segmento_a_usar_tareas)){
+			log_error(logger_ram_hq,"No se encontraron segmentos disponibles despues de compactar");
+			respuesta = RESPUESTA_FAIL;
+		}
 	}
 	return respuesta;
 }
@@ -320,3 +327,70 @@ posicion obtener_ubicacion(uint32_t tripulante_pid)
 	//TODO
 	return ubicacion_obtenida;
 }
+
+
+//-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
+
+//TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
+
+t_segmento_de_memoria* buscar_segmento_pcb(){
+	t_segmento_de_memoria* auxiliar;
+	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
+		for(int i=0; i<segmentos_memoria->elements_count;i++){
+			auxiliar = list_get(segmentos_memoria,i);
+			if(auxiliar->tamanio_segmento >= 2*(sizeof(uint32_t)) && auxiliar->libre){
+				return auxiliar;
+			}
+		}
+	}
+	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){ 
+		t_segmento_de_memoria* vencedor;
+		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
+		for(int i=0;i<segmentos_memoria->elements_count;i++){
+			auxiliar = list_get(segmentos_memoria,i);
+			if((auxiliar->tamanio_segmento >= 2*(sizeof(uint32_t))) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
+				vencedor = auxiliar;
+			}
+		}
+		return vencedor;
+	}
+	
+};
+
+	/*char *nombre_tarea;
+	uint32_t cantidad_parametro;
+	uint32_t parametro;
+	uint32_t pos_x;
+	uint32_t pos_y;
+	uint32_t tiempo;*/
+
+t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){
+	uint32_t tamanio_tareas = 5*(sizeof(uint32_t))*(tareas->elements_count);
+	tarea* auxiliar_tarea;
+	for(int i=0; i<tareas->elements_count; i++){
+		auxiliar_tarea = list_get(tareas,i);
+		tamanio_tareas += sizeof(strlen(auxiliar_tarea->nombre_tarea));
+	}
+	t_segmento_de_memoria* auxiliar;
+	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
+		for(int i=0; i<segmentos_memoria->elements_count;i++){
+			auxiliar = list_get(segmentos_memoria,i);
+			if(auxiliar->tamanio_segmento >= tamanio_tareas){
+				return auxiliar;
+			}
+		}
+	}
+	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){
+		t_segmento_de_memoria* vencedor;
+		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
+		for(int i=0;i<segmentos_memoria->elements_count;i++){
+			auxiliar = list_get(segmentos_memoria,i);
+			if((auxiliar->tamanio_segmento >= tamanio_tareas) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento)){
+				vencedor = auxiliar;
+			}
+		}
+		return vencedor;
+	}
+	
+};
+
