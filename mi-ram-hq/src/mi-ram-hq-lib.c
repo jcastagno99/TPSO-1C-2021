@@ -275,7 +275,6 @@ void crear_estructura_administrativa()
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
 
 //Falta hacer la funcion de compactacion
-//Añadir las firmas de las funciones al lib.h
 //Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
 
 respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
