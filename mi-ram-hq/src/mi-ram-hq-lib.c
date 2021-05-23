@@ -248,8 +248,13 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 void crear_estructura_administrativa()
 {
 	patotas = list_create();
+	mutex_init(&mutex_patotas,NULL);
+	mutex_init(&mutex_memoria,NULL);
+	mutex_init(&mutex_swap,NULL);
+
 	if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
+		numero_segmento_global = 0;
 		t_segmento_de_memoria* segmento;
 		segmento->inicio_segmento = memoria_principal;
 		segmento->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
@@ -269,76 +274,96 @@ void crear_estructura_administrativa()
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
 
-//Para COMPACTAR, necesito liberar los semaforos de los segmentos?
-//Como actualizo los segmentos_de_memoria en el caso inicial? cuando mi memoria es un unico segmento LIBRE
-//Es necesario eliminar los elementos de las listas si yo les hago free?
+//Falta hacer la funcion de compactacion
 //Añadir las firmas de las funciones al lib.h
+//Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
 
 respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 {
-	//Es necesario bloquear la lista de patotas? no se modifican luego de inicializarlas
+	pthread_mutex_lock(&mutex_patotas);
 	t_tabla_de_segmento* patota = buscar_patota(patota_con_tareas.pid);
 	if(patota){
+		pthread_mutex_unloc(&mutex_patotas);
 		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",patota_con_tareas.pid);
-		free(patota_con_tareas.tareas);
-	  //free(patota_con_tareas);
+		list_destroy_and_destroy_elements(patota_con_tareas.tareas,free);
 		return RESPUESTA_FAIL;
 	}
+	pthread_mutex_unloc(&mutex_patotas);
+	
 	patota = malloc(sizeof(t_tabla_de_segmento));
 	patota->segmento_pcb = NULL;
 	patota->segmento_tarea = NULL;
 	patota->segmentos_tripulantes = list_create();
 	patota->mutex_segmentos_tripulantes = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_segmentos_tripulantes,NULL);
+	pthread_mutex_lock(&mutex_patotas);
 	list_add(patotas,patota);
-	//TODO: usar un semaforo
+	pthread_mutex_unlock(&mutex_patotas);
+
+	pthread_mutex_lock(&mutex_memoria);
 	t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb();
 	if(!segmento_a_usar_pcb){
 		//TODO: compactar
 		log_info(logger_ram_hq,"No encontre un segmento disponible para el PCB de PID: &i , voy a compactar",patota_con_tareas.pid);
 		segmento_a_usar_pcb = buscar_segmento_pcb();
 		if(!segmento_a_usar_pcb){
-			//TODO liberar semaforo
+			pthread_mutex_unloc(&mutex_memoria);
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el PCB aun luego de compactar, solicitud rechazada");
-			free(patota->segmentos_tripulantes);
+			list_destroy_and_destroy_elements(patota_con_tareas.tareas,free);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
-			//Eliminar el elemento de la lista? necesito su indice...
+			//Eliminar el elemento de la lista, necesito su indice...
 			return RESPUESTA_FAIL;
 		}
 	}
-	log_info(logger_ram_hq,"Encontre un segmento para el PCB de PID: &i , empieza en: &i ",patota_con_tareas.pid,(int) segmento_a_usar_pcb->inicio_segmento);
+	pthread_mutex_unloc(&mutex_memoria);
+
+	log_info(logger_ram_hq,"Encontre un segmento para el PCB de PID: &i , empieza en: &i ",patota_con_tareas.pid,(int) segmento_a_usar_pcb->inicio_segmento); 
 	t_segmento* segmento_pcb = malloc(sizeof(t_segmento));
 	segmento_pcb->base = segmento_a_usar_pcb->inicio_segmento;
 	segmento_pcb->tamanio = segmento_a_usar_pcb->tamanio_segmento;
+	segmento_pcb->numero_segmento = numero_segmento_global;
+	numero_segmento_global++;
 	segmento_pcb->mutex_segmento = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(segmento_pcb->mutex_segmento,NULL);
 	patota->segmento_pcb = segmento_pcb;
-	//TODO: usar un semaforo
+	
+	pthread_mutex_lock(&mutex_memoria);
 	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
 	if(!segmento_a_usar_tareas){
 		log_info(logger_ram_hq,"No encontre un segmento disponible para las tareas, voy a compactar");
 		//TODO: compactar
 		t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas.tareas); 
 		if(!segmento_a_usar_tareas){
-			//TODO: liberar semaforo
+			pthread_mutex_unlock(&mutex_memoria);
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada");
 			free(segmento_pcb->mutex_segmento);
 			free(segmento_pcb);
-			free(patota->segmentos_tripulantes);
+			list_remove_and_destroy_elements(patota->segmentos_tripulantes,free);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
 			segmento_a_usar_pcb->libre = true;
 			return RESPUESTA_FAIL;
 		}
 	}
+	pthread_mutex_unlock(&mutex_memoria);
+
 	log_info(logger_ram_hq,"Encontre un segmento para las tareas, empieza en: &i ",(int) segmento_a_usar_pcb->inicio_segmento);
 	t_segmento* segmento_tarea = malloc(sizeof(t_segmento));
 	segmento_tarea->base = segmento_a_usar_tareas->inicio_segmento;
 	segmento_tarea->tamanio = segmento_a_usar_tareas->tamanio_segmento;
+	segmento_tarea->numero_segmento = numero_segmento_global;
+	numero_segmento_global++;
 	segmento_tarea->mutex_segmento = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_initi(segmento_tarea->mutex_segmento);
 	patota->segmento_tarea = segmento_tarea;
+	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria");
+
+	uint32_t direccion_logica_tareas = 0; //TODO: Calcular la direccion logica real
+	//Los semaforos se toman dentro de las funciones:
+	cargar_pcb_en_segmento(patota_con_tareas.pid,direccion_logica_tareas,segmento_pcb);
+	cargar_tareas_en_segmento(patota_con_tareas.tareas,segmento_tarea);
+
 	return RESPUESTA_OK;
 }
 
@@ -459,3 +484,29 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 	}
 	return NULL;
 };
+
+//----------------------------------------------CARGAR SEGMENTOS A MEMORIA-------------------------------------------------------------------------
+
+void cargar_pcb_en_segmento(uint32_t pid, uint32_t direccion_logica_tareas, t_segmento* segmento){
+	pthread_mutex_lock(segmento->mutex_segmento);
+	int offset = 0;
+	memcpy(segmento->base + offset, pid, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(segmento->base + offset, direccion_logica_tareas, sizeof(uint32_t));
+	pthread_mutex_unlock(segmento->mutex_segmento);
+}
+
+//Aclaración: Esta función asume que las tareas incluyen un /0 al final de la cadena de char*
+void cargar_tareas_en_segmento(t_list* tareas, t_segmento* segmento){
+	pthread_mutex_lock(segmento->mutex_segmento);
+	int offset = 0;
+	char* auxiliar;
+	for(int i=0; i<tareas->elements_count; i++){
+		auxiliar = list_get(tareas,i);
+		memcpy(segmento->base + offset, auxiliar, strlen(auxiliar) + 1);
+		offset = strlen(auxiliar) + 1;
+	}
+	pthread_mutex_unlock(segmento->mutex_segmento);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------

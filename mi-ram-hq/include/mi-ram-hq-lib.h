@@ -75,10 +75,13 @@ void* memoria_principal;
 void* memoria_swap;
 
 t_list* patotas;
+pthread_mutex_t mutex_patotas;
 pthread_mutex_t mutex_memoria;
 pthread_mutex_t mutex_swap;
 
 t_list* segmentos_memoria;
+
+uint32_t numero_segmento_global;
 
 
 //------------Firmas de funciones------------
@@ -100,6 +103,13 @@ tarea obtener_proxima_tarea_segmentacion(uint32_t);
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t);
 estado obtener_estado_segmentacion(uint32_t);
 posicion obtener_ubicacion_segmentacion(uint32_t);
+
+t_tabla_de_segmento* buscar_patota(uint32_t);
+t_segmento_de_memoria* buscar_segmento_tareas(t_list*);
+t_segmento_de_memoria* buscar_segmento_pcb();
+
+void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
+void cargar_tareas_en_segmento(t_list*,t_segmento*);
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
