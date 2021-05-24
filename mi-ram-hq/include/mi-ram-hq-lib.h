@@ -88,7 +88,7 @@ uint32_t numero_segmento_global;
 
 mi_ram_hq_config* leer_config_mi_ram_hq(char*);
 t_log* iniciar_logger_mi_ram_hq(char*);
-void crear_estructura_administrativa();
+void crear_estructuras_administrativas();
 
 void* esperar_conexion(int);
 int iniciar_servidor_mi_ram_hq(int);

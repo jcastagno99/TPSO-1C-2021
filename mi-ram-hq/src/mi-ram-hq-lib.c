@@ -245,7 +245,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	return NULL;
 }
 
-void crear_estructura_administrativa()
+void crear_estructuras_administrativa()
 {
 	patotas = list_create();
 	mutex_init(&mutex_patotas,NULL);
@@ -276,6 +276,7 @@ void crear_estructura_administrativa()
 
 //Falta hacer la funcion de compactacion
 //Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
+//Es necesario "compactar" segmentos libres contiguos o puedo delegarlo a cuando se llame al algoritmo de compactacion general
 
 respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 {
@@ -341,7 +342,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 			list_remove_and_destroy_elements(patota->segmentos_tripulantes,free);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
-			segmento_a_usar_pcb->libre = true;
+			segmento_a_usar_pcb->libre = true; // Necesario compactar con los segmentos contiguos?
 			return RESPUESTA_FAIL;
 		}
 	}
