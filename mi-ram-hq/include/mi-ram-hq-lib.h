@@ -39,14 +39,6 @@ typedef struct
 	
 }mi_ram_hq_config;
 
-typedef struct
-{
-	t_segmento* segmento_pcb;
-	t_segmento* segmento_tarea;
-	t_list* segmentos_tripulantes;
-	pthread_mutex_t* mutex_segmentos_tripulantes;
-
-}t_tabla_de_segmento;
 
 typedef struct
 {
@@ -57,6 +49,14 @@ typedef struct
 
 }t_segmento;
 
+typedef struct
+{
+	t_segmento* segmento_pcb;
+	t_segmento* segmento_tarea;
+	t_list* segmentos_tripulantes;
+	pthread_mutex_t* mutex_segmentos_tripulantes;
+
+}t_tabla_de_segmento;
 
 typedef struct
 {
@@ -107,9 +107,11 @@ posicion obtener_ubicacion_segmentacion(uint32_t);
 t_tabla_de_segmento* buscar_patota(uint32_t);
 t_segmento_de_memoria* buscar_segmento_tareas(t_list*);
 t_segmento_de_memoria* buscar_segmento_pcb();
+t_segmento_de_memoria* buscar_segmento_tcb();
 
 void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
 void cargar_tareas_en_segmento(t_list*,t_segmento*);
+void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
@@ -119,5 +121,8 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
 estado obtener_estado_paginacion(uint32_t);
 posicion obtener_ubicacion_paginacion(uint32_t);
 
-
 #endif /* MI_RAM_HQ_LIB_H */
+
+
+
+

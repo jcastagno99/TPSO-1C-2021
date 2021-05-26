@@ -245,12 +245,12 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	return NULL;
 }
 
-void crear_estructuras_administrativa()
+void crear_estructuras_administrativas()
 {
 	patotas = list_create();
-	mutex_init(&mutex_patotas,NULL);
-	mutex_init(&mutex_memoria,NULL);
-	mutex_init(&mutex_swap,NULL);
+	pthread_mutex_init(&mutex_patotas,NULL);
+	pthread_mutex_init(&mutex_memoria,NULL);
+	pthread_mutex_init(&mutex_swap,NULL);
 
 	if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
@@ -273,6 +273,8 @@ void crear_estructuras_administrativa()
 }
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
+
+
 
 //Falta hacer la funcion de compactacion
 //Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
@@ -339,7 +341,8 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada");
 			free(segmento_pcb->mutex_segmento);
 			free(segmento_pcb);
-			list_remove_and_destroy_elements(patota->segmentos_tripulantes,free);
+			//ojo esta funcion elimina solo 1 elemento, no toda la lista
+			list_remove_and_destroy_element(patota->segmentos_tripulantes,0,free);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
 			segmento_a_usar_pcb->libre = true; // Necesario compactar con los segmentos contiguos?
@@ -355,7 +358,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 	segmento_tarea->numero_segmento = numero_segmento_global;
 	numero_segmento_global++;
 	segmento_tarea->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_initi(segmento_tarea->mutex_segmento);
+	pthread_mutex_init(segmento_tarea->mutex_segmento,NULL);
 	patota->segmento_tarea = segmento_tarea;
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria");
 
@@ -366,6 +369,12 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 
 	return RESPUESTA_OK;
 }
+
+respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas patota_con_tareas)
+{
+	return RESPUESTA_OK;
+}
+
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
 {
 	//iniciar semaforo patota
@@ -390,8 +399,6 @@ respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
 			pthread_mutex_unlock(&mutex_memoria);
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el TCB aun luego de compactar, solicitud rechazada");
 			
-			//libero toda la patota?
-			//no es necesario liberar la patota, pero si rechazo el iniciar tripulantes
 			return RESPUESTA_FAIL;
 		}
 	}
@@ -401,25 +408,31 @@ respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
 	
 	//crear segmento tripulante
 	t_segmento* segmento_tripulante = malloc(sizeof(t_segmento));
-	segmento_tripulante->base = segmento_a_usar_tripulante;//segmento_a_usar_tareas->inicio_segmento;
-	segmento_tripulante->tamanio = sizeof(tripulante_con_tarea); // no se si hacer un tripulante con tarea, nuevo tripulante o que. Donde va a tener la tarea actual el tripulante?
+	segmento_tripulante->base = segmento_a_usar_tripulante->inicio_segmento;//segmento_a_usar_tareas->inicio_segmento;
+	segmento_tripulante->tamanio = segmento_a_usar_tripulante->tamanio_segmento; // no se si hacer un tripulante con tarea, nuevo tripulante o que. Donde va a tener la tarea actual el tripulante?
 	segmento_tripulante->numero_segmento = numero_segmento_global;
 	numero_segmento_global++;
 	
 	//agregar
 	segmento_tripulante->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_initi(segmento_tripulante->mutex_segmento);
+	pthread_mutex_init(segmento_tripulante->mutex_segmento,NULL);
 	list_add(patota->segmentos_tripulantes,segmento_tripulante);
 	//ver bien este mensaje que poner
-	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria");
+	log_info(logger_ram_hq,"Las estructuras administrativas para el tripulante %i fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria",tripulante.tid);
 
 	uint32_t direccion_logica_tareas = 0; //TODO: Calcular la direccion logica real
-	//Los semaforos se toman dentro de las funciones:
-	cargar_tcb_en_segmento(tripulante,segmento_tripulante);
+	uint32_t direccion_logica_patota = 0; //TODO: Calcular la direccion logica real
+	
+	// cargar_tcb_en_segmento va a recibir tid,estado,x,y,prox_instruccion,puntero_pcb
+	//Chequear estar pasando bien los punteros
+	cargar_tcb_en_segmento(tripulante.tid,NEW,tripulante.pos_x,tripulante.pos_y,direccion_logica_tareas,direccion_logica_patota,segmento_tripulante);
 	
 	return RESPUESTA_OK;
 }
-
+respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante tripulante)
+{
+	return RESPUESTA_OK;
+}
 respuesta_ok_fail iniciar_tripulante(nuevo_tripulante tripulante)
 {
 	respuesta_ok_fail respuesta;
@@ -433,12 +446,46 @@ respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion tripulante_con_posi
 	//TODO
 	return respuesta;
 }
+respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripulante_con_posicion){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulante_con_posicion){
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
 tarea obtener_proxima_tarea(uint32_t tripulante_pid)
 {
 	tarea proxima_tarea;
 	return proxima_tarea;
 }
+tarea obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
+{
+	tarea proxima_tarea;
+	return proxima_tarea;
+}
+
+tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_pid)
+{
+	tarea proxima_tarea;
+	return proxima_tarea;
+}
+
 respuesta_ok_fail expulsar_tripulante(uint32_t tripulante_pid)
+{
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
+{
+	respuesta_ok_fail respuesta;
+	//TODO
+	return respuesta;
+}
+respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tripulante_pid)
 {
 	respuesta_ok_fail respuesta;
 	//TODO
@@ -450,7 +497,31 @@ estado obtener_estado(uint32_t tripulante_pid)
 	//TODO
 	return estado_obtenido;
 }
+estado obtener_estado_paginacion(uint32_t tripulante_pid)
+{
+	estado estado_obtenido;
+	//TODO
+	return estado_obtenido;
+}
+estado obtener_estado_segmentacion(uint32_t tripulante_pid)
+{
+	estado estado_obtenido;
+	//TODO
+	return estado_obtenido;
+}
 posicion obtener_ubicacion(uint32_t tripulante_pid)
+{
+	posicion ubicacion_obtenida;
+	//TODO
+	return ubicacion_obtenida;
+}
+posicion obtener_ubicacion_paginacion(uint32_t tripulante_pid)
+{
+	posicion ubicacion_obtenida;
+	//TODO
+	return ubicacion_obtenida;
+}
+posicion obtener_ubicacion_segmentacion(uint32_t tripulante_pid)
 {
 	posicion ubicacion_obtenida;
 	//TODO
@@ -541,15 +612,16 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 t_segmento_de_memoria* buscar_segmento_tcb(){
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar;
+	uint32_t size_tcb = sizeof(uint32_t)* 3 + sizeof(t_segmento*)*2 + sizeof(estado);
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
-			if(iterador->tamanio_segmento >= sizeof(nuevo_tripulante) && iterador->libre){
+			if(iterador->tamanio_segmento >= size_tcb && iterador->libre){
 				auxiliar->inicio_segmento = iterador->inicio_segmento;
-				auxiliar->tamanio_segmento = sizeof(nuevo_tripulante); 
+				auxiliar->tamanio_segmento = size_tcb; 
 				auxiliar->libre = false;
-				iterador->inicio_segmento += sizeof(nuevo_tripulante);
-				iterador->tamanio_segmento -= sizeof(nuevo_tripulante);
+				iterador->inicio_segmento += size_tcb;
+				iterador->tamanio_segmento -= size_tcb;
 				return auxiliar;
 			}
 		}
@@ -559,7 +631,7 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			auxiliar = list_get(segmentos_memoria,i);
-			if((auxiliar->tamanio_segmento >= sizeof(nuevo_tripulante)) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
+			if((auxiliar->tamanio_segmento >= size_tcb) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
 				auxiliar->libre = false;
 				vencedor = auxiliar;
 			}
@@ -591,11 +663,24 @@ void cargar_tareas_en_segmento(t_list* tareas, t_segmento* segmento){
 	}
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
-
-void cargar_tcb_en_segmento(nuevo_tripulante tripulante,t_segmento * segmento){
+void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint32_t pos_y,uint32_t direccion_tarea,uint32_t direccion_patota,t_segmento* segmento){
+//void cargar_tcb_en_segmento(nuevo_tripulante tripulante, segmento){0
 	pthread_mutex_lock(segmento->mutex_segmento);
+	
 	int offset = 0;
-	memcpy(segmento->base + offset, &tripulante, sizeof(nuevo_tripulante));
+	memcpy(segmento->base + offset, &tid, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &estado_nuevo, sizeof(estado));
+	offset = offset + sizeof(estado);
+	memcpy(segmento->base + offset, &pos_x, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &pos_y, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &direccion_tarea, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &direccion_patota, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
 
