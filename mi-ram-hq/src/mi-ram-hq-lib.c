@@ -248,6 +248,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 void crear_estructuras_administrativas()
 {
 	patotas = list_create();
+	segmentos_memoria = list_create();
 	pthread_mutex_init(&mutex_patotas,NULL);
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_swap,NULL);
@@ -255,8 +256,8 @@ void crear_estructuras_administrativas()
 	if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		numero_segmento_global = 0;
-		t_segmento_de_memoria* segmento;
-		segmento->inicio_segmento = memoria_principal;
+		t_segmento_de_memoria* segmento = malloc(sizeof(t_segmento_de_memoria));
+		segmento->inicio_segmento =  memoria_principal;
 		segmento->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		segmento->libre = true;
 		list_add(segmentos_memoria,segmento);
@@ -362,6 +363,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas patota_con_tareas)
 	patota->segmento_tarea = segmento_tarea;
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria");
 
+	uint32_t direccion_logica_segmento = 0;
 	uint32_t direccion_logica_tareas = 0; //TODO: Calcular la direccion logica real
 	//Los semaforos se toman dentro de las funciones:
 	cargar_pcb_en_segmento(patota_con_tareas.pid,direccion_logica_tareas,segmento_pcb);
@@ -547,8 +549,8 @@ t_tabla_de_segmento* buscar_patota(uint32_t pid){
 //TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
 
 t_segmento_de_memoria* buscar_segmento_pcb(){
-	t_segmento_de_memoria* iterador;
-	t_segmento_de_memoria* auxiliar;
+	t_segmento_de_memoria* iterador = malloc(sizeof(t_segmento_de_memoria));
+	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
@@ -558,6 +560,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 				auxiliar->libre = false;
 				iterador->inicio_segmento += 2*(sizeof(uint32_t));
 				iterador->tamanio_segmento -= 2*(sizeof(uint32_t));
+				free (iterador);
 				return auxiliar;
 			}
 		}
@@ -574,6 +577,8 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 		}
 		return vencedor;
 	}
+	free (iterador);
+	free(auxiliar);
 	return NULL;
 };
 
@@ -645,9 +650,9 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 void cargar_pcb_en_segmento(uint32_t pid, uint32_t direccion_logica_tareas, t_segmento* segmento){
 	pthread_mutex_lock(segmento->mutex_segmento);
 	int offset = 0;
-	memcpy(segmento->base + offset, pid, sizeof(uint32_t));
+	memcpy(segmento->base + offset, &pid, sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(segmento->base + offset, direccion_logica_tareas, sizeof(uint32_t));
+	memcpy(segmento->base + offset, &direccion_logica_tareas, sizeof(uint32_t));
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
 
