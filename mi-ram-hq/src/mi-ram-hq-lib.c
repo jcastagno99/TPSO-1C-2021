@@ -126,9 +126,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		case OBTENER_PROXIMA_TAREA:
 		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			uint32_t tripulante_tid = deserializar_pid(paquete->stream);
 			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+			tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
 			void *respuesta = serializar_tarea(proxima_tarea);
 			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
 			break;
@@ -450,9 +450,40 @@ respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion tripulante_con_posi
 }
 respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripulante_con_posicion){
 	respuesta_ok_fail respuesta;
-	//TODO
-	return respuesta;
+	t_tabla_de_segmento* auxiliar_patota;
+	t_segmento* segmento_tripulante_auxiliar;
+	pthread_mutex_lock(&mutex_patotas);
+	log_info(logger_ram_hq,"Buscando el tripulante %d",tripulante_con_posicion.tid);
+	for(int i=0; i<patotas->elements_count; i++){
+		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
+		auxiliar_patota = list_get(patotas,i);
+		for(int j=0; j<auxiliar_patota->segmentos_tripulantes->elements_count; j++){
+			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
+			uint32_t tid_aux;
+			pthread_mutex_lock(segmento_tripulante_auxiliar -> mutex_segmento);
+			memcpy(&tid_aux,segmento_tripulante_auxiliar -> base,sizeof(uint32_t)); 
+			
+			if(tid_aux == tripulante_con_posicion.tid){
+				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria, actualizando estado",tripulante_con_posicion.tid);
+				uint32_t offset_x = sizeof(uint32_t) + sizeof(estado);
+				uint32_t offset_y = offset_x + sizeof(uint32_t);
+				memcpy(segmento_tripulante_auxiliar -> base + offset_x,tripulante_con_posicion.pos_x,sizeof(uint32_t));
+				memcpy(segmento_tripulante_auxiliar -> base + offset_y,tripulante_con_posicion.pos_y,sizeof(uint32_t));
+				pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
+				pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
+				return RESPUESTA_OK;
+			}
+			pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
+		}
+		pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
+		pthread_mutex_lock(&mutex_patotas);	
+		log_error(logger_ram_hq,"No se encontro el tripulante %d en memoria",tripulante_con_posicion.tid);
+	}
+
+	return RESPUESTA_FAIL;
 }
+
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulante_con_posicion){
 	respuesta_ok_fail respuesta;
 	//TODO
@@ -469,9 +500,15 @@ tarea obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
 	return proxima_tarea;
 }
 
-tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_pid)
+tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid)
 {
 	tarea proxima_tarea;
+	t_tabla_de_segmento* auxiliar_patota = buscar_patota(tripulante_tid);
+	//uint32 pid = obtener_pid(auxiliar_patota);
+	//tarea = obtener_proxima_tarea(pid);
+	//Ta bueno pasarle el pid ya que lo tengo para ahorrar iteraciones
+	//actualizarTareaActual(pid,tid,tarea);
+
 	return proxima_tarea;
 }
 
@@ -545,6 +582,40 @@ t_tabla_de_segmento* buscar_patota(uint32_t pid){
 	}
 	return NULL;
 }
+
+t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
+	t_tabla_de_segmento* auxiliar_patota;
+	t_segmento* segmento_tripulante_auxiliar;
+	uint32_t pid_auxiliar;
+	log_info(logger_ram_hq,"Buscando la patota a partir del tid %d",tid);
+	pthread_mutex_lock(&mutex_patotas);
+	for(int i=0; i<patotas->elements_count; i++){
+		auxiliar_patota = list_get(patotas,i);
+		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
+		//memcpy(&pid_auxiliar,auxiliar->segmento_pcb->base,sizeof(uint32_t));
+		for(int j=0; j<auxiliar_patota->segmentos_tripulantes->elements_count; j++){
+			uint32_t tid_aux;
+			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
+			pthread_mutex_lock(segmento_tripulante_auxiliar -> mutex_segmento);
+			uint32_t offset = 0;
+			memcpy(&tid_aux,segmento_tripulante_auxiliar->base,sizeof(uint32_t));
+
+			if(tid_aux == tid){
+				pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
+				pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
+				log_info(logger_ram_hq,"Patota correspondiente al tid = %d encontrada",tid);
+				return auxiliar_patota;
+			}
+			pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
+		}
+		pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
+	}
+	pthread_mutex_unlock(&mutex_patotas);
+	log_error(logger_ram_hq,"No se encontro una patota con el tid = %d asociada",tid);
+	return NULL;
+}
+
 
 //TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
 
