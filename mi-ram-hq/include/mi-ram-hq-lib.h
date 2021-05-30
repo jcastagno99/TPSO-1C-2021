@@ -21,6 +21,8 @@
 #include <commons/collections/queue.h>
 #include <commons/config.h>
 #include <shared_utils.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_CLIENTS 128
 

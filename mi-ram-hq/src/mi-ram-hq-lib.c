@@ -760,4 +760,22 @@ void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
 
-//--------------------------------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------FUNCION DE COMPACTACION-----------------------------------------------------
+
+void compactar_memoria(){
+	t_segmento_de_memoria* auxiliar;
+	t_segmento_de_memoria* auxiliar_siguiente;
+	for(int i=0; i<segmentos_memoria->elements_count; i++){ //Mejora : buscar un centinela para saber cuando no se debe compactar mas
+
+		auxiliar = list_get(segmentos_memoria,i);
+		auxiliar_siguiente = list_get(segmentos_memoria,i+1);
+
+		if(auxiliar->libre && !(auxiliar_siguiente->libre)){
+			memcpy(auxiliar->inicio_segmento,auxiliar_siguiente->inicio_segmento,auxiliar_siguiente->tamanio_segmento);
+			auxiliar_siguiente->inicio_segmento = auxiliar->inicio_segmento;
+			auxiliar->inicio_segmento = abs(auxiliar->inicio_segmento - auxiliar_siguiente->inicio_segmento);
+			//El tamanio de auxiliar se mantiene
+		}
+	}	
+
+}
