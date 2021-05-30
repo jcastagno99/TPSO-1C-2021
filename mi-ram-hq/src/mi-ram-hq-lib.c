@@ -620,7 +620,7 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 //TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
 
 t_segmento_de_memoria* buscar_segmento_pcb(){
-	t_segmento_de_memoria* iterador = malloc(sizeof(t_segmento_de_memoria));
+	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
@@ -631,7 +631,6 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 				auxiliar->libre = false;
 				iterador->inicio_segmento += 2*(sizeof(uint32_t));
 				iterador->tamanio_segmento -= 2*(sizeof(uint32_t));
-				free (iterador);
 				return auxiliar;
 			}
 		}
