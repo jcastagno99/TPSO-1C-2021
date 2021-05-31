@@ -108,7 +108,10 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 				escritura[i] = op_c_rec.recurso[0];
 			}
 				escribir_archivo(archivo, escritura);
+				free(archivo);
+				free(escritura);
 		}
+		break;
 		
 		case CONSUMIR_RECURSO :{
 			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
@@ -124,7 +127,11 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 				escritura[i] = op_c_rec.recurso[0];
 			}
 				quitar_de_archivo(archivo, escritura);
+				free(archivo);
+				free(escritura);
 		}
+		break;
+
 		case VACIAR_RECURSO :{
 			char* rec = deserializar_recurso(stream);
 			rec = a_mayusc_primera_letra(rec);
@@ -133,7 +140,10 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			strcat(archivo, rec);
 			strcat(archivo, ".ims");
 			borrar_archivo(archivo);
+			free(archivo);
 		}
+		break;
+
 		case REGISTRAR_MOVIMIENTO : {
 			movimiento_tripulante trip_y_movs = deserializar_movimiento_tripulante(stream);
 			char* posX_vieja = itoa_propio(trip_y_movs.pos_x_vieja);
@@ -142,10 +152,10 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			char* posY_nueva = itoa_propio(trip_y_movs.pos_y_nueva);
 			char* tripulante_id = itoa_propio(trip_y_movs.tid);
 			char* frase1 = "El tripulante: ";
-			char* frase2 = "se movió desde la posición X: ";
-			char* frase3 = "e Y: ";
-			char* frase4 = "a la posición nueva X: ";
-			char* frase5 = "y nueva Y: ";
+			char* frase2 = " se movió desde la posición X: ";
+			char* frase3 = " e Y: ";
+			char* frase4 = " a la posición nueva X: ";
+			char* frase5 = " y nueva Y: ";
 			char* frase = malloc(strlen(posX_vieja)+strlen(posY_vieja)+strlen(posX_nueva)+strlen(posY_nueva)
 			+ strlen(tripulante_id)+strlen(frase1)+strlen(frase2)+strlen(frase3)+strlen(frase4)+strlen(frase5)+1);
 			frase[0] = '\0'; //creo que con esto me evito el memcpy
@@ -165,20 +175,131 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			strcat(archivo, tripulante_id);
 			strcat(archivo, ".ims");
 			escribir_archivo(archivo,frase);
+			free(tripulante_id);
+			free(posX_vieja);
+			free(posY_vieja);
+			free(posX_nueva);
+			free(posY_nueva);
+			free(frase);
+			free(archivo);
 		}
+		break;
+
 		case REGISTRAR_COMIENZO_TAREA : {
 			tripulante_con_tarea trip_c_tarea = deserializar_tripulante_con_tarea(stream);
+			char* frase1 = "El tripulante: ";
+			char* frase2 = " ha comenzado con la tarea: ";
+			char* tripulante_id = itoa_propio(trip_c_tarea.tid);
+			char* frase = malloc(strlen(frase1)+strlen(frase2)+strlen(tripulante_id)+strlen(trip_c_tarea.tarea)+1);
+			frase[0] = '\0';
+			strcat(frase,frase1);
+			strcat(frase,tripulante_id);
+			strcat(frase,frase2);
+			strcat(frase,trip_c_tarea.tarea);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			escribir_archivo(archivo,frase);
+			free(trip_c_tarea.tarea);
+			free(tripulante_id);
+			free(frase);
+			free(archivo);
 		}
+		break;
+
 		case REGISTRAR_FIN_TAREA : {
-			tripulante_con_tarea trip_c_tarea =deserializar_tripulante_con_tarea(stream);
+			tripulante_con_tarea trip_c_tarea = deserializar_tripulante_con_tarea(stream);
+			char* frase1 = "El tripulante: ";
+			char* frase2 = " ha finalizado la tarea: ";
+			char* tripulante_id = itoa_propio(trip_c_tarea.tid);
+			char* frase = malloc(strlen(frase1)+strlen(frase2)+strlen(tripulante_id)+strlen(trip_c_tarea.tarea)+1);
+			frase[0] = '\0';
+			strcat(frase,frase1);
+			strcat(frase,tripulante_id);
+			strcat(frase,frase2);
+			strcat(frase,trip_c_tarea.tarea);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			escribir_archivo(archivo,frase);
+			free(trip_c_tarea.tarea);
+			free(tripulante_id);
+			free(frase);
+			free(archivo);
 		}
+		break;
+
 		case REGISTRAR_MOVIMIENTO_A_SABOTAJE : {
-			movimiento_tripulante trip_c_tarea = deserializar_movimiento_tripulante(stream);
+			movimiento_tripulante trip_y_movs = deserializar_movimiento_tripulante(stream);
+			char* posX_vieja = itoa_propio(trip_y_movs.pos_x_vieja);
+			char* posY_vieja = itoa_propio(trip_y_movs.pos_y_vieja);
+			char* posX_nueva = itoa_propio(trip_y_movs.pos_x_nueva);
+			char* posY_nueva = itoa_propio(trip_y_movs.pos_y_nueva);
+			char* tripulante_id = itoa_propio(trip_y_movs.tid);
+			char* frase1 = "El tripulante: ";
+			char* frase2 = " se movió desde la posición X: ";
+			char* frase3 = " e Y: ";
+			char* frase4 = " a la posición nueva X: ";
+			char* frase5 = " y nueva Y: ";
+			char* frase6 = " para solucionar el sabotaje existente";
+			char* frase = malloc(strlen(posX_vieja)+strlen(posY_vieja)+strlen(posX_nueva)+strlen(posY_nueva)
+			+ strlen(tripulante_id)+strlen(frase1)+strlen(frase2)+strlen(frase3)+strlen(frase4)+strlen(frase5)+strlen(frase6) +1);
+			frase[0] = '\0'; //creo que con esto me evito el memcpy
+			strcat(frase,frase1);
+			strcat(frase,tripulante_id);
+			strcat(frase,frase2);
+			strcat(frase,posX_vieja);
+			strcat(frase,frase3);
+			strcat(frase,posY_vieja);
+			strcat(frase,frase4);
+			strcat(frase,posX_nueva);
+			strcat(frase,frase5);
+			strcat(frase,posY_nueva);
+			strcat(frase, frase6);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			escribir_archivo(archivo,frase);
+			free(tripulante_id);
+			free(posX_vieja);
+			free(posY_vieja);
+			free(posX_nueva);
+			free(posY_nueva);
+			free(frase);
+			free(archivo);
 		}
+		break;
+
 		case REGISTRAR_SABOTAJE_RESUELTO : {
 			uint32_t tid;
 			memcpy(&tid,stream,sizeof(uint32_t));
+			char* frase1 = "El sabotaje ha sido resuelto por el tripulante: ";
+			char* tripulante_id = itoa_propio(tid);
+			char* frase = malloc(strlen(frase1)+strlen(tripulante_id)+1);
+			frase[0] = '\0';
+			strcat(frase,frase1);
+			strcat(frase, tripulante_id);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			escribir_archivo(archivo,frase);
+			free(tripulante_id);
+			free(frase);
+			free(archivo);
 		}
+		break;
+
+		default:
+		//no me rompas las bolainas
+		break;
 	}
 	liberar_paquete(paquete);
 	close(*socket_envio);
@@ -194,6 +315,10 @@ void inicializar_filesystem(uint32_t block_size, uint32_t block_amount)
 	crear_directorio(carpeta_files);
 	crear_directorio(carpeta_bitacoras);
 	log_info(logger_i_mongo_store, "FILESYSTEM INICIALIZADO DE 0 CON EXITO");
+	uint32_t* tamanios = malloc(2*sizeof(uint32_t));
+	tamanios[0] = 2* sizeof(uint32_t) + block_amount;
+	tamanios[1] = block_amount * block_size;
+	pthread_create(&hilo_sincronizacion, NULL, sincronizar, (void*)tamanios);
 }
 
 void inicializar_superbloque(uint32_t block_size, uint32_t block_amount)
@@ -297,4 +422,53 @@ bool existe_recurso(char* recurso){
 		return 1;
 	}
 	return 0;
+}
+
+void* sincronizar(void* tamanio){ //como si fuera un array
+	while(1){
+		uint32_t* tamanios = (uint32_t*) tamanio;
+		msync(superbloque, tamanios[0],0);
+		msync(blocks,tamanios[1],0);
+		sleep(i_mongo_store_configuracion->TIEMPO_SINCRONIZACION);
+	}
+	
+}
+
+char* itoa_propio(uint32_t entero){
+	int aux;
+	int digitos;
+	char convertido;
+	digitos = 0;
+	aux = entero;
+	if(entero == 0){
+		char* unCero = malloc(2);
+		unCero[0] = entero + '0';
+		unCero[1] = '\0';
+		return unCero;
+	}
+	while(aux > 0){
+		aux = aux / 10;
+		digitos += 1;
+	}
+	char* cadena = malloc(digitos+1);
+	cadena[digitos] = '\0';
+	while(entero){
+		convertido = entero % 10 + '0';
+		cadena[digitos -1] = convertido;
+		digitos --;
+		entero = entero / 10;
+	}
+	return cadena;
+}
+
+void escribir_archivo(char* archivo,char* contenido){
+	//TODO
+}
+
+void quitar_de_archivo(char* archivo, char* contenido){
+	//TODO
+}
+
+void borrar_archivo(char* archivo){
+	//TODO
 }

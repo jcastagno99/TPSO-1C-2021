@@ -71,7 +71,15 @@ void no_pude_abrir_archivo(char*);
 void no_pude_mapear_archivo(char*);
 void inicializar_rutas(char* montaje);
 bool existe_archivo(char* archivo);
-//-----------------Parsing-----------------
+void escribir_archivo(char* archivo, char * escritura);
+void quitar_de_archivo(char* archivo,char* escritura);
+void borrar_archivo(char* archivo);
+//--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
+char* itoa_propio(uint32_t entero);
+//--------------Sincronizacion----------
+pthread_t hilo_sincronizacion;
+void* sincronizar(void* tamanios);
+
 
 #endif /* I_MONGO_STORE_LIB_H */

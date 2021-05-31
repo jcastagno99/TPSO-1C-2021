@@ -181,7 +181,7 @@ void* serializar_movimiento_tripulante(movimiento_tripulante trip){
 	return stream;
 }
 //esta funcion que tiene pp de nombre, de paso te arma tambien la tarea
-void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t cantidad_parametros, 
+/* void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t cantidad_parametros, 
 uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
 	tarea tarea;
 	tarea.nombre_tarea = nombre;
@@ -192,8 +192,9 @@ uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
 	tarea.tiempo = tiempo;
 	return pserializar_tripulante_con_tarea(tid,tarea);
 }
+Dada de baja con el ultimo cambio a mensajes de struct tarea (ahora solo se mandan char*)*/
 //esta en cambio, supone que ya tenes la tarea armada
-void* pserializar_tripulante_con_tarea(uint32_t tid, tarea tarea){
+void* pserializar_tripulante_con_tarea(uint32_t tid, char* tarea){
 	tripulante_con_tarea tripctarea;
 	tripctarea.tarea = tarea;
 	tripctarea.tid = tid;
@@ -202,24 +203,14 @@ void* pserializar_tripulante_con_tarea(uint32_t tid, tarea tarea){
 //y esta, supone que tenes la estructura completa ya armada
 void* serializar_tripulante_con_tarea(tripulante_con_tarea tct){
 	int offset = 0;
-	uint32_t longitud_nombre = strlen(tct.tarea.nombre_tarea)+1;
-	void* stream = malloc(7*sizeof(uint32_t)+longitud_nombre);
+	uint32_t longitud_nombre = strlen(tct.tarea)+1;
+	void* stream = malloc(2*sizeof(uint32_t)+longitud_nombre);
 	memcpy(stream+offset,&tct.tid,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
 	memcpy(stream+offset,&longitud_nombre,sizeof(uint32_t));
 	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,tct.tarea.nombre_tarea,longitud_nombre);
+	memcpy(stream+offset,tct.tarea,longitud_nombre);
 	offset+=longitud_nombre;
-	memcpy(stream+offset,&tct.tarea.cantidad_parametro,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tct.tarea.parametro,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tct.tarea.pos_x,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tct.tarea.pos_y,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tct.tarea.tiempo,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
 	return stream;
 }
 
@@ -424,25 +415,13 @@ movimiento_tripulante deserializar_movimiento_tripulante(void* stream){
 tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream){
 	tripulante_con_tarea tct;
 	int offset = 0;
-	tarea tarea;
 	uint32_t longitud;
 	memcpy(&tct.tid, stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
 	memcpy(&longitud,stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
-	memcpy(tarea.nombre_tarea,stream+offset,longitud);
+	memcpy(tct.tarea,stream+offset,longitud);
 	offset+= longitud;
-	memcpy(&tarea.cantidad_parametro, stream+offset,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(&tarea.parametro, stream+offset,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(&tarea.pos_x,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&tarea.pos_y,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&tarea.tiempo,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	tct.tarea = tarea;
 	return tct;
 }
 

@@ -138,7 +138,7 @@ typedef struct
 typedef struct
 {
 	uint32_t tid;
-	tarea tarea;
+	char* tarea;
 }tripulante_con_tarea;
 
 typedef struct{
@@ -172,8 +172,8 @@ void* pserializar_tripulante_y_posicion(uint32_t tid, uint32_t posx, uint32_t po
 void* serializar_tripulante_y_posicion(tripulante_y_posicion trip);
 void* pserializar_movimiento_tripulante(uint32_t tid,uint32_t xv,uint32_t yv,uint32_t xn,uint32_t yn);
 void* serializar_movimiento_tripulante(movimiento_tripulante trip);
-void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
-void* pserializar_tripulante_con_tarea(uint32_t tid, tarea tarea);
+//void* ppserializar_tripulante_con_tarea(uint32_t tid, char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
+void* pserializar_tripulante_con_tarea(uint32_t tid, char* tarea);
 void* serializar_tripulante_con_tarea(tripulante_con_tarea tct);
 void* serializar_pid_con_tareas(pid_con_tareas pid_con_tareas);
 void* serializar_pid(uint32_t pid);
