@@ -97,32 +97,87 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		case GENERAR_RECURSO :{
 			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
 			op_c_rec.recurso = a_mayusc_primera_letra(op_c_rec.recurso);
-			if(existe_recurso(op_c_rec.recurso)){
-
+			char* escritura = NULL;
+			if(op_c_rec.cantidad > 0);
+				escritura = malloc(op_c_rec.cantidad + 1);
+			char* archivo = malloc(strlen(carpeta_files) + strlen(".ims") + strlen(op_c_rec.recurso) + 1);
+			memcpy(archivo, carpeta_files, strlen(carpeta_files)+1);
+			strcat(archivo, op_c_rec.recurso);
+			strcat(archivo, ".ims");
+			for (int i = 0; i<op_c_rec.cantidad;i++){
+				escritura[i] = op_c_rec.recurso[0];
 			}
+				escribir_archivo(archivo, escritura);
 		}
+		
 		case CONSUMIR_RECURSO :{
 			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
 			op_c_rec.recurso = a_mayusc_primera_letra(op_c_rec.recurso);
+			char* escritura = NULL;
+			if(op_c_rec.cantidad > 0);
+				escritura = malloc(op_c_rec.cantidad + 1);
+			char* archivo = malloc(strlen(carpeta_files) + strlen(".ims") + strlen(op_c_rec.recurso) + 1);
+			memcpy(archivo, carpeta_files, strlen(carpeta_files)+1);
+			strcat(archivo, op_c_rec.recurso);
+			strcat(archivo, ".ims");
+			for (int i = 0; i<op_c_rec.cantidad;i++){
+				escritura[i] = op_c_rec.recurso[0];
+			}
+				quitar_de_archivo(archivo, escritura);
 		}
 		case VACIAR_RECURSO :{
 			char* rec = deserializar_recurso(stream);
 			rec = a_mayusc_primera_letra(rec);
+			char* archivo = malloc(strlen(carpeta_files) + strlen(".ims") + strlen(rec) + 1);
+			memcpy(archivo, carpeta_files, strlen(carpeta_files)+1);
+			strcat(archivo, rec);
+			strcat(archivo, ".ims");
+			borrar_archivo(archivo);
 		}
 		case REGISTRAR_MOVIMIENTO : {
-
+			movimiento_tripulante trip_y_movs = deserializar_movimiento_tripulante(stream);
+			char* posX_vieja = itoa_propio(trip_y_movs.pos_x_vieja);
+			char* posY_vieja = itoa_propio(trip_y_movs.pos_y_vieja);
+			char* posX_nueva = itoa_propio(trip_y_movs.pos_x_nueva);
+			char* posY_nueva = itoa_propio(trip_y_movs.pos_y_nueva);
+			char* tripulante_id = itoa_propio(trip_y_movs.tid);
+			char* frase1 = "El tripulante: ";
+			char* frase2 = "se movió desde la posición X: ";
+			char* frase3 = "e Y: ";
+			char* frase4 = "a la posición nueva X: ";
+			char* frase5 = "y nueva Y: ";
+			char* frase = malloc(strlen(posX_vieja)+strlen(posY_vieja)+strlen(posX_nueva)+strlen(posY_nueva)
+			+ strlen(tripulante_id)+strlen(frase1)+strlen(frase2)+strlen(frase3)+strlen(frase4)+strlen(frase5)+1);
+			frase[0] = '\0'; //creo que con esto me evito el memcpy
+			strcat(frase,frase1);
+			strcat(frase,tripulante_id);
+			strcat(frase,frase2);
+			strcat(frase,posX_vieja);
+			strcat(frase,frase3);
+			strcat(frase,posY_vieja);
+			strcat(frase,frase4);
+			strcat(frase,posX_nueva);
+			strcat(frase,frase5);
+			strcat(frase,posY_nueva);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			escribir_archivo(archivo,frase);
 		}
 		case REGISTRAR_COMIENZO_TAREA : {
-
+			tripulante_con_tarea trip_c_tarea = deserializar_tripulante_con_tarea(stream);
 		}
 		case REGISTRAR_FIN_TAREA : {
-
+			tripulante_con_tarea trip_c_tarea =deserializar_tripulante_con_tarea(stream);
 		}
 		case REGISTRAR_MOVIMIENTO_A_SABOTAJE : {
-
+			movimiento_tripulante trip_c_tarea = deserializar_movimiento_tripulante(stream);
 		}
 		case REGISTRAR_SABOTAJE_RESUELTO : {
-
+			uint32_t tid;
+			memcpy(&tid,stream,sizeof(uint32_t));
 		}
 	}
 	liberar_paquete(paquete);
