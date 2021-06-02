@@ -93,6 +93,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 	log_info(logger_i_mongo_store, "Se creó el hilo correctamente");
 	t_paquete *paquete = recibir_paquete(*socket_envio);
 	void* stream = paquete->stream;
+	op_code codigo_respuesta;
+	uint32_t tamanio_respuesta;
+	void* stream_respuesta;
 	switch(paquete->codigo_operacion){
 		case GENERAR_RECURSO :{
 			operacion_recurso op_c_rec = deserializar_operacion_recurso(stream);
@@ -107,9 +110,12 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			for (int i = 0; i<op_c_rec.cantidad;i++){
 				escritura[i] = op_c_rec.recurso[0];
 			}
-				escribir_archivo(archivo, escritura);
-				free(archivo);
-				free(escritura);
+			escribir_archivo(archivo, escritura);
+			free(archivo);
+			free(escritura);
+			codigo_respuesta = RESPUESTA_GENERAR_RECURSO;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 		
@@ -126,9 +132,12 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			for (int i = 0; i<op_c_rec.cantidad;i++){
 				escritura[i] = op_c_rec.recurso[0];
 			}
-				quitar_de_archivo(archivo, escritura);
-				free(archivo);
-				free(escritura);
+			quitar_de_archivo(archivo, escritura);
+			free(archivo);
+			free(escritura);
+			codigo_respuesta = RESPUESTA_CONSUMIR_RECURSO;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -141,6 +150,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			strcat(archivo, ".ims");
 			borrar_archivo(archivo);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_VACIAR_RECURSO;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -182,6 +194,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			free(posY_nueva);
 			free(frase);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_REGISTRAR_MOVIMIENTO;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -206,6 +221,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			free(tripulante_id);
 			free(frase);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_REGISTRAR_COMIENZO_TAREA;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -230,6 +248,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			free(tripulante_id);
 			free(frase);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_REGISTRAR_FIN_TAREA;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -273,6 +294,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			free(posY_nueva);
 			free(frase);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_REGISTRAR_MOVIMIENTO_A_SABOTAJE;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
 
@@ -294,14 +318,45 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			free(tripulante_id);
 			free(frase);
 			free(archivo);
+			codigo_respuesta = RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO;
+			stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
+			tamanio_respuesta = sizeof(respuesta_ok_fail);
 		}
 		break;
+
+		case OBTENER_BITACORA : {
+			uint32_t tid;
+			memcpy(&tid,stream,sizeof(uint32_t));
+			char* tripulante_id = itoa_propio(tid);
+			char* archivo = malloc(strlen(carpeta_bitacoras) + strlen(".ims") + strlen("Tripulante") + strlen(tripulante_id) + 1);
+			memcpy(archivo, carpeta_bitacoras, strlen(carpeta_bitacoras)+1);
+			strcat(archivo, "Tripulante");
+			strcat(archivo, tripulante_id);
+			strcat(archivo, ".ims");
+			char* contenido = todo_el_archivo(archivo);
+			uint32_t tamanio = strlen(contenido)+1;
+			tamanio_respuesta = tamanio + sizeof(uint32_t);
+			stream_respuesta = malloc(tamanio + sizeof(uint32_t));
+			memcpy(stream_respuesta,&tamanio,sizeof(uint32_t));
+			memcpy(stream_respuesta+sizeof(uint32_t),contenido,tamanio);
+			codigo_respuesta = RESPUESTA_OBTENER_BITACORA;
+			free(tripulante_id);
+			free(archivo);
+		}
+
 
 		default:
 		//no me rompas las bolainas
 		break;
 	}
+	t_paquete* paquete_respuesta = malloc(sizeof(t_paquete));
+	paquete_respuesta->codigo_operacion = codigo_respuesta;
+	paquete_respuesta->size = tamanio_respuesta;
+	paquete_respuesta->stream = stream_respuesta;
+	void* a_enviar = serializar_paquete(paquete_respuesta, paquete_respuesta->size + sizeof(op_code)+ sizeof(size_t));
+	send(*socket_envio,a_enviar,paquete_respuesta->size + sizeof(op_code)+ sizeof(size_t),0);
 	liberar_paquete(paquete);
+	free(a_enviar);
 	close(*socket_envio);
 	free(socket_envio);
 	return NULL;
@@ -471,4 +526,9 @@ void quitar_de_archivo(char* archivo, char* contenido){
 
 void borrar_archivo(char* archivo){
 	//TODO
+}
+
+char* todo_el_archivo(char* archivo){
+	//TODO
+	return "tu vieja";
 }

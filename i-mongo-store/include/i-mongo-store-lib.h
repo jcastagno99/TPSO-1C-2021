@@ -74,6 +74,7 @@ bool existe_archivo(char* archivo);
 void escribir_archivo(char* archivo, char * escritura);
 void quitar_de_archivo(char* archivo,char* escritura);
 void borrar_archivo(char* archivo);
+char* todo_el_archivo(char* archivo);
 //--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
 char* itoa_propio(uint32_t entero);
