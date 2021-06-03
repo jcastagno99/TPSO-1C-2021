@@ -517,7 +517,13 @@ char* itoa_propio(uint32_t entero){
 }
 
 void escribir_archivo(char* archivo,char* contenido){
-	//TODO
+	FILE* archivo;
+	archivo = fopen(archivo,"r+");
+	if(archivo == NULL && errno == ENOENT){
+		archivo = fopen(archivo,"w+");
+	} else{
+		log_error(logger_i_mongo_store, "El archivo %s existe, pero no se pudo abrir", archivo);
+	}
 }
 
 void quitar_de_archivo(char* archivo, char* contenido){
