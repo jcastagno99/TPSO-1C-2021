@@ -24,6 +24,7 @@
 #include <shared_utils.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <commons/string.h>
 #define MAX_CLIENTS 128
 
 
@@ -37,6 +38,10 @@ typedef struct
 	char* IP_DISCORDIADOR;
 	int PUERTO_DISCORDIADOR;
 }i_mongo_store_config;
+
+typedef enum{
+	RECURSO, BITACORA
+}tipo_archivo;
 
 //------------Variables Globales------------
 
@@ -71,13 +76,16 @@ void no_pude_abrir_archivo(char*);
 void no_pude_mapear_archivo(char*);
 void inicializar_rutas(char* montaje);
 bool existe_archivo(char* archivo);
-void escribir_archivo(char* archivo, char * escritura);
+void escribir_archivo(char* archivo, char * escritura, tipo_archivo tipo);
 void quitar_de_archivo(char* archivo,char* escritura);
 void borrar_archivo(char* archivo);
 char* todo_el_archivo(char* archivo);
+void crear_archivo_metadata(char* ruta, tipo_archivo tipo, char caracter_llenado);
 //--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
 char* itoa_propio(uint32_t entero);
+int conseguir_ultimo_bloque(t_config* llave_valor, int cant_bloques);
+int encontrar_anterior_barra_cero(char* ultimo_bloque, int block_size);
 //--------------Sincronizacion----------
 pthread_t hilo_sincronizacion;
 void* sincronizar(void* tamanios);
