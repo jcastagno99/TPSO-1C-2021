@@ -404,14 +404,14 @@ void inicializar_superbloque(uint32_t block_size, uint32_t block_amount)
 	}
 	memcpy(superbloque, &block_size, sizeof(uint32_t));
 	memcpy(superbloque + sizeof(uint32_t), &block_amount, sizeof(uint32_t));
-	int offset = 2 * sizeof(uint32_t);
-	bool estado = 0;
+	char vector_disponibilidad[block_amount];
 	for (int i = 0; i < block_amount; i++)
 	{
-		memcpy(superbloque + offset, &estado, sizeof(bool));
-		offset += sizeof(bool);
+		vector_disponibilidad[i] = '0';
 	}
-	msync(superbloque, 2 * sizeof(uint32_t) + block_amount, 0);
+	t_bitarray* bitarray = bitarray_create_with_mode(vector_disponibilidad,block_amount,MSB_FIRST);
+	memcpy(superbloque + 2* sizeof(uint32_t), bitarray, sizeof(t_bitarray));
+	msync(superbloque, 2 * sizeof(uint32_t) + sizeof(bitarray), 0);
 	struct stat *algo = malloc(sizeof(struct stat));
 	int resultado = fstat(fd, algo);
 	if (resultado == -1)
@@ -653,4 +653,58 @@ int conseguir_ultimo_bloque(t_config *llave_valor, int cant_bloques)
 
 int encontrar_anterior_barra_cero(char* ultimo_bloque, int block_size){
 	return 0; //hardcodeo
+}
+
+int get_block_size(){
+	uint32_t bs;
+	memcpy(&bs,superbloque,sizeof(uint32_t));
+	return bs;
+}
+
+int get_block_amount(){
+	uint32_t ba;
+	memcpy(&ba, superbloque+sizeof(uint32_t),sizeof(uint32_t));
+	return ba;
+}
+
+int get_primer_bloque_libre(){
+	int cant_bloques = get_block_amount();
+	char* bitarray = malloc(cant_bloques);
+	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	bit_array->bitarray = bitarray;
+	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	bool ocupado = 1;
+	int i;
+	for(i = 0; i<bitarray_get_max_bit(bit_array) || !ocupado;i++){
+		ocupado = bitarray_test_bit(bit_array,i);
+	}
+	free(bitarray);
+	free(bit_array);
+	if(ocupado == 0){
+		return i;
+	} else{
+		return -1;
+	}
+}
+
+void liberar_bloque(int numero_bloque){
+	int cant_bloques = get_block_amount();
+	char* bitarray = malloc(cant_bloques);
+	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	bit_array->bitarray = bitarray;
+	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	bitarray_clean_bit(bit_array, numero_bloque);
+	free(bit_array);
+	free(bitarray);
+}
+
+void ocupar_bloque(int numero_bloque){
+	int cant_bloques = get_block_amount();
+	char* bitarray = malloc(cant_bloques);
+	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	bit_array->bitarray = bitarray;
+	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	bitarray_set_bit(bit_array, numero_bloque);
+	free(bit_array);
+	free(bitarray);
 }

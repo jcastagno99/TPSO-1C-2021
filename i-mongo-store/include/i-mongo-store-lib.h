@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <commons/string.h>
+#include <commons/bitarray.h>
 #define MAX_CLIENTS 128
 
 
@@ -81,6 +82,11 @@ void quitar_de_archivo(char* archivo,char* escritura);
 void borrar_archivo(char* archivo);
 char* todo_el_archivo(char* archivo);
 void crear_archivo_metadata(char* ruta, tipo_archivo tipo, char caracter_llenado);
+void liberar_bloque(int numero_bloque);
+void ocupar_bloque(int numero_bloque);
+int get_block_size();
+int get_block_amount();
+int get_primer_bloque_libre();
 //--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
 char* itoa_propio(uint32_t entero);
