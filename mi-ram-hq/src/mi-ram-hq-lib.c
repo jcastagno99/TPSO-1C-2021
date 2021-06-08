@@ -633,21 +633,21 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 				iterador->tamanio_segmento -= 2*(sizeof(uint32_t));
 				return auxiliar;
 			}
-		}
+		} 
 	}
 	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){ 
 		t_segmento_de_memoria* vencedor;
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
-			auxiliar = list_get(segmentos_memoria,i);
-			if((auxiliar->tamanio_segmento >= 2*(sizeof(uint32_t))) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
-				auxiliar->libre = false;
-				vencedor = auxiliar;
+			iterador = list_get(segmentos_memoria,i);
+			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento < vencedor->tamanio_segmento) && iterador->libre){
+				iterador->libre = false;
+				vencedor = iterador;
 			}
 		}
 		return vencedor;
 	}
-	free (iterador);
+	
 	free(auxiliar);
 	return NULL;
 };
