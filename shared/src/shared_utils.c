@@ -337,6 +337,18 @@ nuevo_tripulante deserializar_nuevo_tripulante(void* stream){
 	return tripulante;
 }
 
+nuevo_tripulante_sin_pid* deserializar_nuevo_tripulante_sin_pid(void* stream){
+	nuevo_tripulante_sin_pid* tripulante = malloc(sizeof(nuevo_tripulante_sin_pid));
+	int offset = 0;
+	memcpy(tripulante->tid, stream + offset, sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	memcpy(tripulante->pos_x, stream + offset, sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	memcpy(tripulante->pos_y, stream + offset, sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	return tripulante;
+}
+
 respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream){
 	respuesta_ok_fail rta;
 	memcpy(&rta,stream,sizeof(respuesta_ok_fail));
@@ -442,6 +454,34 @@ pid_con_tareas deserializar_pid_con_tareas(void* stream){
 	}
 	return pct;
 }
+
+pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* stream){
+	pid_con_tareas_y_tripulantes pct;
+	pct.tareas = list_create();
+	int offset = 0;
+	uint32_t tamanio_palabra = 0;
+	memcpy(&pct.pid,stream+offset,sizeof(uint32_t));
+	offset+=sizeof(uint32_t);
+	memcpy(&tamanio_palabra,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	while(tamanio_palabra != 0){
+		list_add(pct.tareas, deserializar_tarea_alt(stream+offset,tamanio_palabra));
+		offset+= tamanio_palabra + 5*sizeof(uint32_t);
+		memcpy(&tamanio_palabra,stream+offset,sizeof(uint32_t));
+		offset+=sizeof(uint32_t);
+	}
+	uint32_t tid;
+	memcpy(&tid,stream+offset,sizeof(uint32_t));
+	while(tid != 0){
+		list_add(pct.tripulantes, deserializar_nuevo_tripulante_sin_pid(stream+offset));
+		offset += 3*sizeof(uint32_t);
+		memcpy(&tid,stream+offset,sizeof(uint32_t));
+	}
+
+	return pct;
+
+}
+
 
 tarea* deserializar_tarea_alt(void* stream,uint32_t longitud){
 	int offset = 0;

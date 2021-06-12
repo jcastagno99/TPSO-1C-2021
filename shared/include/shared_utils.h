@@ -94,6 +94,24 @@ typedef struct
 	t_list *tareas;
 } pid_con_tareas;
 
+//-----------------------------------------MIRIAM-----------------------------------------------------------------
+
+typedef struct
+{
+	uint32_t pid;
+	t_list *tareas;
+	t_list *tripulantes;
+}pid_con_tareas_y_tripulantes;
+
+typedef struct
+{
+	uint32_t tid;
+	uint32_t pos_x;
+	uint32_t pos_y;	
+}nuevo_tripulante_sin_pid;
+
+//---------------------------------------------------------------------------------------------------------------------
+
 typedef struct
 {
 	uint32_t tid;
@@ -201,6 +219,7 @@ uint32_t deserializar_pid(void* stream);
 estado deserializar_estado(void* stream);
 operacion_recurso deserializar_operacion_recurso(void* stream);
 char* deserializar_recurso(void* stream);
+pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* stream);
 
 
 

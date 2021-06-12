@@ -21,8 +21,6 @@
 #include <commons/collections/queue.h>
 #include <commons/config.h>
 #include <shared_utils.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define MAX_CLIENTS 128
 
@@ -98,7 +96,7 @@ void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
 
-respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas);
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes);
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante);
 respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion);
 tarea obtener_proxima_tarea_segmentacion(uint32_t);
