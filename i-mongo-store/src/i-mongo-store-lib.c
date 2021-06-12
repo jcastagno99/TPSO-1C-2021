@@ -625,9 +625,50 @@ void escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo)
 	log_info(logger_i_mongo_store, "Se ha finalizado la operación de escritura del archivo %s y de los bloques correspondientes",ruta);
 }
 
-void quitar_de_archivo(char *archivo, char *contenido)
+void quitar_de_archivo(char *ruta, char *contenido)
 {
-	//TODO
+	FILE *archivo;
+	archivo = fopen(ruta, "r+");
+	if (archivo == NULL && errno == ENOENT)
+	{
+		crear_archivo_metadata(ruta, RECURSO, contenido[0]);
+		log_info(logger_i_mongo_store, "Se creo el archivo %s", ruta);
+	}
+	else if (archivo == NULL && errno != ENOENT)
+	{
+		log_error(logger_i_mongo_store, "El archivo %s existe, pero no se pudo abrir", ruta);
+	}
+	t_config *llave_valor = config_create(ruta);
+	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
+	int longitud_restante = strlen(contenido);
+	int caracteres_vaciados = 0;
+	int block_size = get_block_size();
+	char* tipo_recurso = config_get_string_value(llave_valor,"CARACTER_LLENADO");
+	if(longitud_restante > cant_bloques * block_size){
+		log_error(logger_i_mongo_store, "Seguro que no hay suficientes recursos para quitar. Abortando operación de consumir %d unidades de recurso %s",
+		longitud_restante, tipo_recurso);
+	}
+	else
+	{
+		llave_valor = config_create(ruta);
+		int nro_ultimo_bloque = conseguir_ultimo_bloque(llave_valor, cant_bloques);
+		char *ultimo_bloque = malloc(block_size);
+		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
+		int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size); 
+		if(longitud_restante < ultima_posicion_escrita){
+			ultimo_bloque[ultima_posicion_escrita - longitud_restante + 1] = '\0';
+			caracteres_vaciados = longitud_restante;
+			longitud_restante = 0;
+		}
+		else{
+			//libero bloque y lo saco de metadata. ajusto longitud_restante y caracteres_llenados
+		}
+
+	}
+	/* 1- Localizar el último caracter antes de un barra cero
+	2- Desplazar / insertar el barra cero
+	3- Si la cantidad de caracteres a quitar es mayor a la cantidad de caracteres antes del barra cero, liberar un bloque*/
+
 }
 
 void borrar_archivo(char *archivo)
