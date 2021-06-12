@@ -565,10 +565,10 @@ void escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo)
 	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
 	int longitud_restante = strlen(contenido);
 	int caracteres_llenados = 0;
-	//TODO: CONSEGUIR BLOCK_SIZE
-	int block_size = 1024; //hardcodeo
+	int block_size = get_block_size();
 	if (cant_bloques != 0)
 	{
+		llave_valor = config_create(ruta);
 		int nro_ultimo_bloque = conseguir_ultimo_bloque(llave_valor, cant_bloques);
 		char *ultimo_bloque = malloc(block_size);
 		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
@@ -586,19 +586,43 @@ void escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo)
 			ultimo_bloque[ultima_posicion_escrita + caracteres_llenados + 1] = '\0';
 		}
 		memcpy(blocks + (nro_ultimo_bloque * block_size), ultimo_bloque, block_size);
+		config_destroy(llave_valor);
 	}
 	while (longitud_restante > 0)
 	{
-		/* 1- Hallar bloque libre (leer superbloque)
-			2- Reservarlo (escribir superbloque, escribir files/bitacora .ims) alterando block_count y blocks, MD5
-			3- Memcpy del blocks
-			4- Asignar cada byte del bloque al caracter correspondiente, hasta llenar el bloque o agotar los caracteres,
-			actualizando longitud_restante y caracteres_llenados
-			5- Si sobró espacio de bloque, colocar el \0
-			6- Memcpy al blocks
-			7- Reiterar si longitud_restante no es 0
-			 */
+			llave_valor = config_create(ruta);
+			int primer_bloque_libre = get_primer_bloque_libre();
+			ocupar_bloque(primer_bloque_libre);
+			char* escritura = itoa_propio(primer_bloque_libre);
+			llave_valor = config_create(ruta);
+			config_set_value(llave_valor, "BLOCKS", escritura);
+			free(escritura);
+			int cant_bloques_vieja = config_get_int_value(llave_valor, "CANT_BLOQUES");
+			cant_bloques_vieja++;
+			char* cant_bloques_vieja_aux = itoa_propio(cant_bloques_vieja);
+			config_set_value(llave_valor, "CANT_BLOQUES", cant_bloques_vieja_aux);
+			free(cant_bloques_vieja_aux);
+			config_save_in_file(llave_valor, ruta);
+			config_destroy(llave_valor);
+			char* bloque_a_llenar = malloc(block_size);
+			memcpy(bloque_a_llenar, blocks + (primer_bloque_libre * block_size), block_size);
+			if(longitud_restante > block_size){
+				memcpy(bloque_a_llenar,contenido + caracteres_llenados,block_size);
+				longitud_restante -= block_size;
+				caracteres_llenados += block_size;
+			} else{
+				int ultimo_byte = longitud_restante;
+				memcpy(bloque_a_llenar, contenido + caracteres_llenados, longitud_restante);
+				bloque_a_llenar[ultimo_byte] = '\0';
+				longitud_restante = 0;
+				caracteres_llenados += ultimo_byte;
+			}
+			memcpy(blocks + primer_bloque_libre * block_size,bloque_a_llenar,block_size);
+			free(bloque_a_llenar);
+			log_info(logger_i_mongo_store, "Se han llenado %d caracteres en el bloque %d, asignados al archivo %s",
+				 caracteres_llenados, primer_bloque_libre, ruta);
 	}
+	log_info(logger_i_mongo_store, "Se ha finalizado la operación de escritura del archivo %s y de los bloques correspondientes",ruta);
 }
 
 void quitar_de_archivo(char *archivo, char *contenido)
@@ -652,7 +676,14 @@ int conseguir_ultimo_bloque(t_config *llave_valor, int cant_bloques)
 }
 
 int encontrar_anterior_barra_cero(char* ultimo_bloque, int block_size){
-	return 0; //hardcodeo
+	int i;
+	bool encontrado = 0;
+	for(i = 0; i< block_size && !encontrado; i++){
+		if(ultimo_bloque[i] == '\0'){
+			encontrado = 1;
+		}
+	}
+	return i - 1;
 }
 
 int get_block_size(){
