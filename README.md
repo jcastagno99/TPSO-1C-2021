@@ -3,7 +3,19 @@
 <p align="center"><img src="oviedo.jpg" width="200px"/></p>
 
 
-**#### Ejecución del  mi-ram-hq e i-mongo-store**
+## COMANDOS DE LA CONSOLA
+
+````powershell
+INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+LISTAR_TRIPULANTES
+INICIAR_PLANIFICACION
+PAUSAR_PLANIFICACION
+LISTAR_TRIPULANTES
+````
+
+
+
+#### Ejecución del  mi-ram-hq e i-mongo-store
 
 Pide parámetros por consola usar `./exec` en estos módulos para ejecutar o:
 

@@ -103,7 +103,8 @@ typedef struct
 	t_list *tripulantes;
 }pid_con_tareas_y_tripulantes;
 
-typedef struct
+
+typedef struct 
 {
 	uint32_t tid;
 	uint32_t pos_x;
@@ -205,6 +206,10 @@ void* serializar_operacion_recurso(operacion_recurso recurso_con_cantidad);
 void* pserializar_operacion_recurso(char* recurso, uint32_t cantidad);
 void* serializar_recurso(char* recurso);
 
+void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes*);
+
+
+
 nuevo_tripulante deserializar_nuevo_tripulante(void* stream);
 respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream);
 tarea deserializar_tarea(void* stream);
@@ -220,8 +225,5 @@ estado deserializar_estado(void* stream);
 operacion_recurso deserializar_operacion_recurso(void* stream);
 char* deserializar_recurso(void* stream);
 pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* stream);
-
-
-
 
 #endif

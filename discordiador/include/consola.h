@@ -1,13 +1,7 @@
 #ifndef CONSOLA_H
 #define CONSOLA_H
 
-#include <stdlib.h> // [atoi] esta incluido
-#include <stdio.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-#include <commons/log.h>
-#include <string.h>
-#include "discordiador.h"
+#include "funciones_de_consola.h"
 
 typedef enum
 {

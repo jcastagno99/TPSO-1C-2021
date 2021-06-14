@@ -117,3 +117,32 @@
 [INFO] 19:15:24:294 discordiador.log/(3995:3999): INICIAR_PATOTA 5 /home/utnso/tareas/tareasPatota5.txt 1|1 3|4
 [INFO] 00:23:02:156 discordiador.log/(4413:4414): SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
 [INFO] 00:23:39:567 discordiador.log/(4413:4416): INICIAR_PATOTA 5 /home/utnso/tareas/tareasPatota5.txt 1|1 3|4
+[INFO] 22:40:47:762 discordiador.log/(4184:4185): SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 22:40:49:141 discordiador.log/(4184:4187): asd
+[WARNING] 22:40:49:141 discordiador.log/(4184:4187): COMANDO NO VALIDO
+[INFO] 22:40:57:799 discordiador.log/(4184:4187): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 22:40:57:799 discordiador.log/(4184:4187): INICIANDO PATOTA
+[INFO] 22:40:57:799 discordiador.log/(4184:4186): Procesando la patota con 5
+[INFO] 22:40:57:799 discordiador.log/(4184:4186): Patota 5 creada
+[INFO] 22:41:05:716 discordiador.log/(4184:4187): LISTAR_TRIPULANTES
+[INFO] 22:41:13:266 discordiador.log/(4184:4187): INICIAR_PLANIFICACION
+[INFO] 22:41:13:266 discordiador.log/(4184:4189): Planificador a largo plazo: Cola new: 5
+[INFO] 22:41:13:266 discordiador.log/(4184:4188): Planificador a corto plazo:  Cola ready: 0
+[INFO] 22:41:13:266 discordiador.log/(4184:4188): Ejecutando cosas...
+[INFO] 22:41:13:266 discordiador.log/(4184:4189): Pasando elementos de NEW --------> READY
+[INFO] 22:41:13:266 discordiador.log/(4184:4189): Planificador a largo plazo: quedaron 4 elementos
+[INFO] 22:41:16:266 discordiador.log/(4184:4189): Planificador a largo plazo: Cola new: 4
+[INFO] 22:41:16:266 discordiador.log/(4184:4189): Pasando elementos de NEW --------> READY
+[INFO] 22:41:16:267 discordiador.log/(4184:4189): Planificador a largo plazo: quedaron 3 elementos
+[INFO] 22:41:18:266 discordiador.log/(4184:4188): Planificador a corto plazo:  Cola ready: 2
+[INFO] 22:41:18:267 discordiador.log/(4184:4188): Ejecutando cosas...
+[INFO] 22:41:18:267 discordiador.log/(4184:4188): Agregado exitosamente! Ahora la cantidad en ready es 1 y en exec, 1
+[INFO] 22:41:19:267 discordiador.log/(4184:4189): Planificador a largo plazo: Cola new: 3
+[INFO] 22:41:19:267 discordiador.log/(4184:4189): Pasando elementos de NEW --------> READY
+[INFO] 22:41:19:267 discordiador.log/(4184:4189): Planificador a largo plazo: quedaron 2 elementos
+[INFO] 22:41:22:268 discordiador.log/(4184:4189): Planificador a largo plazo: Cola new: 2
+[INFO] 22:41:22:268 discordiador.log/(4184:4189): Pasando elementos de NEW --------> READY
+[INFO] 22:41:22:268 discordiador.log/(4184:4189): Planificador a largo plazo: quedaron 1 elementos
+[INFO] 22:41:23:153 discordiador.log/(4184:4187): PAUSAR_PLANIFICACION
+[INFO] 22:41:23:153 discordiador.log/(4184:4187): PLANIFICACION DETENIDA
+[INFO] 22:41:27:609 discordiador.log/(4184:4187): LISTAR_TRIPULANTES
