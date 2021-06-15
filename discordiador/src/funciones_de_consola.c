@@ -178,21 +178,16 @@ void iniciar_patota_global(char **str_split)
         list_add(patota_full->tripulantes , tripulante);
         id_tcb++;
     }
-    //serializo el paquete ------------------------------------------
-    void *info = serializar_pid_con_tareas_y_tripulantes(patota_full); 
-    
     //guardo el tamaño en una variable para poder debugearlo
-    uint32_t size_paquete = sizeof(uint32_t) + (patota_full->tareas->elements_count + patota_full->tripulantes->elements_count)* sizeof(t_link_element);
+    uint32_t size_paquete;
 
+    //serializo el paquete ------------------------------------------
+    //VER SI ACTUALIZA SIZE_PAQUETE
+    void *info = serializar_pid_con_tareas_y_tripulantes(patota_full,&size_paquete); 
     
-    // SE DEBERA BORRAR ESTO---------------------------
-    printf("Recibi respuesta OK\n");
-            //limpiar todo lo del envio
-            //list_destroy_and_destroy_elements(lista_tareas, (void*) tarea_destroy); de la global 
-            
-    iniciar_patota_local(patota_full->tripulantes, patota_full->tareas,str_split);
-         
 
+    enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
+    
     /*
     //envio el paquete
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);

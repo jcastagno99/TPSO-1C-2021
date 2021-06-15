@@ -51,6 +51,10 @@ void inicializar_discordiador()
 	ip_i_mongo_store = config_get_string_value(config, "IP_I_MONGO_STORE");
 	puerto_i_mongo_store = config_get_string_value(config, "PUERTO_I_MONGO_STORE");
 
+
+	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+
+
 	//puerto de escucha para los sabotajes
 	char *puerto_escucha_sabotaje = config_get_string_value(config, "PUERTO_ESCUCHA_SABOTAJE");
 	char *retardo = config_get_string_value(config, "RETARDO_CICLO_CPU");
@@ -58,8 +62,8 @@ void inicializar_discordiador()
 	int puerto = atoi(puerto_escucha_sabotaje);
 	tiempo_retardo_ciclo_cpu = atoi(retardo);
 
-	pthread_t hilo_server;
-	pthread_create(&hilo_server, NULL, esperar_conexiones, &puerto);
+	//pthread_t hilo_server;
+	//pthread_create(&hilo_server, NULL, esperar_conexiones, &puerto);
 
 	// HILO CREACION PATOTAS ---------------------------------------------
 	pthread_t hilo_creacion_patota;

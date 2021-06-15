@@ -67,6 +67,7 @@ void validacion_sintactica(char *text)
             if (cant_tripulantes != 0)
             {
                 log_info(logger, "INICIANDO PATOTA");
+                iniciar_patota_global(str_split);
                 pthread_mutex_lock(&mutex_cola_iniciar_patota);
                 queue_push(cola_de_iniciar_patotas, str_split);
                 pthread_mutex_unlock(&mutex_cola_iniciar_patota);

@@ -100,6 +100,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		case INICIAR_PATOTA:
 		{
 			pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+			//Llega bien el mensaje
 			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
 			respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
@@ -295,8 +296,8 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patot
 	
 	patota = malloc(sizeof(t_tabla_de_segmento));
 	patota->segmento_pcb = NULL;
-	patota->segmento_tarea = NULL;
-	patota->segmentos_tripulantes = NULL;
+	patota->segmento_tarea = list_create();
+	patota->segmentos_tripulantes = list_create();
 	patota->mutex_segmentos_tripulantes = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_segmentos_tripulantes,NULL);
 	pthread_mutex_lock(&mutex_patotas);
@@ -673,6 +674,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 				auxiliar->inicio_segmento = iterador->inicio_segmento;
 				auxiliar->tamanio_segmento = 2*(sizeof(uint32_t)); 
 				auxiliar->libre = false;
+				list_add(segmentos_memoria,auxiliar);
 				iterador->inicio_segmento += 2*(sizeof(uint32_t));
 				iterador->tamanio_segmento -= 2*(sizeof(uint32_t));
 				return auxiliar;
@@ -685,6 +687,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento < vencedor->tamanio_segmento) && iterador->libre){
+				//hay que armar bien esto, para todas las best fil
 				iterador->libre = false;
 				vencedor = iterador;
 			}
@@ -703,12 +706,18 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 		auxiliar_tarea = list_get(tareas,i);
 		tamanio_tareas += strlen(auxiliar_tarea) + 1;
 	}
-	t_segmento_de_memoria* auxiliar;
+	t_segmento_de_memoria* iterador;
+	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
-			auxiliar = list_get(segmentos_memoria,i);
-			if(auxiliar->tamanio_segmento >= tamanio_tareas && auxiliar->libre){
+			iterador = list_get(segmentos_memoria,i);
+			if(iterador->tamanio_segmento >= tamanio_tareas && iterador->libre){
+				auxiliar->inicio_segmento = iterador->inicio_segmento;
+				auxiliar->tamanio_segmento = tamanio_tareas; 
 				auxiliar->libre = false;
+				list_add(segmentos_memoria,auxiliar);
+				iterador->inicio_segmento += tamanio_tareas;
+				iterador->tamanio_segmento -= tamanio_tareas;
 				return auxiliar;
 			}
 		}
@@ -719,6 +728,7 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			auxiliar = list_get(segmentos_memoria,i);
 			if((auxiliar->tamanio_segmento >= tamanio_tareas) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
+				//fix
 				auxiliar->libre = false;
 				vencedor = auxiliar;
 			}
@@ -730,7 +740,7 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 
 t_segmento_de_memoria* buscar_segmento_tcb(){
 	t_segmento_de_memoria* iterador;
-	t_segmento_de_memoria* auxiliar;
+	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	uint32_t size_tcb = sizeof(uint32_t)*5 + sizeof(estado);
 	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
@@ -739,6 +749,8 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 				auxiliar->inicio_segmento = iterador->inicio_segmento;
 				auxiliar->tamanio_segmento = size_tcb; 
 				auxiliar->libre = false;
+				//sema?
+				list_add(segmentos_memoria,auxiliar);
 				iterador->inicio_segmento += size_tcb;
 				iterador->tamanio_segmento -= size_tcb;
 				return auxiliar;

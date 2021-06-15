@@ -1747,3 +1747,127 @@
 [INFO] 00:22:40:928 MI-RAM-HQ/(4397:4397): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
 [INFO] 00:23:02:142 MI-RAM-HQ/(4397:4397): NUEVA CONEXIÓN!
 [INFO] 00:23:02:142 MI-RAM-HQ/(4397:4415): Se creó el hilo correctamente
+[INFO] 23:27:59:186 MI-RAM-HQ/(4230:4230): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 23:55:12:442 MI-RAM-HQ/(4230:4230): NUEVA CONEXIÓN!
+[INFO] 23:55:12:448 MI-RAM-HQ/(4230:6366): Se creó el hilo correctamente
+[INFO] 23:59:20:796 MI-RAM-HQ/(6515:6515): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 23:59:34:269 MI-RAM-HQ/(6515:6515): NUEVA CONEXIÓN!
+[INFO] 23:59:34:270 MI-RAM-HQ/(6515:6584): Se creó el hilo correctamente
+[INFO] 00:00:27:394 MI-RAM-HQ/(6817:6817): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:00:36:642 MI-RAM-HQ/(6817:6817): NUEVA CONEXIÓN!
+[INFO] 00:00:36:642 MI-RAM-HQ/(6817:6855): Se creó el hilo correctamente
+[INFO] 00:01:24:261 MI-RAM-HQ/(6938:6938): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:01:31:741 MI-RAM-HQ/(6938:6938): NUEVA CONEXIÓN!
+[INFO] 00:01:31:742 MI-RAM-HQ/(6938:6977): Se creó el hilo correctamente
+[INFO] 00:04:22:142 MI-RAM-HQ/(7161:7161): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:04:28:268 MI-RAM-HQ/(7161:7161): NUEVA CONEXIÓN!
+[INFO] 00:04:28:269 MI-RAM-HQ/(7161:7199): Se creó el hilo correctamente
+[INFO] 00:06:38:026 MI-RAM-HQ/(7404:7404): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:06:43:345 MI-RAM-HQ/(7404:7404): NUEVA CONEXIÓN!
+[INFO] 00:06:46:888 MI-RAM-HQ/(7404:7421): Se creó el hilo correctamente
+[INFO] 00:07:40:093 MI-RAM-HQ/(7495:7495): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:07:42:410 MI-RAM-HQ/(7495:7495): NUEVA CONEXIÓN!
+[INFO] 00:07:44:957 MI-RAM-HQ/(7495:7509): Se creó el hilo correctamente
+[INFO] 00:08:22:811 MI-RAM-HQ/(7584:7584): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:08:27:443 MI-RAM-HQ/(7584:7584): NUEVA CONEXIÓN!
+[INFO] 00:08:35:862 MI-RAM-HQ/(7584:7594): Se creó el hilo correctamente
+[INFO] 00:13:41:266 MI-RAM-HQ/(7977:7977): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 00:14:31:324 MI-RAM-HQ/(7977:7977): NUEVA CONEXIÓN!
+[INFO] 00:14:31:324 MI-RAM-HQ/(7977:8061): Se creó el hilo correctamente
+[INFO] 22:17:35:399 MI-RAM-HQ/(4914:4914): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:17:45:496 MI-RAM-HQ/(4914:4914): NUEVA CONEXIÓN!
+[INFO] 22:17:45:505 MI-RAM-HQ/(4914:4984): Se creó el hilo correctamente
+[INFO] 22:18:21:847 MI-RAM-HQ/(5017:5017): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:18:27:056 MI-RAM-HQ/(5017:5017): NUEVA CONEXIÓN!
+[INFO] 22:18:27:057 MI-RAM-HQ/(5017:5065): Se creó el hilo correctamente
+[INFO] 22:19:43:417 MI-RAM-HQ/(5384:5384): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:19:48:905 MI-RAM-HQ/(5384:5384): NUEVA CONEXIÓN!
+[INFO] 22:19:48:905 MI-RAM-HQ/(5384:5422): Se creó el hilo correctamente
+[INFO] 22:23:36:988 MI-RAM-HQ/(5623:5623): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:23:41:963 MI-RAM-HQ/(5623:5623): NUEVA CONEXIÓN!
+[INFO] 22:23:41:963 MI-RAM-HQ/(5623:5661): Se creó el hilo correctamente
+[INFO] 22:24:44:310 MI-RAM-HQ/(5623:5661): Encontre un segmento para el PCB de PID: 1 , empieza en: 150159880 
+[INFO] 22:24:44:311 MI-RAM-HQ/(5623:5661): Encontre un segmento para las tareas, empieza en: 150159880 
+[INFO] 22:24:44:311 MI-RAM-HQ/(5623:5661): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 22:24:44:311 MI-RAM-HQ/(5623:5661): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 22:27:07:349 MI-RAM-HQ/(5851:5851): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:27:15:776 MI-RAM-HQ/(5851:5851): NUEVA CONEXIÓN!
+[INFO] 22:27:15:778 MI-RAM-HQ/(5851:5890): Se creó el hilo correctamente
+[INFO] 22:27:46:435 MI-RAM-HQ/(5933:5933): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:27:51:671 MI-RAM-HQ/(5933:5933): NUEVA CONEXIÓN!
+[INFO] 22:27:51:672 MI-RAM-HQ/(5933:5972): Se creó el hilo correctamente
+[INFO] 22:28:11:206 MI-RAM-HQ/(5933:5972): Encontre un segmento para el PCB de PID: 1 , empieza en: 163172872 
+[INFO] 22:28:11:206 MI-RAM-HQ/(5933:5972): Encontre un segmento para las tareas, empieza en: 163172872 
+[INFO] 22:28:11:206 MI-RAM-HQ/(5933:5972): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 22:28:11:206 MI-RAM-HQ/(5933:5972): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 22:35:21:034 MI-RAM-HQ/(6540:6540): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:35:25:261 MI-RAM-HQ/(6540:6540): NUEVA CONEXIÓN!
+[INFO] 22:35:29:921 MI-RAM-HQ/(6540:6556): Se creó el hilo correctamente
+[INFO] 22:36:00:138 MI-RAM-HQ/(6614:6614): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:36:03:583 MI-RAM-HQ/(6614:6614): NUEVA CONEXIÓN!
+[INFO] 22:36:05:452 MI-RAM-HQ/(6614:6626): Se creó el hilo correctamente
+[INFO] 22:38:23:067 MI-RAM-HQ/(6614:6626): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 22:38:23:067 MI-RAM-HQ/(6614:6626): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 22:38:23:067 MI-RAM-HQ/(6614:6626): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 22:38:23:067 MI-RAM-HQ/(6614:6626): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 10:39:28:317 MI-RAM-HQ/(9541:9541): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:39:31:298 MI-RAM-HQ/(9541:9541): NUEVA CONEXIÓN!
+[INFO] 10:39:33:428 MI-RAM-HQ/(9541:9558): Se creó el hilo correctamente
+[INFO] 10:39:56:383 MI-RAM-HQ/(9541:9558): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 10:39:56:383 MI-RAM-HQ/(9541:9558): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 10:39:56:383 MI-RAM-HQ/(9541:9558): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 10:39:56:383 MI-RAM-HQ/(9541:9558): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 10:40:48:379 MI-RAM-HQ/(9683:9683): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:40:50:961 MI-RAM-HQ/(9683:9683): NUEVA CONEXIÓN!
+[INFO] 10:40:54:088 MI-RAM-HQ/(9683:9693): Se creó el hilo correctamente
+[INFO] 10:41:26:962 MI-RAM-HQ/(9683:9693): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 10:41:26:962 MI-RAM-HQ/(9683:9693): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 10:41:26:962 MI-RAM-HQ/(9683:9693): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 10:41:26:962 MI-RAM-HQ/(9683:9693): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 10:41:50:761 MI-RAM-HQ/(9786:9786): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:41:55:231 MI-RAM-HQ/(9786:9786): NUEVA CONEXIÓN!
+[INFO] 10:41:57:394 MI-RAM-HQ/(9786:9803): Se creó el hilo correctamente
+[INFO] 10:43:38:393 MI-RAM-HQ/(9786:9803): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 10:44:05:331 MI-RAM-HQ/(9786:9803): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 10:44:23:128 MI-RAM-HQ/(9786:9803): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 10:44:30:389 MI-RAM-HQ/(9786:9803): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 10:47:50:757 MI-RAM-HQ/(10226:10226): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:47:58:061 MI-RAM-HQ/(10226:10226): NUEVA CONEXIÓN!
+[INFO] 10:48:00:221 MI-RAM-HQ/(10226:10250): Se creó el hilo correctamente
+[INFO] 10:48:24:111 MI-RAM-HQ/(10320:10320): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:48:30:092 MI-RAM-HQ/(10320:10320): NUEVA CONEXIÓN!
+[INFO] 10:48:37:134 MI-RAM-HQ/(10320:10339): Se creó el hilo correctamente
+[INFO] 10:49:25:986 MI-RAM-HQ/(10320:10339): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 10:49:29:526 MI-RAM-HQ/(10320:10339): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 10:50:15:096 MI-RAM-HQ/(10320:10339): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 10:50:17:610 MI-RAM-HQ/(10320:10339): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 10:56:05:510 MI-RAM-HQ/(10580:10580): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 10:57:52:339 MI-RAM-HQ/(10580:10580): NUEVA CONEXIÓN!
+[INFO] 10:57:54:703 MI-RAM-HQ/(10580:10645): Se creó el hilo correctamente
+[INFO] 10:58:52:765 MI-RAM-HQ/(10580:10645): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 10:59:14:891 MI-RAM-HQ/(10580:10645): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 10:59:29:187 MI-RAM-HQ/(10580:10645): No encontre un segmento disponible para el tripulante numero: 1, voy a compactar
+[ERROR] 10:59:29:187 MI-RAM-HQ/(10580:10645): No hay suficiente espacio para almacenar al tripulante numero: 1 , solicitud rechazada
+[INFO] 11:05:22:317 MI-RAM-HQ/(11184:11184): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 11:05:23:981 MI-RAM-HQ/(11184:11184): NUEVA CONEXIÓN!
+[INFO] 11:05:26:393 MI-RAM-HQ/(11184:11193): Se creó el hilo correctamente
+[INFO] 11:06:57:467 MI-RAM-HQ/(11184:11193): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 11:07:35:578 MI-RAM-HQ/(11184:11193): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 11:10:38:083 MI-RAM-HQ/(11184:11193): No encontre un segmento disponible para el tripulante numero: 85, voy a compactar
+[ERROR] 11:10:38:084 MI-RAM-HQ/(11184:11193): No hay suficiente espacio para almacenar al tripulante numero: 85 , solicitud rechazada
+[INFO] 11:10:54:637 MI-RAM-HQ/(11659:11659): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 11:10:56:925 MI-RAM-HQ/(11659:11659): NUEVA CONEXIÓN!
+[INFO] 11:10:58:883 MI-RAM-HQ/(11659:11668): Se creó el hilo correctamente
+[INFO] 11:14:42:613 MI-RAM-HQ/(11961:11961): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 11:16:04:967 MI-RAM-HQ/(12062:12062): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 11:16:36:190 MI-RAM-HQ/(12062:12062): NUEVA CONEXIÓN!
+[INFO] 11:16:38:506 MI-RAM-HQ/(12062:12087): Se creó el hilo correctamente
+[INFO] 11:17:34:386 MI-RAM-HQ/(12062:12087): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 11:17:46:784 MI-RAM-HQ/(12062:12087): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 11:18:23:369 MI-RAM-HQ/(12062:12087): Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria
+[INFO] 11:19:21:548 MI-RAM-HQ/(12251:12251): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 11:19:27:828 MI-RAM-HQ/(12251:12251): NUEVA CONEXIÓN!
+[INFO] 11:19:35:787 MI-RAM-HQ/(12251:12267): Se creó el hilo correctamente
+[INFO] 11:19:41:589 MI-RAM-HQ/(12251:12267): Encontre un segmento para el PCB de PID: 1 , empieza en: 134545928 
+[INFO] 11:19:41:589 MI-RAM-HQ/(12251:12267): Encontre un segmento para las tareas, empieza en: 134545928 
+[INFO] 11:19:41:589 MI-RAM-HQ/(12251:12267): Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria

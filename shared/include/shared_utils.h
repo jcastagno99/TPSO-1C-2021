@@ -206,7 +206,7 @@ void* serializar_operacion_recurso(operacion_recurso recurso_con_cantidad);
 void* pserializar_operacion_recurso(char* recurso, uint32_t cantidad);
 void* serializar_recurso(char* recurso);
 
-void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes*);
+void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes*,uint32_t *);
 
 
 

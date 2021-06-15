@@ -35,6 +35,7 @@ int id_tcb;
 int grado_de_multiprocesamiento;
 int procesadores_disponibles;
 bool planificacion_pausada;
+int conexion_mi_ram_hq;
 
 // Planificacion
 sem_t sem_planificador_a_corto_plazo;
