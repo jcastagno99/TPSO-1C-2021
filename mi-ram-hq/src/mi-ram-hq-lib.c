@@ -276,9 +276,6 @@ void crear_estructuras_administrativas()
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
 
-
-
-//Falta hacer la funcion de compactacion
 //Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
 
 respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes)
@@ -476,23 +473,12 @@ respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
 	
 	return RESPUESTA_OK;
 }
+
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante tripulante)
 {
 	return RESPUESTA_OK;
 }
-respuesta_ok_fail iniciar_tripulante(nuevo_tripulante tripulante)
-{
-	respuesta_ok_fail respuesta;
-	//TODO
-	respuesta = RESPUESTA_FAIL;
-	return respuesta;
-}
-respuesta_ok_fail actualizar_ubicacion(tripulante_y_posicion tripulante_con_posicion)
-{
-	respuesta_ok_fail respuesta;
-	//TODO
-	return respuesta;
-}
+
 respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripulante_con_posicion){
 	respuesta_ok_fail respuesta;
 	t_tabla_de_segmento* auxiliar_patota;
@@ -534,11 +520,8 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	//TODO
 	return respuesta;
 }
-tarea obtener_proxima_tarea(uint32_t tripulante_pid)
-{
-	tarea proxima_tarea;
-	return proxima_tarea;
-}
+
+
 tarea obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
 {
 	tarea proxima_tarea;
@@ -557,61 +540,48 @@ tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid)
 	return proxima_tarea;
 }
 
-respuesta_ok_fail expulsar_tripulante(uint32_t tripulante_pid)
-{
-	respuesta_ok_fail respuesta;
-	//TODO
-	return respuesta;
-}
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
 {
 	respuesta_ok_fail respuesta;
 	//TODO
 	return respuesta;
 }
+
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tripulante_pid)
 {
 	respuesta_ok_fail respuesta;
 	//TODO
 	return respuesta;
 }
-estado obtener_estado(uint32_t tripulante_pid)
-{
-	estado estado_obtenido;
-	//TODO
-	return estado_obtenido;
-}
+
+
 estado obtener_estado_paginacion(uint32_t tripulante_pid)
 {
 	estado estado_obtenido;
 	//TODO
 	return estado_obtenido;
 }
+
 estado obtener_estado_segmentacion(uint32_t tripulante_pid)
 {
 	estado estado_obtenido;
 	//TODO
 	return estado_obtenido;
 }
-posicion obtener_ubicacion(uint32_t tripulante_pid)
-{
-	posicion ubicacion_obtenida;
-	//TODO
-	return ubicacion_obtenida;
-}
+
 posicion obtener_ubicacion_paginacion(uint32_t tripulante_pid)
 {
 	posicion ubicacion_obtenida;
 	//TODO
 	return ubicacion_obtenida;
 }
+
 posicion obtener_ubicacion_segmentacion(uint32_t tripulante_pid)
 {
 	posicion ubicacion_obtenida;
 	//TODO
 	return ubicacion_obtenida;
 }
-
 
 //-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
 
@@ -817,20 +787,40 @@ void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint
 
 //-------------------------------------------------------------------------FUNCION DE COMPACTACION-----------------------------------------------------
 
+
 void compactar_memoria(){
+	//TODO: ORDENAR LISTA DE SEGMENTOS POR DIRECCIONES
+	list_sort(segmentos_memoria,ordenar_direcciones_de_memoria); // No se si esta bien usada la funcion, lo voy a preguntar en soporte pero dejo la idea
+	//-----------------------------------------------
+	t_list* lista_de_ocupados;
 	t_segmento_de_memoria* auxiliar;
-	t_segmento_de_memoria* auxiliar_siguiente;
-	for(int i=0; i<segmentos_memoria->elements_count; i++){ //Mejora : buscar un centinela para saber cuando no se debe compactar mas
-
+	for(int i=0; i<segmentos_memoria->elements_count; i++){
 		auxiliar = list_get(segmentos_memoria,i);
-		auxiliar_siguiente = list_get(segmentos_memoria,i+1);
-
-		if(auxiliar->libre && !(auxiliar_siguiente->libre)){
-			memcpy(auxiliar->inicio_segmento,auxiliar_siguiente->inicio_segmento,auxiliar_siguiente->tamanio_segmento);
-			auxiliar_siguiente->inicio_segmento = auxiliar->inicio_segmento;
-			auxiliar->inicio_segmento = abs(auxiliar->inicio_segmento - auxiliar_siguiente->inicio_segmento);
-			//El tamanio de auxiliar se mantiene
+		if(!auxiliar->libre){
+			list_add(lista_de_ocupados,auxiliar);
 		}
-	}	
+	}
+	int offset = 0;
+	void* inicio_segmento_libre;
+	uint32_t tamanio_acumulado;
+	uint32_t tamanio_segmento_libre;
+	for(int i=0; i<lista_de_ocupados->elements_count; i++){
+		auxiliar = list_get(lista_de_ocupados,i);
+		memcpy(memoria_principal + offset, auxiliar->inicio_segmento, auxiliar->tamanio_segmento);
+		tamanio_acumulado += auxiliar->tamanio_segmento;
+		offset += auxiliar->tamanio_segmento + 1;
+		if(auxiliar = list_get(lista_de_ocupados,i+1) == NULL){
+			inicio_segmento_libre = auxiliar->inicio_segmento + auxiliar->tamanio_segmento; // Si rompe, castear el inicio de auxiliar como uint32_t
+			tamanio_segmento_libre = mi_ram_hq_configuracion->TAMANIO_MEMORIA - tamanio_acumulado + 1; //No se si va el +1
+		}
+	}
+	t_segmento_de_memoria* segmento_libre = malloc(sizeof(t_segmento_de_memoria));
+	segmento_libre->inicio_segmento = inicio_segmento_libre;
+	segmento_libre->tamanio_segmento = tamanio_segmento_libre;
+	list_add(lista_de_ocupados,segmento_libre); // Al final de la ordenada le agrego el segmento libre
+	segmentos_memoria = lista_de_ocupados; // Actualizamos la lista de segmentos global con la nueva que ya esta ordenada
+}
 
+int ordenar_direcciones_de_memoria(t_segmento_de_memoria* segmento1, t_segmento_de_memoria* segmento2){
+	return segmento1->inicio_segmento < segmento2->inicio_segmento;
 }

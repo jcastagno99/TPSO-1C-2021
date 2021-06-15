@@ -121,6 +121,9 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
 estado obtener_estado_paginacion(uint32_t);
 posicion obtener_ubicacion_paginacion(uint32_t);
 
+void compactar_memoria();
+int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
+
 #endif /* MI_RAM_HQ_LIB_H */
 
 
