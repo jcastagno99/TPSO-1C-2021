@@ -53,34 +53,13 @@ void inicializar_discordiador()
 
 
 	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-
-
-	//puerto de escucha para los sabotajes
-	char *puerto_escucha_sabotaje = config_get_string_value(config, "PUERTO_ESCUCHA_SABOTAJE");
-	char *retardo = config_get_string_value(config, "RETARDO_CICLO_CPU");
-
-	int puerto = atoi(puerto_escucha_sabotaje);
-	tiempo_retardo_ciclo_cpu = atoi(retardo);
-
 	//pthread_t hilo_server;
 	//pthread_create(&hilo_server, NULL, esperar_conexiones, &puerto);
-
-	// HILO CREACION PATOTAS ---------------------------------------------
-	pthread_t hilo_creacion_patota;
-	pthread_create(&hilo_creacion_patota, NULL, gestion_patotas_a_memoria, (void *)logger);
 
 	// HILO CONSOLA ------------------------------------------------------
 	pthread_t hilo_consola;
 	pthread_create(&hilo_consola, NULL, (void *)leer_consola, (void *)logger);
-
-	//Hilo ejecutando planificador a corto plazo  -------------------------
-	pthread_t hilo_planificador_a_corto_plazo;
-	pthread_create(&hilo_planificador_a_corto_plazo, NULL, planificador_a_corto_plazo, NULL);
-
-	//Hilo ejecutando planificador a largo plazo  -------------------------
-	pthread_t hilo_planificador_a_largo_plazo;
-	pthread_create(&hilo_planificador_a_largo_plazo, NULL, (void *)planificador_a_largo_plazo, NULL);
-
+	
 	pthread_join(hilo_consola, NULL);
 }
 

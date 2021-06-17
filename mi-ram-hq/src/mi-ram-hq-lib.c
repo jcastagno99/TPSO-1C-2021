@@ -1,5 +1,7 @@
 #include "mi-ram-hq-lib.h"
 #include <stdlib.h>
+void funcion_test_memoria(uint32_t);
+
 
 mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 {
@@ -87,163 +89,175 @@ void crear_hilo_para_manejar_suscripciones(t_list *lista_hilos, int socket)
 	pthread_t hilo_conectado;
 	pthread_create(&hilo_conectado, NULL, (void *)manejar_suscripciones_mi_ram_hq, socket_hilo);
 	list_add(lista_hilos, &hilo_conectado);
+
 }
 
 void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 {
 	log_info(logger_ram_hq, "Se creó el hilo correctamente");
-	t_paquete *paquete = recibir_paquete(*socket_hilo);
-	if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
-	{
-		switch (paquete->codigo_operacion)
+	//sacar este while 1 que lo hice por como esta la comunicacion ahora.
+	// cuando discord lo haga de a 1 mensaje x socket lo saco
+	while (1){
+
+		t_paquete *paquete = recibir_paquete(*socket_hilo);
+		if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 		{
-		case INICIAR_PATOTA:
+			switch (paquete->codigo_operacion)
+			{
+			case INICIAR_PATOTA:
+			{
+				pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+				//Llega bien el mensaje
+				//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
+				respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case INICIAR_TRIPULANTE:
+			{
+				nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
+				respuesta_ok_fail resultado = iniciar_tripulante_segmentacion(nuevo_tripulante);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case ACTUALIZAR_UBICACION:
+			{
+				tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
+				respuesta_ok_fail resultado = actualizar_ubicacion_segmentacion(tripulante_y_posicion);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case OBTENER_PROXIMA_TAREA:
+			{
+				uint32_t tripulante_tid = deserializar_tid(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+				tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+				void *respuesta = serializar_tarea(proxima_tarea);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
+				break;
+			}
+			case EXPULSAR_TRIPULANTE:
+			{
+				uint32_t tripulante_tid = deserializar_tid(paquete->stream);
+				funcion_test_memoria(tripulante_tid);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+				respuesta_ok_fail resultado = expulsar_tripulante_segmentacion(tripulante_tid);
+				log_info(logger_ram_hq,"Llego el mensaje expulsar tripulante %i",tripulante_tid);
+				//obtener_todos_los_datos(); // buscar el pid que tenga esto. Instanciar todo
+				
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case OBTENER_ESTADO:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				estado estado = obtener_estado_segmentacion(tripulante_pid);
+				void *respuesta = serializar_estado(estado);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
+				break;
+			}
+			case OBTENER_UBICACION:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
+				posicion posicion = obtener_ubicacion_segmentacion(tripulante_pid);
+				void *respuesta = serializar_posicion(posicion);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
+				break;
+			}
+			default:
+			{
+				log_error(logger_ram_hq, "El codigo de operacion es invalido");
+				break;
+			}
+			}
+		}
+		else if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 		{
-			pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
-			//Llega bien el mensaje
-			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
-			respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
-			break;
+			//TODO: Mismo handler pero con las funciones que utilizan el esquema de memoria de PAGINACION
+			switch (paquete->codigo_operacion)
+			{
+			case INICIAR_PATOTA:
+			{
+				pid_con_tareas patota_con_tareas = deserializar_pid_con_tareas(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
+				respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case INICIAR_TRIPULANTE:
+			{
+				nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
+				respuesta_ok_fail resultado = iniciar_tripulante_paginacion(nuevo_tripulante);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case ACTUALIZAR_UBICACION:
+			{
+				tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
+				respuesta_ok_fail resultado = actualizar_ubicacion_paginacion(tripulante_y_posicion);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case OBTENER_PROXIMA_TAREA:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+				tarea proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+				void *respuesta = serializar_tarea(proxima_tarea);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
+				break;
+			}
+			case EXPULSAR_TRIPULANTE:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
+				respuesta_ok_fail resultado = expulsar_tripulante_paginacion(tripulante_pid);
+				void *respuesta = serializar_respuesta_ok_fail(resultado);
+				enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
+				break;
+			}
+			case OBTENER_ESTADO:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				estado estado = obtener_estado_paginacion(tripulante_pid);
+				void *respuesta = serializar_estado(estado);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
+				break;
+			}
+			case OBTENER_UBICACION:
+			{
+				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
+				posicion posicion = obtener_ubicacion_paginacion(tripulante_pid);
+				void *respuesta = serializar_posicion(posicion);
+				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
+				break;
+			}
+			default:
+			{
+				log_error(logger_ram_hq, "El codigo de operacion es invalido");
+				break;
+			}
+			}
 		}
-		case INICIAR_TRIPULANTE:
-		{
-			nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
-			respuesta_ok_fail resultado = iniciar_tripulante_segmentacion(nuevo_tripulante);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case ACTUALIZAR_UBICACION:
-		{
-			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
-			respuesta_ok_fail resultado = actualizar_ubicacion_segmentacion(tripulante_y_posicion);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case OBTENER_PROXIMA_TAREA:
-		{
-			uint32_t tripulante_tid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
-			void *respuesta = serializar_tarea(proxima_tarea);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
-			break;
-		}
-		case EXPULSAR_TRIPULANTE:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			respuesta_ok_fail resultado = expulsar_tripulante_segmentacion(tripulante_pid);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
-		}
-		case OBTENER_ESTADO:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			estado estado = obtener_estado_segmentacion(tripulante_pid);
-			void *respuesta = serializar_estado(estado);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
-			break;
-		}
-		case OBTENER_UBICACION:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
-			posicion posicion = obtener_ubicacion_segmentacion(tripulante_pid);
-			void *respuesta = serializar_posicion(posicion);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
-			break;
-		}
-		default:
-		{
-			log_error(logger_ram_hq, "El codigo de operacion es invalido");
-			break;
-		}
-		}
+		liberar_paquete(paquete);
 	}
-	else if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
-	{
-		//TODO: Mismo handler pero con las funciones que utilizan el esquema de memoria de PAGINACION
-		switch (paquete->codigo_operacion)
-		{
-		case INICIAR_PATOTA:
-		{
-			pid_con_tareas patota_con_tareas = deserializar_pid_con_tareas(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
-			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case INICIAR_TRIPULANTE:
-		{
-			nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
-			respuesta_ok_fail resultado = iniciar_tripulante_paginacion(nuevo_tripulante);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case ACTUALIZAR_UBICACION:
-		{
-			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
-			respuesta_ok_fail resultado = actualizar_ubicacion_paginacion(tripulante_y_posicion);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case OBTENER_PROXIMA_TAREA:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			tarea proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
-			void *respuesta = serializar_tarea(proxima_tarea);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
-			break;
-		}
-		case EXPULSAR_TRIPULANTE:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			respuesta_ok_fail resultado = expulsar_tripulante_paginacion(tripulante_pid);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
-		}
-		case OBTENER_ESTADO:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			estado estado = obtener_estado_paginacion(tripulante_pid);
-			void *respuesta = serializar_estado(estado);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
-			break;
-		}
-		case OBTENER_UBICACION:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
-			posicion posicion = obtener_ubicacion_paginacion(tripulante_pid);
-			void *respuesta = serializar_posicion(posicion);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
-			break;
-		}
-		default:
-		{
-			log_error(logger_ram_hq, "El codigo de operacion es invalido");
-			break;
-		}
-		}
-	}
-	liberar_paquete(paquete);
 	close(*socket_hilo);
 	free(socket_hilo);
-
-	return NULL;
+	
+	return;
 }
 
 void crear_estructuras_administrativas()
@@ -388,17 +402,18 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patot
 				segmentos_memoria = bakcup_lista_memoria;
 				return RESPUESTA_FAIL;
 			}
-			log_info(logger_ram_hq,"Encontre un segmento para el tripulante numero: %i , empieza en: %i ",i+1,(int) segmento_a_usar_pcb->inicio_segmento);
-			t_segmento* segmento_tripulante = malloc(sizeof(t_segmento));
-			segmento_tripulante->base = segmento_a_usar_tripulante->inicio_segmento;
-			segmento_tripulante->tamanio = segmento_a_usar_tripulante->tamanio_segmento;
-			segmento_tripulante->numero_segmento = numero_segmento_global;
-			numero_segmento_global++;
-			segmento_tripulante->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-			pthread_mutex_init(segmento_tripulante->mutex_segmento,NULL);
-			list_add(patota->segmentos_tripulantes,segmento_tripulante);
-			//cargar_tcb_en_segmento(list_get(patota_con_tareas_y_tripulantes.tripulantes,i),segmento_tripulante);
 		}	
+		log_info(logger_ram_hq,"Encontre un segmento para el tripulante numero: %i , empieza en: %i ",i+1,(int) segmento_a_usar_tripulante->inicio_segmento);
+		t_segmento* segmento_tripulante = malloc(sizeof(t_segmento));
+		segmento_tripulante->base = segmento_a_usar_tripulante->inicio_segmento;
+		segmento_tripulante->tamanio = segmento_a_usar_tripulante->tamanio_segmento;
+		segmento_tripulante->numero_segmento = numero_segmento_global;
+		numero_segmento_global++;
+		segmento_tripulante->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(segmento_tripulante->mutex_segmento,NULL);
+		list_add(patota->segmentos_tripulantes,segmento_tripulante);
+		
+		cargar_tcb_sinPid_en_segmento((nuevo_tripulante_sin_pid*)list_get(patota_con_tareas_y_tripulantes.tripulantes,i),patota->segmento_pcb,segmento_tripulante);
 
 	}
 
@@ -409,6 +424,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patot
 	//Los semaforos se toman dentro de las funciones:
 	cargar_pcb_en_segmento(patota_con_tareas_y_tripulantes.pid,direccion_logica_tareas,segmento_pcb);
 	cargar_tareas_en_segmento(patota_con_tareas_y_tripulantes.tareas,segmento_tarea);
+	
 	pthread_mutex_unlock(&mutex_memoria);
 	list_destroy_and_destroy_elements(bakcup_lista_memoria,free);
 	return RESPUESTA_OK;
@@ -549,7 +565,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
 
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tripulante_pid)
 {
-	respuesta_ok_fail respuesta;
+	respuesta_ok_fail respuesta = RESPUESTA_OK;
 	//TODO
 	return respuesta;
 }
@@ -765,7 +781,7 @@ void cargar_tareas_en_segmento(t_list* tareas, t_segmento* segmento){
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
 void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint32_t pos_y,uint32_t direccion_tarea,uint32_t direccion_patota,t_segmento* segmento){
-//void cargar_tcb_en_segmento(nuevo_tripulante tripulante, segmento){0
+//void cargar_tcb_en_segmento(nuevo_tripulante_sin_pid tripulante, segmento){
 	pthread_mutex_lock(segmento->mutex_segmento);
 	
 	int offset = 0;
@@ -780,6 +796,28 @@ void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint
 	memcpy(segmento->base + offset, &direccion_tarea, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->base + offset, &direccion_patota, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	
+	pthread_mutex_unlock(segmento->mutex_segmento);
+}
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmento* patota, t_segmento* segmento){
+	pthread_mutex_lock(segmento->mutex_segmento);
+	
+	uint32_t cero = 0;
+	estado est = NEW;
+
+	int offset = 0;
+	memcpy(segmento->base + offset, & (tripulante->tid), sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &est, sizeof(estado));
+	offset = offset + sizeof(estado);
+	memcpy(segmento->base + offset, & (tripulante->pos_x), sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, & (tripulante->pos_y), sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &cero, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(segmento->base + offset, &patota, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	
 	pthread_mutex_unlock(segmento->mutex_segmento);
@@ -823,4 +861,11 @@ void compactar_memoria(){
 
 int ordenar_direcciones_de_memoria(t_segmento_de_memoria* segmento1, t_segmento_de_memoria* segmento2){
 	return segmento1->inicio_segmento < segmento2->inicio_segmento;
+}
+
+void funcion_test_memoria( uint32_t tid){
+	t_tabla_de_segmento* patota = buscar_patota_con_tid(tid);
+	// recorrer lista de patotas
+		//recorrer tareas de la patota
+		//recorrer tripulantes de la patota
 }

@@ -185,15 +185,13 @@ void iniciar_patota_global(char **str_split)
     //VER SI ACTUALIZA SIZE_PAQUETE
     void *info = serializar_pid_con_tareas_y_tripulantes(patota_full,&size_paquete); 
     
-
+    //socket = crear_conexion()
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
     
-    /*
-    //envio el paquete
-    enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
-
     //recibo respuesta
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    //cerrar conexion
+    
     if (paquete_recibido->codigo_operacion == RESPUESTA_INICIAR_PATOTA){
         printf("Recibi opcode de respuesta okfail\n");
         //desserializo la respuesta
@@ -206,7 +204,7 @@ void iniciar_patota_global(char **str_split)
             //limpiar todo lo del envio
             //list_destroy_and_destroy_elements(lista_tareas, (void*) tarea_destroy); de la global 
             // CREAR UNA PARA DESTRUIRLA 
-            iniciar_patota_local(str_split);
+           // iniciar_patota_local(str_split);
 
         }
         else if (respuesta == RESPUESTA_FAIL)
@@ -220,7 +218,6 @@ void iniciar_patota_global(char **str_split)
     else
         printf("Recibi opcode de respuesta INVALIDO\n");
 
-    */
 }
 
 

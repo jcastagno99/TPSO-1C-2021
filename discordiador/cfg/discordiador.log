@@ -18194,3 +18194,123 @@
 [INFO] 11:19:47:684 discordiador.log/(12266:12269): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
 [INFO] 11:19:47:684 discordiador.log/(12266:12269): INICIANDO PATOTA
 [INFO] 11:19:47:684 discordiador.log/(12266:12268): Procesando la patota con 5
+[INFO] 19:06:37:683 discordiador.log/(4545:4546): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 19:07:27:475 discordiador.log/(4638:4640): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 19:07:27:476 discordiador.log/(4638:4640): INICIANDO PATOTA
+[INFO] 19:08:36:191 discordiador.log/(4638:4640): EXPULSAR_TRIPULANTE 2
+[INFO] 19:09:20:380 discordiador.log/(4815:4822): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 19:09:24:859 discordiador.log/(4815:4822): INICIANDO PATOTA
+[INFO] 19:09:57:801 discordiador.log/(4815:4822): EXPULSAR_TRIPULANTE 2
+[INFO] 19:12:47:195 discordiador.log/(4982:4988): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 19:12:50:502 discordiador.log/(4982:4988): INICIANDO PATOTA
+[INFO] 19:13:12:190 discordiador.log/(4982:4988): EXPULSAR_TRIPULANTE 2
+[INFO] 19:19:00:024 discordiador.log/(5210:5216): EXPULSAR_TRIPULANTE 2
+[INFO] 19:19:59:666 discordiador.log/(5210:5216): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 19:20:08:434 discordiador.log/(5210:5216): INICIANDO PATOTA
+[INFO] 19:21:50:633 discordiador.log/(5210:5216): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 19:21:55:921 discordiador.log/(5210:5216): INICIANDO PATOTA
+[INFO] 15:54:46:321 discordiador.log/(4508:4509): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:54:56:077 discordiador.log/(4535:4536): EXPULSAR_TRIPULANTE 3
+[INFO] 15:56:26:202 discordiador.log/(4535:4536): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:56:53:070 discordiador.log/(4675:4677): EXPULSAR_TRIPULANTE 3
+[INFO] 15:58:59:179 discordiador.log/(4825:4827): EXPULSAR_TRIPULANTE 2
+[INFO] 16:05:30:010 discordiador.log/(4825:4827): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:05:39:913 discordiador.log/(5296:5298): EXPULSAR_TRIPULANTE 3
+[INFO] 16:07:19:040 discordiador.log/(5296:5298): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:07:27:072 discordiador.log/(5444:5446): EXPULSAR_TRIPULANTE 3
+[INFO] 16:08:58:375 discordiador.log/(5444:5446): EXPULSAR_TRIPULANTE 3
+[INFO] 16:10:53:798 discordiador.log/(5617:5619): EXPULSAR_TRIPULANTE 5
+[INFO] 16:12:36:952 discordiador.log/(5617:5619): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:12:48:071 discordiador.log/(5775:5777): EXPULSAR_TRIPULANTE 5
+[INFO] 16:14:13:359 discordiador.log/(5775:5777): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:14:31:425 discordiador.log/(5941:5943): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:14:46:378 discordiador.log/(5994:5996): EXPULSAR_TRIPULANTE 5
+[INFO] 16:16:48:308 discordiador.log/(5994:5996): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:16:53:718 discordiador.log/(6141:6142): EXPULSAR_TRIPULANTE 5
+[INFO] 16:22:39:965 discordiador.log/(6141:6142): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:23:06:251 discordiador.log/(6491:6492): EXPULSAR_TRIPULANTE 3
+[INFO] 16:23:57:313 discordiador.log/(6491:6492): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:24:18:972 discordiador.log/(6772:6773): EXPULSAR_TRIPULANTE 3
+[INFO] 16:27:32:079 discordiador.log/(6772:6773): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 16:27:50:618 discordiador.log/(6940:6941): EXPULSAR_TRIPULANTE 7
+[INFO] 16:28:07:825 discordiador.log/(6940:6941): EXPULSAR_TRIPULANTE 7
+[INFO] 16:50:33:219 discordiador.log/(7755:7756): EXPULSAR_TRIPULANTE 7
+[INFO] 16:51:07:090 discordiador.log/(7755:7756): EXPULSAR_TRIPULANTE 7
+[INFO] 16:54:14:957 discordiador.log/(8125:8141): EXPULSAR_TRIPULANTE 5
+[INFO] 16:55:10:970 discordiador.log/(8125:8141): EXPULSAR_TRIPULANTE 5
+[INFO] 16:57:36:233 discordiador.log/(8280:8296): EXPULSAR_TRIPULANTE 5
+[INFO] 16:57:44:032 discordiador.log/(8280:8296): EXPULSAR_TRIPULANTE 5
+[INFO] 12:51:48:400 discordiador.log/(3477:3479): EXPULSAR_TRIPULANTE 3
+[INFO] 12:51:53:681 discordiador.log/(3477:3479): EXPULSAR_TRIPULANTE 3
+[INFO] 12:52:24:935 discordiador.log/(3584:3612): EXPULSAR_TRIPULANTE 
+[INFO] 12:52:41:708 discordiador.log/(3584:3612): EXPULSAR_TRIPULANTE 5
+[INFO] 12:52:53:356 discordiador.log/(3584:3612): EXPULSAR_TRIPULANTE 5
+[INFO] 12:53:51:218 discordiador.log/(3756:3784): EXPULSAR_TRIPULANTE 5
+[INFO] 12:53:57:321 discordiador.log/(3756:3784): EXPULSAR_TRIPULANTE 5
+[INFO] 13:53:18:694 discordiador.log/(6308:6338): EXPULSAR_TRIPULANTE 5
+[INFO] 13:53:24:336 discordiador.log/(6308:6338): EXPULSAR_TRIPULANTE 5
+[INFO] 13:57:13:132 discordiador.log/(6739:6740): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 13:57:48:595 discordiador.log/(6744:6745): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 13:59:09:077 discordiador.log/(6803:6804): EXPULSAR_TRIPULANTE 5
+[INFO] 14:03:13:308 discordiador.log/(6803:6804): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:03:50:401 discordiador.log/(7219:7239): EXPULSAR_TRIPULANTE 5
+[INFO] 14:04:24:213 discordiador.log/(7219:7239): EXPULSAR_TRIPULANTE 5
+[INFO] 14:06:42:977 discordiador.log/(7567:7589): EXPULSAR_TRIPULANTE 5
+[INFO] 14:07:07:038 discordiador.log/(7567:7589): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:07:10:916 discordiador.log/(7567:7589): INICIANDO PATOTA
+[INFO] 14:08:42:650 discordiador.log/(7736:7737): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:10:37:861 discordiador.log/(7786:7787): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:17:15:940 discordiador.log/(7913:7914): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:17:15:940 discordiador.log/(7913:7914): INICIANDO PATOTA
+[INFO] 14:18:03:098 discordiador.log/(7913:7914): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:18:16:863 discordiador.log/(8411:8412): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:18:57:876 discordiador.log/(8495:8496): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:18:57:876 discordiador.log/(8495:8496): INICIANDO PATOTA
+[INFO] 14:19:26:054 discordiador.log/(8495:8496): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:19:34:520 discordiador.log/(8580:8581): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:19:34:520 discordiador.log/(8580:8581): INICIANDO PATOTA
+[INFO] 14:20:20:146 discordiador.log/(8580:8581): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:20:40:960 discordiador.log/(8722:8723): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:20:40:961 discordiador.log/(8722:8723): INICIANDO PATOTA
+[INFO] 14:20:57:531 discordiador.log/(8722:8723): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:21:07:285 discordiador.log/(8771:8773): EXPULSAR_TRIPULANTE 5
+[INFO] 14:21:18:690 discordiador.log/(8771:8773): EXPULSAR_TRIPULANTE 5
+[INFO] 14:23:20:468 discordiador.log/(9676:9677): EXPULSAR_TRIPULANTE 5
+[INFO] 14:24:09:291 discordiador.log/(9676:9677): EXPULSAR_TRIPULANTE 5
+[INFO] 14:24:33:745 discordiador.log/(9760:9761): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:32:491 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:43:921 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:45:193 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:45:700 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:46:295 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:34:46:667 discordiador.log/(10462:10464): EXPULSAR_TRIPULANTE 5
+[INFO] 14:35:03:208 discordiador.log/(10462:10464): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:35:03:209 discordiador.log/(10462:10464): INICIANDO PATOTA
+[INFO] 14:36:08:866 discordiador.log/(10553:10554): EXPULSAR_TRIPULANTE 5
+[INFO] 14:36:20:464 discordiador.log/(10553:10554): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:36:20:465 discordiador.log/(10553:10554): INICIANDO PATOTA
+[INFO] 14:36:32:833 discordiador.log/(10553:10554): EXPULSAR_TRIPULANTE 5
+[INFO] 14:40:35:745 discordiador.log/(10553:10554): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:41:00:840 discordiador.log/(10933:10935): EXPULSAR_TRIPULANTE 3
+[INFO] 14:41:05:431 discordiador.log/(10933:10935): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:41:05:431 discordiador.log/(10933:10935): INICIANDO PATOTA
+[INFO] 14:41:25:675 discordiador.log/(10933:10935): EXPULSAR_TRIPULANTE 3
+[INFO] 14:41:26:731 discordiador.log/(10933:10935): EXPULSAR_TRIPULANTE 3
+[INFO] 14:41:28:690 discordiador.log/(10933:10935): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:41:28:690 discordiador.log/(10933:10935): INICIANDO PATOTA
+[INFO] 14:53:52:191 discordiador.log/(11572:11574): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:53:52:191 discordiador.log/(11572:11574): INICIANDO PATOTA
+[INFO] 14:54:17:012 discordiador.log/(11572:11574): EXPULSAR_TRIPULANTE 2
+[INFO] 14:58:24:392 discordiador.log/(11919:11921): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 14:58:24:392 discordiador.log/(11919:11921): INICIANDO PATOTA
+[INFO] 14:58:36:527 discordiador.log/(11919:11921): EXPULSAR_TRIPULANTE 2
+[INFO] 14:59:23:324 discordiador.log/(11919:11921): EXPULSAR_TRIPULANTE 2
+[INFO] 15:04:00:771 discordiador.log/(11919:11921): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:04:09:703 discordiador.log/(12401:12403): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 15:04:09:703 discordiador.log/(12401:12403): INICIANDO PATOTA
+[INFO] 15:04:35:406 discordiador.log/(12401:12403): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:06:43:093 discordiador.log/(12500:12502): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 15:06:43:093 discordiador.log/(12500:12502): INICIANDO PATOTA
+[INFO] 15:42:53:921 discordiador.log/(14321:14322): INICIAR_PATOTA 5 src/prueba.txt 1|1 3|4
+[INFO] 15:42:53:921 discordiador.log/(14321:14322): INICIANDO PATOTA
+[INFO] 15:43:22:769 discordiador.log/(14321:14322): EXPULSAR_TRIPULANTE 3

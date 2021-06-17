@@ -124,6 +124,8 @@ posicion obtener_ubicacion_paginacion(uint32_t);
 void compactar_memoria();
 int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
 
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, t_segmento*);
+
 #endif /* MI_RAM_HQ_LIB_H */
 
 

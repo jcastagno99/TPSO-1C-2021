@@ -52,12 +52,19 @@ void* pserializar_respuesta_ok_fail(char caracter){
 	}
 }
 
+
 void* serializar_respuesta_ok_fail(respuesta_ok_fail resultado){
 	int offset = 0;
 	void* stream = malloc(sizeof(respuesta_ok_fail));
 	memcpy(stream+offset,&resultado, sizeof(respuesta_ok_fail));
 	offset+=sizeof(respuesta_ok_fail);
 	return stream;
+}
+
+void* pserializar_tid(uint32_t tid){
+	void* stream = malloc(sizeof(uint32_t));
+	memcpy(stream,&tid,sizeof(uint32_t));
+	return stream;	
 }
 
 void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
@@ -577,6 +584,12 @@ uint32_t deserializar_pid(void* stream){
 	memcpy(&pid,stream,sizeof(uint32_t));
 	return pid;
 }
+uint32_t deserializar_tid(void* stream){
+	uint32_t tid;// = malloc(sizeof(uint32_t)); [IGUAL QUE ABAJO, el malloc devuelve un puntero pero no estas declarando un puntero]
+	memcpy(&tid,stream,sizeof(uint32_t));
+	return tid;
+}
+
 
 estado deserializar_estado(void* stream){
 	estado estadoRta;
