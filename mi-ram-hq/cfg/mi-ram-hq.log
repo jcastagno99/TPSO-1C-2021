@@ -13276,3 +13276,49 @@
 [INFO] 15:43:30:325 MI-RAM-HQ/(14304:14323): Buscando la patota a partir del tid 3
 [INFO] 15:44:23:781 MI-RAM-HQ/(14304:14323): Patota correspondiente al tid = 3 encontrada
 [INFO] 15:44:40:695 MI-RAM-HQ/(14304:14323): Llego el mensaje expulsar tripulante 3
+[INFO] 21:37:56:191 MI-RAM-HQ/(4849:4849): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:38:10:456 MI-RAM-HQ/(4849:4849): NUEVA CONEXIÓN!
+[INFO] 21:38:10:471 MI-RAM-HQ/(4849:4883): Se creó el hilo correctamente
+[INFO] 21:38:39:579 MI-RAM-HQ/(4849:4883): Encontre un segmento para el PCB de PID: 1 , empieza en: 134550024 
+[INFO] 21:38:39:579 MI-RAM-HQ/(4849:4883): Encontre un segmento para las tareas, empieza en: 134550024 
+[INFO] 21:38:39:579 MI-RAM-HQ/(4849:4883): Encontre un segmento para el tripulante numero: 1 , empieza en: 134550056 
+[INFO] 21:38:39:581 MI-RAM-HQ/(4849:4883): Encontre un segmento para el tripulante numero: 2 , empieza en: 134550080 
+[INFO] 21:38:39:582 MI-RAM-HQ/(4849:4883): Encontre un segmento para el tripulante numero: 3 , empieza en: 134550104 
+[INFO] 21:38:39:582 MI-RAM-HQ/(4849:4883): Encontre un segmento para el tripulante numero: 4 , empieza en: 134550128 
+[INFO] 21:38:39:582 MI-RAM-HQ/(4849:4883): Encontre un segmento para el tripulante numero: 5 , empieza en: 134550152 
+[INFO] 21:38:39:582 MI-RAM-HQ/(4849:4883): Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria
+[INFO] 21:39:57:404 MI-RAM-HQ/(5000:5000): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:40:04:940 MI-RAM-HQ/(5000:5000): NUEVA CONEXIÓN!
+[INFO] 21:40:04:962 MI-RAM-HQ/(5000:5019): Se creó el hilo correctamente
+[INFO] 21:40:11:764 MI-RAM-HQ/(5000:5019): Encontre un segmento para el PCB de PID: 1 , empieza en: 134550024 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para las tareas, empieza en: 134550024 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para el tripulante numero: 1 , empieza en: 134550056 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para el tripulante numero: 2 , empieza en: 134550080 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para el tripulante numero: 3 , empieza en: 134550104 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para el tripulante numero: 4 , empieza en: 134550128 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Encontre un segmento para el tripulante numero: 5 , empieza en: 134550152 
+[INFO] 21:40:11:765 MI-RAM-HQ/(5000:5019): Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria
+[INFO] 21:45:21:153 MI-RAM-HQ/(5000:5019): Llego el mensaje expulsar tripulante 2
+[INFO] 21:46:17:740 MI-RAM-HQ/(5187:5187): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:46:57:110 MI-RAM-HQ/(5265:5265): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:47:04:346 MI-RAM-HQ/(5265:5265): NUEVA CONEXIÓN!
+[INFO] 21:47:04:381 MI-RAM-HQ/(5265:5282): Se creó el hilo correctamente
+[INFO] 21:47:10:128 MI-RAM-HQ/(5265:5282): Encontre un segmento para el PCB de PID: 1 , empieza en: 134550024 
+[INFO] 21:47:45:361 MI-RAM-HQ/(5265:5282): Encontre un segmento para las tareas, empieza en: 134550024 
+[INFO] 21:50:46:797 MI-RAM-HQ/(5265:5282): Encontre un segmento para el tripulante numero: 1 , empieza en: 134550056 
+[INFO] 21:50:53:068 MI-RAM-HQ/(5265:5282): Encontre un segmento para el tripulante numero: 2 , empieza en: 134550080 
+[INFO] 21:50:53:068 MI-RAM-HQ/(5265:5282): Encontre un segmento para el tripulante numero: 3 , empieza en: 134550104 
+[INFO] 21:50:53:068 MI-RAM-HQ/(5265:5282): Encontre un segmento para el tripulante numero: 4 , empieza en: 134550128 
+[INFO] 21:50:53:068 MI-RAM-HQ/(5265:5282): Encontre un segmento para el tripulante numero: 5 , empieza en: 134550152 
+[INFO] 21:50:53:857 MI-RAM-HQ/(5265:5282): Las estructuras administrativas fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria
+[INFO] 21:55:33:496 MI-RAM-HQ/(5536:5536): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:55:43:736 MI-RAM-HQ/(5536:5536): NUEVA CONEXIÓN!
+[INFO] 21:55:43:784 MI-RAM-HQ/(5536:5555): Se creó el hilo correctamente
+[INFO] 21:55:50:816 MI-RAM-HQ/(5536:5555): Encontre un segmento para el PCB de PID: 1 , empieza en: 134550024 
+[INFO] 21:59:03:312 MI-RAM-HQ/(5725:5725): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 21:59:10:810 MI-RAM-HQ/(5725:5725): NUEVA CONEXIÓN!
+[INFO] 21:59:10:815 MI-RAM-HQ/(5725:5763): Se creó el hilo correctamente
+[INFO] 22:02:28:708 MI-RAM-HQ/(5943:5943): SERVIDOR LEVANTADO! ESCUCHANDO EN 5001
+[INFO] 22:02:37:507 MI-RAM-HQ/(5943:5943): NUEVA CONEXIÓN!
+[INFO] 22:02:37:532 MI-RAM-HQ/(5943:5967): Se creó el hilo correctamente
+[INFO] 22:05:33:645 MI-RAM-HQ/(5943:5967): Encontre un segmento para el PCB de PID: 1 , empieza en: 134550024 

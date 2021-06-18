@@ -1,7 +1,9 @@
 #include "mi-ram-hq-lib.h"
 #include <stdlib.h>
 void funcion_test_memoria(uint32_t);
-
+void recorrer_pcb(t_segmento * );
+void recorrer_tareas(t_segmento * );
+void recorrer_tcb(t_list * );
 
 mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 {
@@ -687,10 +689,11 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 
 t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
 	uint32_t tamanio_tareas = 0;
-	char* auxiliar_tarea;
+	tarea* auxiliar_tarea;
 	for(int i=0; i<tareas->elements_count; i++){
 		auxiliar_tarea = list_get(tareas,i);
-		tamanio_tareas += strlen(auxiliar_tarea) + 1;
+		tamanio_tareas += strlen(sizeof(auxiliar_tarea->nombre_tarea)) + 1;
+		tamanio_tareas += sizeof(uint32_t)*5;
 	}
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
@@ -779,6 +782,7 @@ void cargar_tareas_en_segmento(t_list* tareas, t_segmento* segmento){
 		offset = strlen(auxiliar) + 1;
 	}
 	pthread_mutex_unlock(segmento->mutex_segmento);
+	recorrer_tareas(segmento);
 }
 void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint32_t pos_y,uint32_t direccion_tarea,uint32_t direccion_patota,t_segmento* segmento){
 //void cargar_tcb_en_segmento(nuevo_tripulante_sin_pid tripulante, segmento){
@@ -864,8 +868,57 @@ int ordenar_direcciones_de_memoria(t_segmento_de_memoria* segmento1, t_segmento_
 }
 
 void funcion_test_memoria( uint32_t tid){
-	t_tabla_de_segmento* patota = buscar_patota_con_tid(tid);
-	// recorrer lista de patotas
-		//recorrer tareas de la patota
-		//recorrer tripulantes de la patota
+	//patotas
+//	t_list* aux = patotas
+	printf ("Iniciando rastillaje de memoria guardada\n");
+	for(int i = 0;i < patotas->elements_count;i++){
+		t_tabla_de_segmento* patota = list_get(patotas,i);
+		recorrer_pcb(patota->segmento_pcb);
+		recorrer_tareas(patota->segmento_tarea);
+		recorrer_tcb(patota->segmentos_tripulantes);
+	}
+}
+void recorrer_pcb(t_segmento * pcb){
+	uint32_t pid;
+	pthread_mutex_lock(pcb->mutex_segmento);
+	memcpy(&pid, pcb->base, sizeof(uint32_t));
+	pthread_mutex_unlock(pcb->mutex_segmento);
+	printf ("Patota pid = %i\n",pid);
+}
+void recorrer_tareas(t_segmento * tareas){
+	pthread_mutex_lock(tareas->mutex_segmento);
+	char* auxiliar = malloc (tareas->tamanio);
+	memcpy(auxiliar, tareas->base, tareas->tamanio);
+	pthread_mutex_unlock(tareas->mutex_segmento);
+	printf ("Lista de tareas = %s\n",auxiliar);
+}
+void recorrer_tcb(t_list * tripulantes_list){
+	for(int i = 0;i < tripulantes_list->elements_count;i++){
+		t_segmento * tripulante = list_get(tripulantes_list,i);
+		pthread_mutex_lock(tripulante->mutex_segmento);
+		
+		uint32_t tid = 0;
+		estado estado_actual = NEW;
+		uint32_t posX = 0;
+		uint32_t posY = 0;
+		uint32_t tareaActual = 0;
+		uint32_t patotaActual = 0;
+
+		int offset = 0;
+		memcpy(&tid, tripulante->base + offset, sizeof(uint32_t));
+		offset = offset + sizeof(uint32_t);
+		memcpy(&estado_actual, tripulante->base + offset, sizeof(estado));
+		offset = offset + sizeof(estado);
+		memcpy(&posX, tripulante->base + offset, sizeof(uint32_t));
+		offset = offset + sizeof(uint32_t);
+		memcpy(&posY, tripulante->base + offset, sizeof(uint32_t));
+		offset = offset + sizeof(uint32_t);
+		memcpy(&tareaActual, tripulante->base + offset, sizeof(uint32_t));
+		offset = offset + sizeof(uint32_t);
+		memcpy(&patotaActual, tripulante->base + offset, sizeof(uint32_t));
+		offset = offset + sizeof(uint32_t);
+		
+		pthread_mutex_unlock(tripulante->mutex_segmento);
+		printf ("Tripulante tid %i, estado %i, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
+	}
 }
