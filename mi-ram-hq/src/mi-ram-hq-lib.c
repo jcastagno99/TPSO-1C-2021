@@ -16,6 +16,7 @@ mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 	config_mi_ram_hq_aux->TAMANIO_SWAP = config_get_int_value(config_aux, "TAMANIO_SWAP");
 	config_mi_ram_hq_aux->PATH_SWAP = config_get_string_value(config_aux, "PATH_SWAP");
 	config_mi_ram_hq_aux->ALGORITMO_REEMPLAZO = config_get_string_value(config_aux, "ALGORITMO_REEMPLAZO");
+	config_mi_ram_hq_aux->CRITERIO_SELECCION = config_get_string_value(config_aux, "CRITERIO_SELECCION");
 	config_mi_ram_hq_aux->PUERTO = config_get_int_value(config_aux, "PUERTO");
 
 	return config_mi_ram_hq_aux;
@@ -146,29 +147,28 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			case EXPULSAR_TRIPULANTE:
 			{
 				uint32_t tripulante_tid = deserializar_tid(paquete->stream);
-				funcion_test_memoria(tripulante_tid);
-				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-				respuesta_ok_fail resultado = expulsar_tripulante_segmentacion(tripulante_tid);
+				//funcion_test_memoria(tripulante_tid);
+				//TODO : Armar la funcion que contiene la logica de EXPULSAR_TRIPULANTE
 				log_info(logger_ram_hq,"Llego el mensaje expulsar tripulante %i",tripulante_tid);
+				respuesta_ok_fail resultado = expulsar_tripulante_segmentacion(tripulante_tid);
 				//obtener_todos_los_datos(); // buscar el pid que tenga esto. Instanciar todo
-				
 				void *respuesta = serializar_respuesta_ok_fail(resultado);
 				enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
 				break;
 			}
 			case OBTENER_ESTADO:
 			{
-				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-				estado estado = obtener_estado_segmentacion(tripulante_pid);
+				uint32_t tripulante_tid = deserializar_pid(paquete->stream);
+				estado estado = obtener_estado_segmentacion(tripulante_tid);
 				void *respuesta = serializar_estado(estado);
 				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
 				break;
 			}
 			case OBTENER_UBICACION:
 			{
-				uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+				uint32_t tripulante_tid = deserializar_pid(paquete->stream);
 				//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
-				posicion posicion = obtener_ubicacion_segmentacion(tripulante_pid);
+				posicion posicion = obtener_ubicacion_segmentacion(tripulante_tid);
 				void *respuesta = serializar_posicion(posicion);
 				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
 				break;
@@ -258,8 +258,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	close(*socket_hilo);
 	free(socket_hilo);
-	
-	return;
 }
 
 void crear_estructuras_administrativas()
@@ -498,7 +496,6 @@ respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante tripulante)
 }
 
 respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripulante_con_posicion){
-	respuesta_ok_fail respuesta;
 	t_tabla_de_segmento* auxiliar_patota;
 	t_segmento* segmento_tripulante_auxiliar;
 	pthread_mutex_lock(&mutex_patotas);
@@ -516,8 +513,8 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria, actualizando estado",tripulante_con_posicion.tid);
 				uint32_t offset_x = sizeof(uint32_t) + sizeof(estado);
 				uint32_t offset_y = offset_x + sizeof(uint32_t);
-				memcpy(segmento_tripulante_auxiliar -> base + offset_x,tripulante_con_posicion.pos_x,sizeof(uint32_t));
-				memcpy(segmento_tripulante_auxiliar -> base + offset_y,tripulante_con_posicion.pos_y,sizeof(uint32_t));
+				memcpy(segmento_tripulante_auxiliar -> base + offset_x,&tripulante_con_posicion.pos_x,sizeof(uint32_t));
+				memcpy(segmento_tripulante_auxiliar -> base + offset_y,&tripulante_con_posicion.pos_y,sizeof(uint32_t));
 				pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
 				pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
 				pthread_mutex_unlock(&mutex_patotas);
@@ -526,7 +523,7 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 			pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
 		}
 		pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
-		pthread_mutex_lock(&mutex_patotas);	
+		pthread_mutex_unlock(&mutex_patotas);	
 		log_error(logger_ram_hq,"No se encontro el tripulante %d en memoria",tripulante_con_posicion.tid);
 	}
 
@@ -565,40 +562,119 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
 	return respuesta;
 }
 
-respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tripulante_pid)
+respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid)
 {
-	respuesta_ok_fail respuesta = RESPUESTA_OK;
-	//TODO
-	return respuesta;
+	t_tabla_de_segmento* patota_aux;
+	t_segmento* tripulante_aux;
+	t_segmento_de_memoria* segmento_aux;
+	uint32_t tid_aux;
+	pthread_mutex_lock(&mutex_patotas);
+	log_info(logger_ram_hq,"Buscando el tripulante %d",tid);
+	for(int i=0 ; i<patotas->elements_count; i++){
+		patota_aux = list_get(patotas,i);
+		pthread_mutex_lock(patota_aux->mutex_segmentos_tripulantes);
+		for(int j=0; i<patota_aux->segmentos_tripulantes->elements_count; j++){
+			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,i);
+			pthread_mutex_lock(tripulante_aux->mutex_segmento);
+			memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
+			if(tid_aux == tid){
+				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria, se procede a expulsarlo, motivo: SUS", tid);
+				pthread_mutex_lock(&mutex_memoria);
+				for(int k=0; k<segmentos_memoria->elements_count; k++){
+					segmento_aux = list_get(segmentos_memoria,k);
+					if((int)(segmento_aux->inicio_segmento) == (int)(tripulante_aux->base)){
+						log_info(logger_ram_hq,"Encontre el segmento perteneciente al tripulante en %d , procedo a liberarlo", (int)segmento_aux->inicio_segmento);
+						segmento_aux->libre = true;
+					}
+				}
+				pthread_mutex_unlock(&mutex_memoria);
+				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
+				free(tripulante_aux->mutex_segmento);
+				free(tripulante_aux);
+				list_remove(patota_aux->segmentos_tripulantes,j);
+				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
+				//TODO: Borrar al tripulante del mapa
+				return RESPUESTA_OK;
+			}
+			pthread_mutex_unlock(tripulante_aux->mutex_segmento);
+		}
+		log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
+	}
+	pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+	pthread_mutex_unlock(&mutex_patotas);
+	return RESPUESTA_FAIL;
 }
 
 
-estado obtener_estado_paginacion(uint32_t tripulante_pid)
+estado obtener_estado_paginacion(uint32_t tripulante_tid)
 {
 	estado estado_obtenido;
 	//TODO
 	return estado_obtenido;
 }
 
-estado obtener_estado_segmentacion(uint32_t tripulante_pid)
+estado obtener_estado_segmentacion(uint32_t tid)
 {
-	estado estado_obtenido;
-	//TODO
-	return estado_obtenido;
+	t_tabla_de_segmento* patota_aux;
+	t_segmento* tripulante_aux;
+	uint32_t tid_aux;
+	char* estado;
+	int estado_numerico;
+	pthread_mutex_lock(&mutex_patotas);
+	log_info(logger_ram_hq,"Buscando el tripulante %d",tid);
+	for(int i=0; i<patotas->elements_count; i++){
+		patota_aux = list_get(patotas,i);
+		pthread_mutex_lock(patota_aux->mutex_segmentos_tripulantes);
+		for(int j=0; j<patota_aux->segmentos_tripulantes->elements_count; j++){
+			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,j);
+			pthread_mutex_lock(tripulante_aux->mutex_segmento);
+			memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
+			if(tid_aux == tid){
+				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria", tid);
+				memcpy(estado,tripulante_aux->base + sizeof(uint32_t),sizeof(char));
+				estado_numerico = atoi(estado);
+				return estado_numerico;
+
+			}
+		}
+	}
+	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
+	return estado_numerico = 6;
 }
 
-posicion obtener_ubicacion_paginacion(uint32_t tripulante_pid)
+posicion obtener_ubicacion_paginacion(uint32_t tripulante_tid)
 {
 	posicion ubicacion_obtenida;
 	//TODO
 	return ubicacion_obtenida;
 }
 
-posicion obtener_ubicacion_segmentacion(uint32_t tripulante_pid)
+posicion obtener_ubicacion_segmentacion(uint32_t tid)
 {
-	posicion ubicacion_obtenida;
-	//TODO
-	return ubicacion_obtenida;
+	t_tabla_de_segmento* patota_aux;
+	t_segmento* tripulante_aux;
+	uint32_t tid_aux;
+	posicion posicion;
+	pthread_mutex_lock(&mutex_patotas);
+	log_info(logger_ram_hq,"Buscando el tripulante %d",tid);
+	for(int i=0; i<patotas->elements_count; i++){
+		patota_aux = list_get(patotas,i);
+		pthread_mutex_lock(patota_aux->mutex_segmentos_tripulantes);
+		for(int j=0; j<patota_aux->segmentos_tripulantes->elements_count; j++){
+			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,j);
+			pthread_mutex_lock(tripulante_aux->mutex_segmento);
+			memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
+			if(tid_aux == tid){
+				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria", tid);
+				memcpy(&posicion.pos_x,tripulante_aux->base + sizeof(uint32_t) + sizeof(char),sizeof(uint32_t));
+				memcpy(&posicion.pos_y,tripulante_aux->base + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t), sizeof(uint32_t));
+				return posicion;
+			}
+		}
+	}
+	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
+	return posicion; // Los campos estan vacios
 }
 
 //-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
@@ -619,7 +695,6 @@ t_tabla_de_segmento* buscar_patota(uint32_t pid){
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 	t_tabla_de_segmento* auxiliar_patota;
 	t_segmento* segmento_tripulante_auxiliar;
-	uint32_t pid_auxiliar;
 	log_info(logger_ram_hq,"Buscando la patota a partir del tid %d",tid);
 	pthread_mutex_lock(&mutex_patotas);
 	for(int i=0; i<patotas->elements_count; i++){
@@ -630,9 +705,7 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 			uint32_t tid_aux;
 			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
 			pthread_mutex_lock(segmento_tripulante_auxiliar -> mutex_segmento);
-			uint32_t offset = 0;
 			memcpy(&tid_aux,segmento_tripulante_auxiliar->base,sizeof(uint32_t));
-
 			if(tid_aux == tid){
 				pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
 				pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
@@ -649,13 +722,10 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 	return NULL;
 }
 
-
-//TODO : ACTUALIZAR LOS CONDICIONALES CUANDO SE ACTUALIZE EL ARCHIVO DE CONFIGURACIÓN CON EL ALGORITMO DE SEGMENTACIÓN (BF/FF)
-
 t_segmento_de_memoria* buscar_segmento_pcb(){
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
-	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
+	if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			if(iterador->tamanio_segmento >= 2*(sizeof(uint32_t)) && iterador->libre){
@@ -669,7 +739,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 			}
 		} 
 	}
-	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){ 
+	else if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
 		t_segmento_de_memoria* vencedor;
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
@@ -696,7 +766,7 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 	}
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
-	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
+	if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			if(iterador->tamanio_segmento >= tamanio_tareas && iterador->libre){
@@ -710,7 +780,7 @@ t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son 
 			}
 		}
 	}
-	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){
+	else if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){
 		t_segmento_de_memoria* vencedor;
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
@@ -730,7 +800,7 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	uint32_t size_tcb = sizeof(uint32_t)*5 + sizeof(estado);
-	if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","FIRST_FIT")){
+	if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			if(iterador->tamanio_segmento >= size_tcb && iterador->libre){
@@ -745,7 +815,7 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 			}
 		}
 	}
-	else if(strcmp("mi_ram_hq_configuracion->ALGORITMO_DE_SEGMENTACION","BEST_FIT")){ 
+	else if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
 		t_segmento_de_memoria* vencedor;
 		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
@@ -807,12 +877,12 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	pthread_mutex_lock(segmento->mutex_segmento);
 	
 	uint32_t cero = 0;
-	estado est = NEW;
+	char est = '0';
 
 	int offset = 0;
 	memcpy(segmento->base + offset, & (tripulante->tid), sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
-	memcpy(segmento->base + offset, &est, sizeof(estado));
+	memcpy(segmento->base + offset, &est, sizeof(char));
 	offset = offset + sizeof(estado);
 	memcpy(segmento->base + offset, & (tripulante->pos_x), sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
@@ -833,7 +903,7 @@ void compactar_memoria(){
 	//TODO: ORDENAR LISTA DE SEGMENTOS POR DIRECCIONES
 	list_sort(segmentos_memoria,ordenar_direcciones_de_memoria); // No se si esta bien usada la funcion, lo voy a preguntar en soporte pero dejo la idea
 	//-----------------------------------------------
-	t_list* lista_de_ocupados;
+	t_list* lista_de_ocupados = list_create();
 	t_segmento_de_memoria* auxiliar;
 	for(int i=0; i<segmentos_memoria->elements_count; i++){
 		auxiliar = list_get(segmentos_memoria,i);

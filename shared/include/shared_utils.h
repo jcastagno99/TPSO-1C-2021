@@ -221,6 +221,7 @@ tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream);
 pid_con_tareas deserializar_pid_con_tareas(void* stream);
 tarea* deserializar_tarea_alt(void* stream,uint32_t longitud);
 uint32_t deserializar_pid(void* stream);
+uint32_t deserializar_tid(void* stream);
 estado deserializar_estado(void* stream);
 operacion_recurso deserializar_operacion_recurso(void* stream);
 char* deserializar_recurso(void* stream);

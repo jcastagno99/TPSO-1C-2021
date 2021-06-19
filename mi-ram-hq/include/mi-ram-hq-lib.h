@@ -35,6 +35,7 @@ typedef struct
 	int TAMANIO_SWAP;
 	char* PATH_SWAP;
 	char* ALGORITMO_REEMPLAZO;
+	char* CRITERIO_SELECCION;
 	int PUERTO;
 	
 }mi_ram_hq_config;

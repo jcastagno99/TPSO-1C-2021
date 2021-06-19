@@ -282,7 +282,7 @@ void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes* pato
 		memcpy(mensaje_listo + desplazamiento, &aux_trip->pos_y, sizeof(uint32_t));
 		desplazamiento += sizeof(uint32_t);
 	}
-	uint32_t cent = 0;// el centinela ya era cero no se si se puede repetir [ISUUE]
+	uint32_t cent = 0;// el centinela ya era cero no se si se puede repetir [ISSUE]
 	memcpy(mensaje_listo + desplazamiento,&cent,sizeof(uint32_t));
 
 	return mensaje_listo;
@@ -580,12 +580,12 @@ tarea* deserializar_tarea_alt(void* stream,uint32_t longitud){
 }
 
 uint32_t deserializar_pid(void* stream){
-	uint32_t pid;// = malloc(sizeof(uint32_t)); [IGUAL QUE ABAJO, el malloc devuelve un puntero pero no estas declarando un puntero]
+	uint32_t pid;
 	memcpy(&pid,stream,sizeof(uint32_t));
 	return pid;
 }
 uint32_t deserializar_tid(void* stream){
-	uint32_t tid;// = malloc(sizeof(uint32_t)); [IGUAL QUE ABAJO, el malloc devuelve un puntero pero no estas declarando un puntero]
+	uint32_t tid;
 	memcpy(&tid,stream,sizeof(uint32_t));
 	return tid;
 }
