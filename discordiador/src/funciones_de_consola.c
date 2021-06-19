@@ -74,7 +74,7 @@ t_list *crear_tareas_global(char *path)
     FILE *archivo = fopen(path, "r");
     char caracteres[100];
 
-    t_list *lista_tareas = list_create();
+    t_list * lista_tareas = list_create();
 
     while (feof(archivo) == 0)
     {

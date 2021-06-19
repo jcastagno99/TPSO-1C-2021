@@ -689,11 +689,10 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 
 t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
 	uint32_t tamanio_tareas = 0;
-	tarea* auxiliar_tarea;
+	char* auxiliar_tarea;
 	for(int i=0; i<tareas->elements_count; i++){
 		auxiliar_tarea = list_get(tareas,i);
-		tamanio_tareas += strlen(sizeof(auxiliar_tarea->nombre_tarea)) + 1;
-		tamanio_tareas += sizeof(uint32_t)*5;
+		tamanio_tareas += strlen(auxiliar_tarea) + 1;
 	}
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
@@ -821,7 +820,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->base + offset, &cero, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
-	memcpy(segmento->base + offset, &patota, sizeof(uint32_t));
+	memcpy(segmento->base + offset, patota, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	
 	pthread_mutex_unlock(segmento->mutex_segmento);
