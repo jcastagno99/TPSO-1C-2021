@@ -6,7 +6,7 @@
 ## COMANDOS DE LA CONSOLA
 
 ````powershell
-INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
 INICIAR_PATOTA 1 oxigeno.txt 5|5
 
 # Sera deprecado para empezar a usar las de arriba
