@@ -69,6 +69,28 @@ void listar_tripulantes()
     free(tiempo);
 }
 
+char * armar_tareas_para_enviar(char *path)
+{
+    FILE *archivo = fopen(path, "r");
+    char caracteres[1000];
+    strcpy(caracteres,"");
+    while (feof(archivo) == 0)
+    {
+        char aux[100];
+        fgets(aux, 100, archivo);
+
+        aux[strlen(aux)-1] = '$';
+        aux[strlen(aux)] = '\0';
+        strcat(caracteres,aux);        
+        printf("contenido de archivo actual %s",caracteres);
+
+    }
+    fclose(archivo);
+    char * tareas = malloc(strlen(caracteres));
+    tareas = caracteres;
+    return tareas;
+}
+
 t_list *crear_tareas_global(char *path)
 {
     FILE *archivo = fopen(path, "r");
@@ -155,7 +177,9 @@ void iniciar_patota_global(char **str_split)
     pid_con_tareas_y_tripulantes * patota_full = malloc(sizeof(pid_con_tareas_y_tripulantes));
 
     patota_full->pid = id_patota;
-    patota_full->tareas = crear_tareas_global(path); // crear_tareas crear uno que no spliteee o partir mi funcion ??
+    //patota_full->tareas = crear_tareas_global(path); // crear_tareas crear uno que no spliteee o partir mi funcion ??
+    patota_full->tareas = armar_tareas_para_enviar(path); // crear_tareas crear uno que no spliteee o partir mi funcion ??
+
     patota_full->tripulantes = list_create();
 
     for (int i = 0; i < cant_tripulantes; i++)

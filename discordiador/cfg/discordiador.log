@@ -18408,3 +18408,110 @@
 [INFO] 20:10:52:497 discordiador.log/(8784:8785): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
 [INFO] 20:10:52:497 discordiador.log/(8784:8785): INICIANDO PATOTA
 [INFO] 20:11:37:845 discordiador.log/(8784:8785): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 13:21:55:194 discordiador.log/(4655:4663): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:21:55:194 discordiador.log/(4655:4663): INICIANDO PATOTA
+[INFO] 13:37:29:794 discordiador.log/(5367:5381): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:37:29:794 discordiador.log/(5367:5381): INICIANDO PATOTA
+[INFO] 13:38:25:162 discordiador.log/(5515:5521): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:38:25:162 discordiador.log/(5515:5521): INICIANDO PATOTA
+[INFO] 13:46:53:461 discordiador.log/(5819:5825): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:46:53:461 discordiador.log/(5819:5825): INICIANDO PATOTA
+[INFO] 13:49:37:513 discordiador.log/(6049:6056): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:49:37:513 discordiador.log/(6049:6056): INICIANDO PATOTA
+[INFO] 13:50:35:160 discordiador.log/(6153:6158): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:50:35:160 discordiador.log/(6153:6158): INICIANDO PATOTA
+[INFO] 13:53:22:483 discordiador.log/(6345:6351): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 13:53:22:483 discordiador.log/(6345:6351): INICIANDO PATOTA
+[INFO] 14:00:47:761 discordiador.log/(6845:6851): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:00:47:761 discordiador.log/(6845:6851): INICIANDO PATOTA
+[INFO] 14:03:13:361 discordiador.log/(6982:6988): #include <stdio.h>
+[WARNING] 14:03:13:362 discordiador.log/(6982:6988): COMANDO NO VALIDO
+[INFO] 14:03:15:426 discordiador.log/(6982:6988): #include <string.h>
+[WARNING] 14:03:15:426 discordiador.log/(6982:6988): COMANDO NO VALIDO
+[INFO] 14:04:14:611 discordiador.log/(7066:7072): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:04:14:611 discordiador.log/(7066:7072): INICIANDO PATOTA
+[INFO] 14:05:29:965 discordiador.log/(7229:7235): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:05:29:965 discordiador.log/(7229:7235): INICIANDO PATOTA
+[INFO] 14:08:05:979 discordiador.log/(7693:7699): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:08:05:979 discordiador.log/(7693:7699): INICIANDO PATOTA
+[INFO] 14:16:42:405 discordiador.log/(8065:8072): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:16:42:405 discordiador.log/(8065:8072): INICIANDO PATOTA
+[INFO] 14:21:16:793 discordiador.log/(8233:8240): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:21:16:793 discordiador.log/(8233:8240): INICIANDO PATOTA
+[INFO] 14:23:02:343 discordiador.log/(8347:8353): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:23:02:344 discordiador.log/(8347:8353): INICIANDO PATOTA
+[INFO] 14:30:27:276 discordiador.log/(8504:8510): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:30:27:276 discordiador.log/(8504:8510): INICIANDO PATOTA
+[INFO] 14:32:44:375 discordiador.log/(8620:8626): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:32:44:375 discordiador.log/(8620:8626): INICIANDO PATOTA
+[INFO] 14:36:15:798 discordiador.log/(8796:8802): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:36:15:799 discordiador.log/(8796:8802): INICIANDO PATOTA
+[INFO] 14:38:38:201 discordiador.log/(8929:8935): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:38:38:201 discordiador.log/(8929:8935): INICIANDO PATOTA
+[INFO] 14:39:24:446 discordiador.log/(9026:9032): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:39:24:447 discordiador.log/(9026:9032): INICIANDO PATOTA
+[INFO] 14:42:50:792 discordiador.log/(9230:9236): tareas
+[WARNING] 14:42:50:792 discordiador.log/(9230:9236): COMANDO NO VALIDO
+[INFO] 14:43:15:553 discordiador.log/(9230:9236): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4INICIAR_PATOTA 2 src/pl
+[WARNING] 14:43:15:553 discordiador.log/(9230:9236): Parametros incorrectos/faltantes
+[INFO] 14:43:19:028 discordiador.log/(9230:9236): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:43:19:028 discordiador.log/(9230:9236): INICIANDO PATOTA
+[INFO] 14:45:29:599 discordiador.log/(9352:9358): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:45:29:599 discordiador.log/(9352:9358): INICIANDO PATOTA
+[INFO] 14:48:33:619 discordiador.log/(9495:9504): int tamanio_total_nombre = strlen(patota_con_tripulantes->tareas) + 1;
+[WARNING] 14:48:33:619 discordiador.log/(9495:9504): COMANDO NO VALIDO
+[INFO] 14:48:39:746 discordiador.log/(9495:9504): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:48:39:746 discordiador.log/(9495:9504): INICIANDO PATOTA
+[INFO] 14:52:19:029 discordiador.log/(9652:9653): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 14:52:42:401 discordiador.log/(9694:9696): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:52:42:401 discordiador.log/(9694:9696): INICIANDO PATOTA
+[INFO] 14:53:53:329 discordiador.log/(9838:9840): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:53:53:329 discordiador.log/(9838:9840): INICIANDO PATOTA
+[INFO] 14:55:05:878 discordiador.log/(10081:10083): deserializar_pid_con_tareas_y_tripulantes
+[WARNING] 14:55:05:878 discordiador.log/(10081:10083): COMANDO NO VALIDO
+[INFO] 14:55:13:181 discordiador.log/(10081:10083): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 14:55:13:181 discordiador.log/(10081:10083): INICIANDO PATOTA
+[INFO] 15:01:29:129 discordiador.log/(10441:10445): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:01:29:129 discordiador.log/(10441:10445): INICIANDO PATOTA
+[INFO] 15:01:54:953 discordiador.log/(10502:10504): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:01:54:953 discordiador.log/(10502:10504): INICIANDO PATOTA
+[INFO] 15:02:45:891 discordiador.log/(10592:10595): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:02:45:892 discordiador.log/(10592:10595): INICIANDO PATOTA
+[INFO] 15:03:21:189 discordiador.log/(10675:10677): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:03:21:190 discordiador.log/(10675:10677): INICIANDO PATOTA
+[INFO] 15:03:57:461 discordiador.log/(10737:10738): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:04:04:227 discordiador.log/(10769:10771): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:04:04:227 discordiador.log/(10769:10771): INICIANDO PATOTA
+[INFO] 15:09:16:278 discordiador.log/(10926:10930): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:09:16:278 discordiador.log/(10926:10930): INICIANDO PATOTA
+[INFO] 15:11:18:970 discordiador.log/(11032:11041): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:11:18:970 discordiador.log/(11032:11041): INICIANDO PATOTA
+[INFO] 15:15:20:287 discordiador.log/(11236:11240): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:15:20:287 discordiador.log/(11236:11240): INICIANDO PATOTA
+[INFO] 15:16:07:218 discordiador.log/(11345:11353): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:16:07:219 discordiador.log/(11345:11353): INICIANDO PATOTA
+[INFO] 15:17:37:753 discordiador.log/(11514:11522): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:17:37:753 discordiador.log/(11514:11522): INICIANDO PATOTA
+[INFO] 15:18:59:691 discordiador.log/(11611:11614): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:18:59:691 discordiador.log/(11611:11614): INICIANDO PATOTA
+[INFO] 15:21:20:208 discordiador.log/(11748:11751): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:21:20:208 discordiador.log/(11748:11751): INICIANDO PATOTA
+[INFO] 15:23:26:763 discordiador.log/(11927:11929): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:23:26:763 discordiador.log/(11927:11929): INICIANDO PATOTA
+[INFO] 15:26:16:905 discordiador.log/(12160:12164): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:26:16:906 discordiador.log/(12160:12164): INICIANDO PATOTA
+[INFO] 15:27:31:523 discordiador.log/(12273:12275): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:27:31:524 discordiador.log/(12273:12275): INICIANDO PATOTA
+[INFO] 15:29:45:527 discordiador.log/(12273:12275): EXIT. Liberando memoria y saliendo del programa...
+[INFO] 15:30:16:134 discordiador.log/(12438:12445): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:30:16:134 discordiador.log/(12438:12445): INICIANDO PATOTA
+[INFO] 15:32:15:080 discordiador.log/(12608:12615): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:32:15:080 discordiador.log/(12608:12615): INICIANDO PATOTA
+[INFO] 15:34:33:335 discordiador.log/(12747:12754): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:34:33:335 discordiador.log/(12747:12754): INICIANDO PATOTA
+[INFO] 15:36:22:087 discordiador.log/(12901:12905): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:36:22:087 discordiador.log/(12901:12905): INICIANDO PATOTA
+[INFO] 15:41:05:136 discordiador.log/(13296:13299): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:41:05:136 discordiador.log/(13296:13299): INICIANDO PATOTA
+[INFO] 15:45:36:086 discordiador.log/(13507:13511): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 15:45:36:086 discordiador.log/(13507:13511): INICIANDO PATOTA

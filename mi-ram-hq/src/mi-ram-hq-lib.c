@@ -103,7 +103,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	while (1){
 
 		t_paquete *paquete = recibir_paquete(*socket_hilo);
-		if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
+		if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 		{
 			switch (paquete->codigo_operacion)
 			{
@@ -268,7 +268,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_swap,NULL);
 
-	if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
+	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		numero_segmento_global = 0;
 		t_segmento_de_memoria* segmento = malloc(sizeof(t_segmento_de_memoria));
@@ -757,13 +757,9 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 	return NULL;
 };
 
-t_segmento_de_memoria* buscar_segmento_tareas(t_list* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
-	uint32_t tamanio_tareas = 0;
-	char* auxiliar_tarea;
-	for(int i=0; i<tareas->elements_count; i++){
-		auxiliar_tarea = list_get(tareas,i);
-		tamanio_tareas += strlen(auxiliar_tarea) + 1;
-	}
+t_segmento_de_memoria* buscar_segmento_tareas(char* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
+	uint32_t tamanio_tareas = strlen(tareas);
+	
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
@@ -841,15 +837,10 @@ void cargar_pcb_en_segmento(uint32_t pid, uint32_t direccion_logica_tareas, t_se
 }
 
 //Aclaración: Esta función asume que las tareas incluyen un /0 al final de la cadena de char*
-void cargar_tareas_en_segmento(t_list* tareas, t_segmento* segmento){
+void cargar_tareas_en_segmento(char* tareas, t_segmento* segmento){
 	pthread_mutex_lock(segmento->mutex_segmento);
-	int offset = 0;
 	char* auxiliar;
-	for(int i=0; i<tareas->elements_count; i++){
-		auxiliar = list_get(tareas,i);
-		memcpy(segmento->base + offset, auxiliar, strlen(auxiliar) + 1);
-		offset = strlen(auxiliar) + 1;
-	}
+	memcpy(segmento->base, tareas, strlen(tareas) + 1);
 	pthread_mutex_unlock(segmento->mutex_segmento);
 	recorrer_tareas(segmento);
 }

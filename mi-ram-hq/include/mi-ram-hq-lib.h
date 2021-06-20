@@ -106,12 +106,12 @@ estado obtener_estado_segmentacion(uint32_t);
 posicion obtener_ubicacion_segmentacion(uint32_t);
 
 t_tabla_de_segmento* buscar_patota(uint32_t);
-t_segmento_de_memoria* buscar_segmento_tareas(t_list*);
+t_segmento_de_memoria* buscar_segmento_tareas(char*);
 t_segmento_de_memoria* buscar_segmento_pcb();
 t_segmento_de_memoria* buscar_segmento_tcb();
 
 void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
-void cargar_tareas_en_segmento(t_list*,t_segmento*);
+void cargar_tareas_en_segmento(char* , t_segmento* );
 void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
