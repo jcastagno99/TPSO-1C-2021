@@ -1,5 +1,6 @@
 #include "mi-ram-hq-lib.h"
 #include <stdlib.h>
+
 void funcion_test_memoria(uint32_t);
 void recorrer_pcb(t_segmento * );
 void recorrer_tareas(t_segmento * );
@@ -110,8 +111,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			case INICIAR_PATOTA:
 			{
 				pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
-				//Llega bien el mensaje
-				//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
 				respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
 				void *respuesta = serializar_respuesta_ok_fail(resultado);
 				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
@@ -120,7 +119,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			case INICIAR_TRIPULANTE:
 			{
 				nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
-				//TODO : Armar la funcion que contiene la logica de INICIAR_TRIPULANTE
 				respuesta_ok_fail resultado = iniciar_tripulante_segmentacion(nuevo_tripulante);
 				void *respuesta = serializar_respuesta_ok_fail(resultado);
 				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
@@ -129,7 +127,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			case ACTUALIZAR_UBICACION:
 			{
 				tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
-				//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
 				respuesta_ok_fail resultado = actualizar_ubicacion_segmentacion(tripulante_y_posicion);
 				void *respuesta = serializar_respuesta_ok_fail(resultado);
 				enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
@@ -138,8 +135,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			case OBTENER_PROXIMA_TAREA:
 			{
 				uint32_t tripulante_tid = deserializar_tid(paquete->stream);
-				//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-				tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+				tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); 
 				void *respuesta = serializar_tarea(proxima_tarea);
 				enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
 				break;
@@ -148,7 +144,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			{
 				uint32_t tripulante_tid = deserializar_tid(paquete->stream);
 				//funcion_test_memoria(tripulante_tid);
-				//TODO : Armar la funcion que contiene la logica de EXPULSAR_TRIPULANTE
 				log_info(logger_ram_hq,"Llego el mensaje expulsar tripulante %i",tripulante_tid);
 				respuesta_ok_fail resultado = expulsar_tripulante_segmentacion(tripulante_tid);
 				//obtener_todos_los_datos(); // buscar el pid que tenga esto. Instanciar todo
@@ -278,7 +273,7 @@ void crear_estructuras_administrativas()
 		list_add(segmentos_memoria,segmento);
 		
 	}
-	else if (strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
+	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
 		//crear_estructuras_administrativas_paginacion;
 	}
@@ -436,57 +431,7 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas patota_con_tareas)
 }
 
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
-{
-	//iniciar semaforo patota
-	pthread_mutex_lock(&mutex_patotas);
-	//buscar patota
-	t_tabla_de_segmento* patota = buscar_patota(tripulante.pid);
-	if(!patota){
-		pthread_mutex_unlock(&mutex_patotas);
-		log_error(logger_ram_hq,"La patota %i del tripulante %i no existe, solicitud rechazada",tripulante.pid,tripulante.tid);
-		return RESPUESTA_FAIL;
-	}
-	pthread_mutex_unlock(&mutex_patotas);
-	
-	//ver si entra
-	pthread_mutex_lock(&mutex_memoria);
-	t_segmento_de_memoria* segmento_a_usar_tripulante = buscar_segmento_tcb();
-	if(!segmento_a_usar_tripulante){
-		//TODO: compactar
-		log_info(logger_ram_hq,"No encontre un segmento disponible para el TCB de TID: %i del PCB de PID: %i, voy a compactar",tripulante.tid,tripulante.pid);
-		segmento_a_usar_tripulante = buscar_segmento_tcb();
-		if(!segmento_a_usar_tripulante){
-			pthread_mutex_unlock(&mutex_memoria);
-			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el TCB aun luego de compactar, solicitud rechazada");
-			
-			return RESPUESTA_FAIL;
-		}
-	}
-	pthread_mutex_unlock(&mutex_memoria);
-
-	log_info(logger_ram_hq,"Encontre un segmento para el TCB de TID: %i del PCB de PID: %i, empieza en: %i ",tripulante.tid,tripulante.pid,(int) segmento_a_usar_tripulante->inicio_segmento); 
-	
-	//crear segmento tripulante
-	t_segmento* segmento_tripulante = malloc(sizeof(t_segmento));
-	segmento_tripulante->base = segmento_a_usar_tripulante->inicio_segmento;//segmento_a_usar_tareas->inicio_segmento;
-	segmento_tripulante->tamanio = segmento_a_usar_tripulante->tamanio_segmento; // no se si hacer un tripulante con tarea, nuevo tripulante o que. Donde va a tener la tarea actual el tripulante?
-	segmento_tripulante->numero_segmento = numero_segmento_global;
-	numero_segmento_global++;
-	
-	//agregar
-	segmento_tripulante->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_init(segmento_tripulante->mutex_segmento,NULL);
-	list_add(patota->segmentos_tripulantes,segmento_tripulante);
-	//ver bien este mensaje que poner
-	log_info(logger_ram_hq,"Las estructuras administrativas para el tripulante %i fueron creadas y los segmentos asignados, procedo a cargar la informacion a memoria",tripulante.tid);
-
-	uint32_t direccion_logica_tareas = 0; //TODO: Calcular la direccion logica real
-	uint32_t direccion_logica_patota = 0; //TODO: Calcular la direccion logica real
-	
-	// cargar_tcb_en_segmento va a recibir tid,estado,x,y,prox_instruccion,puntero_pcb
-	//Chequear estar pasando bien los punteros
-	cargar_tcb_en_segmento(tripulante.tid,NEW,tripulante.pos_x,tripulante.pos_y,direccion_logica_tareas,direccion_logica_patota,segmento_tripulante);
-	
+{	
 	return RESPUESTA_OK;
 }
 
@@ -573,8 +518,8 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid)
 	for(int i=0 ; i<patotas->elements_count; i++){
 		patota_aux = list_get(patotas,i);
 		pthread_mutex_lock(patota_aux->mutex_segmentos_tripulantes);
-		for(int j=0; i<patota_aux->segmentos_tripulantes->elements_count; j++){
-			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,i);
+		for(int j=0; j<patota_aux->segmentos_tripulantes->elements_count; j++){
+			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,j);
 			pthread_mutex_lock(tripulante_aux->mutex_segmento);
 			memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
 			if(tid_aux == tid){
@@ -757,8 +702,8 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 	return NULL;
 };
 
-t_segmento_de_memoria* buscar_segmento_tareas(char* tareas){ //Las tareas son unos t_list, donde cada miembro es un char* 
-	uint32_t tamanio_tareas = strlen(tareas);
+t_segmento_de_memoria* buscar_segmento_tareas(char* tareas){
+	size_t tamanio_tareas = strlen(tareas);
 	
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
@@ -844,6 +789,8 @@ void cargar_tareas_en_segmento(char* tareas, t_segmento* segmento){
 	pthread_mutex_unlock(segmento->mutex_segmento);
 	recorrer_tareas(segmento);
 }
+
+//No la estamos usando
 void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint32_t pos_y,uint32_t direccion_tarea,uint32_t direccion_patota,t_segmento* segmento){
 //void cargar_tcb_en_segmento(nuevo_tripulante_sin_pid tripulante, segmento){
 	pthread_mutex_lock(segmento->mutex_segmento);
@@ -874,7 +821,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	memcpy(segmento->base + offset, & (tripulante->tid), sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->base + offset, &est, sizeof(char));
-	offset = offset + sizeof(estado);
+	offset = offset + sizeof(char);
 	memcpy(segmento->base + offset, & (tripulante->pos_x), sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->base + offset, & (tripulante->pos_y), sizeof(uint32_t));
@@ -883,7 +830,6 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->base + offset, patota, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
-	
 	pthread_mutex_unlock(segmento->mutex_segmento);
 }
 

@@ -547,12 +547,6 @@ pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* str
 	pct.tareas = malloc(tamanio_palabra);
 	memcpy(pct.tareas,stream + offset, tamanio_palabra);
 	offset= offset+tamanio_palabra + sizeof(uint32_t);
-	/*while(tamanio_palabra != 0){
-		list_add(pct.tareas, deserializar_tarea_alt(stream+offset,tamanio_palabra));
-		offset+= tamanio_palabra + 5*sizeof(uint32_t);
-		memcpy(&tamanio_palabra,stream+offset,sizeof(uint32_t));
-		offset+=sizeof(uint32_t);
-	}*/
 	uint32_t tid;
 	memcpy(&tid,stream+offset,sizeof(uint32_t));
 	while(tid != 0){
