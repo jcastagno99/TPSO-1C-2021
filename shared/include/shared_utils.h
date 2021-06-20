@@ -99,7 +99,7 @@ typedef struct
 typedef struct
 {
 	uint32_t pid;
-	t_list *tareas;
+	char *tareas;
 	t_list *tripulantes;
 }pid_con_tareas_y_tripulantes;
 
