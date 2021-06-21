@@ -114,7 +114,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		{
 			escritura[i] = op_c_rec.recurso[0];
 		}
-		escribir_archivo(archivo, escritura,RECURSO);
+		escribir_archivo(archivo, escritura, RECURSO);
 		free(archivo);
 		free(escritura);
 		codigo_respuesta = RESPUESTA_GENERAR_RECURSO;
@@ -409,8 +409,8 @@ void inicializar_superbloque(uint32_t block_size, uint32_t block_amount)
 	{
 		vector_disponibilidad[i] = '0';
 	}
-	t_bitarray* bitarray = bitarray_create_with_mode(vector_disponibilidad,block_amount,MSB_FIRST);
-	memcpy(superbloque + 2* sizeof(uint32_t), bitarray, sizeof(t_bitarray));
+	t_bitarray *bitarray = bitarray_create_with_mode(vector_disponibilidad, block_amount, MSB_FIRST);
+	memcpy(superbloque + 2 * sizeof(uint32_t), bitarray, sizeof(t_bitarray));
 	msync(superbloque, 2 * sizeof(uint32_t) + sizeof(bitarray), 0);
 	struct stat *algo = malloc(sizeof(struct stat));
 	int resultado = fstat(fd, algo);
@@ -569,7 +569,7 @@ void escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo)
 	if (cant_bloques != 0)
 	{
 		llave_valor = config_create(ruta);
-		int nro_ultimo_bloque = conseguir_ultimo_bloque(llave_valor, cant_bloques);
+		int nro_ultimo_bloque = conseguir_bloque(llave_valor, cant_bloques, cant_bloques - 1);
 		char *ultimo_bloque = malloc(block_size);
 		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
 		int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size); //Devuelve la posición del ultimo caracter anterior al barra cero
@@ -590,39 +590,42 @@ void escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo)
 	}
 	while (longitud_restante > 0)
 	{
-			llave_valor = config_create(ruta);
-			int primer_bloque_libre = get_primer_bloque_libre();
-			ocupar_bloque(primer_bloque_libre);
-			char* escritura = itoa_propio(primer_bloque_libre);
-			llave_valor = config_create(ruta);
-			config_set_value(llave_valor, "BLOCKS", escritura);
-			free(escritura);
-			int cant_bloques_vieja = config_get_int_value(llave_valor, "CANT_BLOQUES");
-			cant_bloques_vieja++;
-			char* cant_bloques_vieja_aux = itoa_propio(cant_bloques_vieja);
-			config_set_value(llave_valor, "CANT_BLOQUES", cant_bloques_vieja_aux);
-			free(cant_bloques_vieja_aux);
-			config_save_in_file(llave_valor, ruta);
-			config_destroy(llave_valor);
-			char* bloque_a_llenar = malloc(block_size);
-			memcpy(bloque_a_llenar, blocks + (primer_bloque_libre * block_size), block_size);
-			if(longitud_restante > block_size){
-				memcpy(bloque_a_llenar,contenido + caracteres_llenados,block_size);
-				longitud_restante -= block_size;
-				caracteres_llenados += block_size;
-			} else{
-				int ultimo_byte = longitud_restante;
-				memcpy(bloque_a_llenar, contenido + caracteres_llenados, longitud_restante);
-				bloque_a_llenar[ultimo_byte] = '\0';
-				longitud_restante = 0;
-				caracteres_llenados += ultimo_byte;
-			}
-			memcpy(blocks + primer_bloque_libre * block_size,bloque_a_llenar,block_size);
-			free(bloque_a_llenar);
-			log_info(logger_i_mongo_store, "Se han llenado %d caracteres en el bloque %d, asignados al archivo %s",
+		llave_valor = config_create(ruta);
+		int primer_bloque_libre = get_primer_bloque_libre();
+		ocupar_bloque(primer_bloque_libre);
+		char *escritura = itoa_propio(primer_bloque_libre);
+		llave_valor = config_create(ruta);
+		config_set_value(llave_valor, "BLOCKS", escritura);
+		free(escritura);
+		int cant_bloques_vieja = config_get_int_value(llave_valor, "CANT_BLOQUES");
+		cant_bloques_vieja++;
+		char *cant_bloques_vieja_aux = itoa_propio(cant_bloques_vieja);
+		config_set_value(llave_valor, "CANT_BLOQUES", cant_bloques_vieja_aux);
+		free(cant_bloques_vieja_aux);
+		config_save_in_file(llave_valor, ruta);
+		config_destroy(llave_valor);
+		char *bloque_a_llenar = malloc(block_size);
+		memcpy(bloque_a_llenar, blocks + (primer_bloque_libre * block_size), block_size);
+		if (longitud_restante > block_size)
+		{
+			memcpy(bloque_a_llenar, contenido + caracteres_llenados, block_size);
+			longitud_restante -= block_size;
+			caracteres_llenados += block_size;
+		}
+		else
+		{
+			int ultimo_byte = longitud_restante;
+			memcpy(bloque_a_llenar, contenido + caracteres_llenados, longitud_restante);
+			bloque_a_llenar[ultimo_byte] = '\0';
+			longitud_restante = 0;
+			caracteres_llenados += ultimo_byte;
+		}
+		memcpy(blocks + primer_bloque_libre * block_size, bloque_a_llenar, block_size);
+		free(bloque_a_llenar);
+		log_info(logger_i_mongo_store, "Se han llenado %d caracteres en el bloque %d, asignados al archivo %s",
 				 caracteres_llenados, primer_bloque_libre, ruta);
 	}
-	log_info(logger_i_mongo_store, "Se ha finalizado la operación de escritura del archivo %s y de los bloques correspondientes",ruta);
+	log_info(logger_i_mongo_store, "Se ha finalizado la operación de escritura del archivo %s y de los bloques correspondientes", ruta);
 }
 
 void quitar_de_archivo(char *ruta, char *contenido)
@@ -640,46 +643,131 @@ void quitar_de_archivo(char *ruta, char *contenido)
 	}
 	t_config *llave_valor = config_create(ruta);
 	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
+	int cant_bloques_actual = cant_bloques;
 	int longitud_restante = strlen(contenido);
 	int caracteres_vaciados = 0;
 	int block_size = get_block_size();
-	char* tipo_recurso = config_get_string_value(llave_valor,"CARACTER_LLENADO");
-	if(longitud_restante > cant_bloques * block_size){
-		log_error(logger_i_mongo_store, "Seguro que no hay suficientes recursos para quitar. Abortando operación de consumir %d unidades de recurso %s",
-		longitud_restante, tipo_recurso);
+	char *tipo_recurso = config_get_string_value(llave_valor, "CARACTER_LLENADO");
+	int nro_ultimo_bloque = conseguir_bloque(llave_valor, cant_bloques, cant_bloques - 1);
+	char *ultimo_bloque = malloc(block_size);
+	memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
+	int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size);
+	int caracteres_disponibles_para_consumir = ((cant_bloques - 1) * block_size) + ultima_posicion_escrita + 1;
+	if (longitud_restante > caracteres_disponibles_para_consumir && longitud_restante > 0)
+	{
+		log_error(logger_i_mongo_store, "No hay suficientes recursos para quitar. Abortando operación de consumir %d unidades de recurso %s",
+				  longitud_restante, tipo_recurso);
 	}
 	else
 	{
 		llave_valor = config_create(ruta);
-		int nro_ultimo_bloque = conseguir_ultimo_bloque(llave_valor, cant_bloques);
-		char *ultimo_bloque = malloc(block_size);
-		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
-		int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size); 
-		if(longitud_restante < ultima_posicion_escrita){
+		if (longitud_restante < ultima_posicion_escrita)
+		{
 			ultimo_bloque[ultima_posicion_escrita - longitud_restante + 1] = '\0';
 			caracteres_vaciados = longitud_restante;
 			longitud_restante = 0;
+			memcpy(blocks + (nro_ultimo_bloque * block_size), ultimo_bloque, block_size);
 		}
-		else{
-			//libero bloque y lo saco de metadata. ajusto longitud_restante y caracteres_llenados
+		else
+		{
+			liberar_bloque(nro_ultimo_bloque);
+			cant_bloques_actual--;
+			caracteres_vaciados += ultima_posicion_escrita + 1;
+			longitud_restante -= ultima_posicion_escrita + 1;
+			while (longitud_restante >= block_size)
+			{
+				liberar_bloque(conseguir_bloque(llave_valor, cant_bloques, cant_bloques_actual - 1));
+				cant_bloques_actual--;
+				caracteres_vaciados += block_size;
+				longitud_restante -= block_size;
+			}
+			if (cant_bloques_actual == 0)
+			{
+				log_info(logger_i_mongo_store, "De casualidad habian %d unidades del recurso %s y se consumieron exactamente %d. Sin bloques", caracteres_disponibles_para_consumir,
+						 tipo_recurso, caracteres_vaciados);
+				char *el_cero = itoa_propio(0);
+				config_set_value(llave_valor, "BLOCK_COUNT", el_cero);
+				free(el_cero);
+				config_set_value(llave_valor, "BLOCKS", "[]");
+				config_save_in_file(llave_valor, ruta);
+			}
+			else
+			{
+				nro_ultimo_bloque = conseguir_bloque(llave_valor, cant_bloques, cant_bloques_actual - 1);
+				memcpy(ultimo_bloque, blocks + (block_size * nro_ultimo_bloque), block_size);
+				ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size);
+				if (longitud_restante != 0)
+				{
+					ultimo_bloque[ultima_posicion_escrita - longitud_restante + 1] = '\0';
+					caracteres_vaciados += longitud_restante;
+					longitud_restante = longitud_restante;
+				}
+				memcpy(blocks + (nro_ultimo_bloque * block_size), ultimo_bloque, block_size);
+				log_info(logger_i_mongo_store, "Se borraron %d unidades del recurso %s con exito. Se liberaron %d bloques", caracteres_vaciados, tipo_recurso,
+						 cant_bloques - cant_bloques_actual);
+				char *nueva_cant_bloques = itoa_propio(cant_bloques_actual);
+				config_set_value(llave_valor, "BLOCK_COUNT", nueva_cant_bloques);
+				free(nueva_cant_bloques);
+				setear_nuevos_blocks(llave_valor, cant_bloques_actual);
+				config_save_in_file(llave_valor, ruta);
+			}
+			config_destroy(llave_valor);
+			free(ultimo_bloque);
 		}
-
 	}
-	/* 1- Localizar el último caracter antes de un barra cero
-	2- Desplazar / insertar el barra cero
-	3- Si la cantidad de caracteres a quitar es mayor a la cantidad de caracteres antes del barra cero, liberar un bloque*/
-
 }
 
 void borrar_archivo(char *archivo)
 {
-	//TODO
+	t_config *llave_valor = config_create(archivo);
+	char **bloques = config_get_array_value(llave_valor, "BLOCKS");
+	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
+	int nro_bloque;
+	for (int i = 0; i<cant_bloques;i++){
+		nro_bloque = atoi(bloques[i]);
+		liberar_bloque(nro_bloque);
+		free(bloques[i]);
+	}
+	free(bloques);
+	config_set_value(llave_valor,"BLOCKS","[]");
+	char* el_cero = itoa_propio(0);
+	config_set_value(llave_valor,"BLOCK_COUNT",el_cero);
+	free(el_cero);
+	config_save_in_file(llave_valor,archivo);
+	config_destroy(llave_valor);
 }
 
 char *todo_el_archivo(char *archivo)
 {
-	//TODO
-	return "tu vieja";
+	t_config *llave_valor = config_create(archivo);
+	char **bloques = config_get_array_value(llave_valor, "BLOCKS");
+	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
+	int nro_bloque;
+	int block_size = get_block_size();
+	int nro_ultimo_bloque = conseguir_bloque(llave_valor, cant_bloques, cant_bloques - 1);
+	char *ultimo_bloque = malloc(block_size);
+	memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
+	int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size);
+	char* texto = malloc(cant_bloques * block_size + ultima_posicion_escrita + 2);
+	texto[0] = '\0';
+	char* un_bloque_lleno = malloc(block_size + 1);
+	un_bloque_lleno[block_size] = '\0';
+	for (int i = 0; i<cant_bloques-1;i++){
+		nro_bloque = atoi(bloques[i]);
+		memcpy(un_bloque_lleno,blocks + (nro_bloque * block_size), block_size);
+		strcat(texto, un_bloque_lleno);
+		free(bloques[i]);
+	}
+	strcat(texto,ultimo_bloque);
+	free(bloques);
+	free(ultimo_bloque);
+	config_set_value(llave_valor,"BLOCKS","[]");
+	char* el_cero = itoa_propio(0);
+	config_set_value(llave_valor,"BLOCK_COUNT",el_cero);
+	free(el_cero);
+	config_save_in_file(llave_valor,archivo);
+	config_destroy(llave_valor);
+	return texto;
 }
 
 void crear_archivo_metadata(char *ruta, tipo_archivo tipo, char caracter_llenado)
@@ -690,7 +778,7 @@ void crear_archivo_metadata(char *ruta, tipo_archivo tipo, char caracter_llenado
 	config_set_value(f, "SIZE", 0);
 	config_set_value(f, "BLOCK_COUNT", 0);
 	config_set_value(f, "BLOCKS", "[]");
-	char* car_llenado = malloc(sizeof(char));
+	char *car_llenado = malloc(sizeof(char));
 	*car_llenado = caracter_llenado;
 	if (tipo == RECURSO)
 	{
@@ -702,81 +790,105 @@ void crear_archivo_metadata(char *ruta, tipo_archivo tipo, char caracter_llenado
 	free(car_llenado);
 }
 
-int conseguir_ultimo_bloque(t_config *llave_valor, int cant_bloques)
+int conseguir_bloque(t_config *llave_valor, int cant_bloques, int indice)
 {
-	char *bloques = config_get_string_value(llave_valor, "BLOCKS");
-	int longitud_bloques = strlen(bloques) + 1;
-	char *bloques_aux = malloc(longitud_bloques - 2);
-	for (int i = 1; i < longitud_bloques - 2; i++)
+	char **bloques = config_get_array_value(llave_valor, "BLOCKS");
+	char *retorno = bloques[indice];
+	for (int i = 0; i < cant_bloques; i++)
 	{
-		bloques_aux[i - 1] = bloques[i];
+		if (i != indice)
+			free(bloques[i]);
 	}
-	bloques_aux[longitud_bloques - 3] = '\0';
-	char **bloques_spliteados = string_split(bloques_aux, ",");
-	return atoi(bloques_spliteados[cant_bloques - 1]);
+	free(bloques);
+	int retorno_posta = atoi(retorno);
+	free(retorno);
+	return retorno_posta;
 }
 
-int encontrar_anterior_barra_cero(char* ultimo_bloque, int block_size){
+int encontrar_anterior_barra_cero(char *ultimo_bloque, int block_size)
+{
 	int i;
 	bool encontrado = 0;
-	for(i = 0; i< block_size && !encontrado; i++){
-		if(ultimo_bloque[i] == '\0'){
+	for (i = 0; i < block_size && !encontrado; i++)
+	{
+		if (ultimo_bloque[i] == '\0')
+		{
 			encontrado = 1;
 		}
 	}
 	return i - 1;
 }
 
-int get_block_size(){
+int get_block_size()
+{
 	uint32_t bs;
-	memcpy(&bs,superbloque,sizeof(uint32_t));
+	memcpy(&bs, superbloque, sizeof(uint32_t));
 	return bs;
 }
 
-int get_block_amount(){
+int get_block_amount()
+{
 	uint32_t ba;
-	memcpy(&ba, superbloque+sizeof(uint32_t),sizeof(uint32_t));
+	memcpy(&ba, superbloque + sizeof(uint32_t), sizeof(uint32_t));
 	return ba;
 }
 
-int get_primer_bloque_libre(){
+int get_primer_bloque_libre()
+{
 	int cant_bloques = get_block_amount();
-	char* bitarray = malloc(cant_bloques);
-	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	char *bitarray = malloc(cant_bloques);
+	t_bitarray *bit_array = malloc(sizeof(t_bitarray));
 	bit_array->bitarray = bitarray;
-	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	memcpy(bit_array, superbloque + 2 * sizeof(uint32_t), sizeof(t_bitarray));
 	bool ocupado = 1;
 	int i;
-	for(i = 0; i<bitarray_get_max_bit(bit_array) || !ocupado;i++){
-		ocupado = bitarray_test_bit(bit_array,i);
+	for (i = 0; i < bitarray_get_max_bit(bit_array) || !ocupado; i++)
+	{
+		ocupado = bitarray_test_bit(bit_array, i);
 	}
 	free(bitarray);
 	free(bit_array);
-	if(ocupado == 0){
+	if (ocupado == 0)
+	{
 		return i;
-	} else{
+	}
+	else
+	{
 		return -1;
 	}
 }
 
-void liberar_bloque(int numero_bloque){
+void liberar_bloque(int numero_bloque)
+{
 	int cant_bloques = get_block_amount();
-	char* bitarray = malloc(cant_bloques);
-	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	char *bitarray = malloc(cant_bloques);
+	t_bitarray *bit_array = malloc(sizeof(t_bitarray));
 	bit_array->bitarray = bitarray;
-	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	memcpy(bit_array, superbloque + 2 * sizeof(uint32_t), sizeof(t_bitarray));
 	bitarray_clean_bit(bit_array, numero_bloque);
 	free(bit_array);
 	free(bitarray);
 }
 
-void ocupar_bloque(int numero_bloque){
+void ocupar_bloque(int numero_bloque)
+{
 	int cant_bloques = get_block_amount();
-	char* bitarray = malloc(cant_bloques);
-	t_bitarray* bit_array = malloc(sizeof(t_bitarray));
+	char *bitarray = malloc(cant_bloques);
+	t_bitarray *bit_array = malloc(sizeof(t_bitarray));
 	bit_array->bitarray = bitarray;
-	memcpy(bit_array, superbloque + 2*sizeof(uint32_t),sizeof(t_bitarray));
+	memcpy(bit_array, superbloque + 2 * sizeof(uint32_t), sizeof(t_bitarray));
 	bitarray_set_bit(bit_array, numero_bloque);
 	free(bit_array);
 	free(bitarray);
+}
+
+void setear_nuevos_blocks(t_config* config, int cant_bloques_actual){
+	char* blocks_viejos = config_get_string_value(config,"BLOCKS");
+	blocks_viejos[2*cant_bloques_actual] = ']';
+	blocks_viejos[2*cant_bloques_actual + 1] = '\0';
+	char* blocks_nuevos = malloc(2*cant_bloques_actual+2);
+	memcpy(blocks_nuevos,blocks_viejos,2*cant_bloques_actual+2);
+	free(blocks_viejos);
+	config_set_value(config,"BLOCKS",blocks_nuevos);
+	free(blocks_nuevos);
 }

@@ -87,10 +87,11 @@ void ocupar_bloque(int numero_bloque);
 int get_block_size();
 int get_block_amount();
 int get_primer_bloque_libre();
+void setear_nuevos_blocks(t_config* config, int cant_bloques_actual);
 //--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
 char* itoa_propio(uint32_t entero);
-int conseguir_ultimo_bloque(t_config* llave_valor, int cant_bloques);
+int conseguir_bloque(t_config * llave_valor, int cant_bloques, int indice);
 int encontrar_anterior_barra_cero(char* ultimo_bloque, int block_size);
 //--------------Sincronizacion----------
 pthread_t hilo_sincronizacion;
