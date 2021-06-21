@@ -29,7 +29,7 @@
 *.dylib
 
 # Executables
-# discordiador/discordiador
+discordiador/discordiador
 *.exe
 *.out
 *.app
@@ -43,7 +43,7 @@
 *.idb
 *.pdb
 *.log
-#**/*.log
+**/*.log
 
 # Kernel Module Compile Results
 *.mod*
