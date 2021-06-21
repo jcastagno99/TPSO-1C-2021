@@ -35,6 +35,7 @@ typedef struct
 	int TAMANIO_SWAP;
 	char* PATH_SWAP;
 	char* ALGORITMO_REEMPLAZO;
+	char* CRITERIO_SELECCION;
 	int PUERTO;
 	
 }mi_ram_hq_config;
@@ -96,7 +97,7 @@ void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
 
-respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes);
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miriam);
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante);
 respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion);
 tarea obtener_proxima_tarea_segmentacion(uint32_t);
@@ -105,12 +106,12 @@ estado obtener_estado_segmentacion(uint32_t);
 posicion obtener_ubicacion_segmentacion(uint32_t);
 
 t_tabla_de_segmento* buscar_patota(uint32_t);
-t_segmento_de_memoria* buscar_segmento_tareas(t_list*);
+t_segmento_de_memoria* buscar_segmento_tareas(uint32_t);
 t_segmento_de_memoria* buscar_segmento_pcb();
 t_segmento_de_memoria* buscar_segmento_tcb();
 
 void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
-void cargar_tareas_en_segmento(t_list*,t_segmento*);
+void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento* );
 void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
@@ -120,6 +121,13 @@ tarea obtener_proxima_tarea_paginacion(uint32_t);
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
 estado obtener_estado_paginacion(uint32_t);
 posicion obtener_ubicacion_paginacion(uint32_t);
+
+void compactar_memoria();
+int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
+
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, t_segmento*);
+t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
+
 
 #endif /* MI_RAM_HQ_LIB_H */
 
