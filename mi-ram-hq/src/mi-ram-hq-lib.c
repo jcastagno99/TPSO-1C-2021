@@ -491,7 +491,24 @@ tarea obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
 tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid)
 {
 	tarea proxima_tarea;
-	t_tabla_de_segmento* auxiliar_patota = buscar_patota(tripulante_tid);
+	t_segmento* tripulante_aux;
+	uint32_t tid_aux;
+	t_tabla_de_segmento* auxiliar_patota = buscar_patota_con_tid(tripulante_tid);
+	if(!auxiliar_patota){
+		for(int i=0; i<auxiliar_patota->segmentos_tripulantes->elements_count; i++){
+		pthread_mutex_lock(auxiliar_patota->mutex_segmentos_tripulantes);
+		tripulante_aux = list_get(auxiliar_patota->segmentos_tripulantes,i);
+		memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
+			if(tid_aux == tripulante_tid){
+				char* tareas;
+				uint32_t id_tarea;
+				memcpy(&id_tarea,tripulante_aux->base + 3*(sizeof(uint32_t)) + 1, sizeof(uint32_t));
+				memcpy(tareas,auxiliar_patota->segmento_tarea,auxiliar_patota->segmento_tarea->tamanio); //Me traigo todo el contenido del segmento de tareas
+				
+			}
+		}
+	}
+	log_error(logger_ram_hq,"El tripulante %d no esta dado de alta en ninguna patota", tripulante_tid);
 	//uint32 pid = obtener_pid(auxiliar_patota);
 	//tarea = obtener_proxima_tarea(pid);
 	//Ta bueno pasarle el pid ya que lo tengo para ahorrar iteraciones
@@ -645,7 +662,6 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 	for(int i=0; i<patotas->elements_count; i++){
 		auxiliar_patota = list_get(patotas,i);
 		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
-		//memcpy(&pid_auxiliar,auxiliar->segmento_pcb->base,sizeof(uint32_t));
 		for(int j=0; j<auxiliar_patota->segmentos_tripulantes->elements_count; j++){
 			uint32_t tid_aux;
 			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
@@ -655,7 +671,7 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 				pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
 				pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
 				pthread_mutex_unlock(&mutex_patotas);
-				log_info(logger_ram_hq,"Patota correspondiente al tid = %d encontrada",tid);
+				log_info(logger_ram_hq,"Patota correspondiente al tid: %d encontrada",tid);
 				return auxiliar_patota;
 			}
 			pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
@@ -663,7 +679,7 @@ t_tabla_de_segmento* buscar_patota_con_tid(uint32_t tid){
 		pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
 	}
 	pthread_mutex_unlock(&mutex_patotas);
-	log_error(logger_ram_hq,"No se encontro una patota con el tid = %d asociada",tid);
+	log_error(logger_ram_hq,"No se encontro una patota con el tid: %d asociada",tid);
 	return NULL;
 }
 
