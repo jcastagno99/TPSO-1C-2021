@@ -78,6 +78,7 @@ typedef enum
 	BLOCKED_E_S,
 	BLOCKED_SABOTAJE,
 	EXIT,
+	EXPULSADO,
 	ERROR
 } estado;
 

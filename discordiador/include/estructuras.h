@@ -7,40 +7,46 @@
 
 // A TODO PONERLE UN TRI o UN DIS al inicio para no confundir con los de serializacion
 
-typedef struct {
-    int x;
-    int y;
-} Posicion;
-
-typedef enum{
+typedef enum
+{
     DISPONIBLE,
     EN_CURSO,
     TERMINADA
 } dis_estado_tarea;
 
-typedef struct {
+typedef struct
+{
     dis_estado_tarea estado_tarea;
     char *nombre_tarea;
-	int parametro;
-	int pos_x;
-	int pos_y;
-	int tiempo;
+    int parametro;
+    int pos_x;
+    int pos_y;
+    int tiempo;
     bool es_de_sabotaje;
 } dis_tarea;
 
-typedef struct {
-    Posicion pos;
+typedef struct
+{
+    int pos_x;
+    int pos_y;
     estado estado; // estado : de los shared_utils.h
     int id;
     int id_patota;
     sem_t sem_tri;
-    dis_tarea* tarea_actual;
+    dis_tarea *tarea_actual;
+    pthread_t threadid;
+    sem_t procesador;
+    bool hice_ciclo_inicial_tarea_es;
+    int tareas_realizadas;
+    bool expulsado;
+    pthread_mutex_t mutex_expulsado;
 } dis_tripulante;
 
-typedef struct {
+typedef struct
+{
     int id_patota;
-    t_list* list_tareas;
+    t_list *list_tareas;
+    int cantidad_de_tareas;
 } dis_patota;
-
 
 #endif

@@ -67,7 +67,6 @@ void validacion_sintactica(char *text)
             if (cant_tripulantes != 0)
             {
                 log_info(logger, "INICIANDO PATOTA");
-                iniciar_patota_global(str_split);
                 pthread_mutex_lock(&mutex_cola_iniciar_patota);
                 queue_push(cola_de_iniciar_patotas, str_split);
                 pthread_mutex_unlock(&mutex_cola_iniciar_patota);
@@ -91,37 +90,13 @@ void validacion_sintactica(char *text)
         break;
 
     case EJECT_CREW:
-        printf("Posible intento de expulsar tripulante\n");
+
         if (str_split[1] != NULL && str_split[2] == NULL)
         {
             if (atoi(str_split[1]) != 0)
             {
-
-                int size_paquete = sizeof(uint32_t);
-                int tid = atoi(str_split[1]);
-                void *info = pserializar_tid(tid); 
-
-                enviar_paquete(conexion_mi_ram_hq, EXPULSAR_TRIPULANTE, size_paquete, info);
-                t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-                if (paquete_recibido->codigo_operacion == RESPUESTA_EXPULSAR_TRIPULANTE){
-                    printf("Recibi opcode de respuesta okfail\n");
-                    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-
-                    if (respuesta == RESPUESTA_OK)
-                    {
-                        printf("Recibi respuesta OK\n");
-                   
-                    }
-                    else if (respuesta == RESPUESTA_FAIL)
-                    {
-                        printf("Recibi respuesta FAIL\n");
-                    }
-                    else
-                        printf("Recibi respuesta INVALIDA\n");
-                }
-                else
-                    printf("Recibi opcode de respuesta INVALIDO\n");
-
+                printf("EXPULSAR_TRIPULANTE : OK\n");
+                expulsar_tripulante(atoi(str_split[1]));
             }
             else
                 printf("EXPULSAR_TRIPULANTE : id tripulante no es un [int]\n");
@@ -130,14 +105,17 @@ void validacion_sintactica(char *text)
             printf("Parametros incorrectos/faltantes\n");
         break;
 
-    /* case INIT_PLANIFICATION:
+    case INIT_PLANIFICATION:
         printf("Posible intento de iniciar planificacion\n");
         if (str_split[1] == NULL)
-        {   
-            planificacion_pausada=false; //por lo de abajo
-            sem_post(&sem_planificador_a_largo_plazo);
-            sem_post(&sem_planificador_a_corto_plazo);
-            printf("INICIAR_PLANIFICACION : OK\n");
+        {
+            planificacion_pausada = false;
+            for (int i = 0; i < cantidad_hilos_pausables; i++)
+            {
+                sem_post(&sem_para_detener_hilos);
+            }
+
+            log_info(logger, "INICIAR_PLANIFICACION: OK");
             // [TODO]
         }
         else
@@ -147,16 +125,13 @@ void validacion_sintactica(char *text)
     case PAUSE_PLANIFICATION:
         if (str_split[1] == NULL)
         {
-            //sem_wait(&sem_planificador_a_largo_plazo);
-            //sem_wait(&sem_planificador_a_corto_plazo);
-            planificacion_pausada=true;
-            log_info(logger,"PLANIFICACION DETENIDA"); // NO LLEGA AQUI
-
+            planificacion_pausada = true;
+            log_info(logger, "PAUSAR_PLANIFICACION: OK");
         }
         else
             printf("PAUSAR_PLANIFICACION : no contiene parametros\n");
         break;
-*/
+
     case GET_BINNACLE:
         printf("Posible intento de obtener bitacora\n");
         if (str_split[1] != NULL && str_split[2] == NULL)

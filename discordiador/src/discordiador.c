@@ -1,6 +1,5 @@
 #include "discordiador.h"
 
-
 int main(void)
 {
 	signal(SIGINT, catch_sigint_signal);
@@ -12,14 +11,37 @@ int main(void)
 	// terminar_programa(conexion_mi_ram_hq, conexion_i_mongo_store, logger, config);
 }
 
+void cargar_config()
+{
+	// Grado de multiprocesamiento
+	char *multitask = config_get_string_value(config, "GRADO_MULTITAREA");
+	grado_de_multiprocesamiento = atoi(multitask);
+	// Conexiones
+	ip_mi_ram_hq = config_get_string_value(config, "IP_MI_RAM_HQ");
+	puerto_mi_ram_hq = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
+	ip_i_mongo_store = config_get_string_value(config, "IP_I_MONGO_STORE");
+	puerto_i_mongo_store = config_get_string_value(config, "PUERTO_I_MONGO_STORE");
+	// RR
+	char *q = config_get_string_value(config, "QUANTUM");
+	quantum_rr = atoi(q);
+	// RETARDO
+	char *retardo = config_get_string_value(config, "RETARDO_CICLO_CPU");
+	tiempo_retardo_ciclo_cpu = atoi(retardo);
+	// Puerto de escucha para los sabotajes
+	char *puerto_escucha_sabotaje = config_get_string_value(config, "PUERTO_ESCUCHA_SABOTAJE");
+	puerto_escucha = atoi(puerto_escucha_sabotaje);
+	// Algoritmo
+	algoritmo = config_get_string_value(config, "ALGORITMO");
+}
+
 void inicializar_discordiador()
 {
-	logger = iniciar_logger();
-	config = leer_config();
+	logger = log_create("cfg/discordiador.log", "discordiador.log", 1, LOG_LEVEL_INFO);
+	config = config_create("cfg/discordiador.config");
 
+	cargar_config();
 	// [TODO] Planificacion
-	sem_init(&sem_planificador_a_corto_plazo, 0, 0);
-	sem_init(&sem_planificador_a_largo_plazo, 0, 0);
+	sem_init(&sem_para_detener_hilos, 0, 0);
 
 	// [TODO] inicializar colas/listas y semaforos
 	cola_de_new = list_create();
@@ -28,59 +50,99 @@ void inicializar_discordiador()
 	lista_de_patotas = list_create();
 	list_total_tripulantes = list_create();
 	cola_de_iniciar_patotas = queue_create();
+	cola_de_block = list_create();
 
 	pthread_mutex_init(&mutex_cola_iniciar_patota, NULL);
 	pthread_mutex_init(&mutex_cola_de_ready, NULL);
 	pthread_mutex_init(&mutex_cola_de_new, NULL);
 	pthread_mutex_init(&mutex_cola_de_exec, NULL);
+	pthread_mutex_init(&mutex_cola_de_block, NULL);
 	pthread_mutex_init(&mutex_tarea, NULL);
 
 	sem_init(&sem_contador_cola_iniciar_patota, 0, 0);
 	sem_init(&sem_contador_cola_de_new, 0, 0);
+	sem_init(&sem_contador_cola_de_block, 0, 0);
+	sem_init(&sem_contador_cola_de_ready, 0, 0);
+	sem_init(&operacion_entrada_salida_finalizada, 0, 0);
 
 	// [TODO] Inicializacion de VAR GLOBALES
 	id_patota = 1;
-	id_tcb=1;
-	grado_de_multiprocesamiento = 1;
-	procesadores_disponibles = grado_de_multiprocesamiento;
-	planificacion_pausada = false;
+	id_tcb = 1;
+	planificacion_pausada = true;
+	cantidad_hilos_pausables = 3 + grado_de_multiprocesamiento;
+	/* Quiero que se pauseen:
+	1- El hilo Planificador a corto plazo
+	2- El hilo planificador a Largo plazo
+	3- El hilo que gestiona la operacion de E/S
+	4- Cada procesador
+	*/
 
-	//CONFIG
-	ip_mi_ram_hq = config_get_string_value(config, "IP_MI_RAM_HQ");
-	puerto_mi_ram_hq = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
-	ip_i_mongo_store = config_get_string_value(config, "IP_I_MONGO_STORE");
-	puerto_i_mongo_store = config_get_string_value(config, "PUERTO_I_MONGO_STORE");
+	sem_init(&procesadores_disponibles, 0, grado_de_multiprocesamiento);
 
-
+	/******************************************
+	***			𝗖𝗢𝗡𝗘𝗫𝗜𝗢𝗡𝗘𝗦			   ***
+	******************************************/
 	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-	//pthread_t hilo_server;
-	//pthread_create(&hilo_server, NULL, esperar_conexiones, &puerto);
+
+
+	pthread_t hilo_server;
+	pthread_create(&hilo_server, NULL, esperar_conexiones, NULL);
+
+	// HILO CREACION PATOTAS ---------------------------------------------
+	pthread_t hilo_creacion_patota;
+	pthread_create(&hilo_creacion_patota, NULL, gestion_patotas_a_memoria, (void *)logger);
 
 	// HILO CONSOLA ------------------------------------------------------
 	pthread_t hilo_consola;
 	pthread_create(&hilo_consola, NULL, (void *)leer_consola, (void *)logger);
-	
+
+	// Hilo ejecutando planificador a corto plazo  -------------------------
+	pthread_t hilo_planificador_a_corto_plazo;
+	pthread_create(&hilo_planificador_a_corto_plazo, NULL, planificador_a_corto_plazo, NULL);
+
+	// Hilo ejecutando planificador a largo plazo  -------------------------
+	pthread_t hilo_planificador_a_largo_plazo;
+	pthread_create(&hilo_planificador_a_largo_plazo, NULL, (void *)planificador_a_largo_plazo, NULL);
+
+	// Hilo ejecutando la Cola de Bloqueado  -------------------------
+	pthread_t hilo_cola_de_block;
+	pthread_create(&hilo_cola_de_block, NULL, (void *)ejecutar_tripulantes_bloqueados, NULL);
+
+	// Hilo ejecutando la Cola de Exec  -------------------------
+	pthread_t hilo_cola_de_exec;
+	if (string_equals_ignore_case(algoritmo, "RR"))
+	{
+		for (int i = 0; i < grado_de_multiprocesamiento; i++)
+		{
+			int *temp = (int *)malloc(sizeof(int));
+			*temp = i;
+			pthread_create(&hilo_cola_de_exec, NULL, (void *)procesar_tripulante_rr, (void *)temp);
+		}
+		log_info(logger, "[ Discordiador ] Algoritmo: %s. Quantum: %i. Grado de multiprocesamiento: %i.", algoritmo, quantum_rr, grado_de_multiprocesamiento);
+	}
+	else
+	{
+		for (int i = 0; i < grado_de_multiprocesamiento; i++)
+		{
+			int *temp = (int *)malloc(sizeof(int));
+			*temp = i;
+			pthread_create(&hilo_cola_de_exec, NULL, (void *)procesar_tripulante_fifo, (void *)temp);
+		}
+		log_info(logger, "[ Discordiador ] Algoritmo: %s. Grado de multiprocesamiento: %i", algoritmo, grado_de_multiprocesamiento);
+	}
 	pthread_join(hilo_consola, NULL);
-}
 
-t_log *iniciar_logger(void)
-{
-	return log_create("cfg/discordiador.log", "discordiador.log", 1, LOG_LEVEL_INFO);
-}
-
-t_config *leer_config(void)
-{
-	return config_create("cfg/discordiador.config");
 }
 
 // SERVIDOR QUE ESPERA UN SABOTAJE --------------
-void *esperar_conexiones(void *arg)
+void *esperar_conexiones()
 {
-	int puerto = *((int *)arg);
 	t_list *hilos = list_create();
-	int socket_escucha = iniciar_servidor_discordiador(puerto);
+	//[TODO] borrar esto que nunca se uso ni se va a usar, ademas se crea acá dentor de esta funcion y no va a poder
+	// ser referenciado desde ningun lugar.
+	int socket_escucha = iniciar_servidor_discordiador(puerto_escucha);
 	int socket_cliente;
-	log_info(logger, "SERVIDOR LEVANTADO! ESCUCHANDO EN %i", puerto);
+	log_info(logger, "[ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN %i", puerto_escucha);
 	struct sockaddr cliente;
 	socklen_t len = sizeof(cliente);
 	do
@@ -88,12 +150,12 @@ void *esperar_conexiones(void *arg)
 		socket_cliente = accept(socket_escucha, &cliente, &len);
 		if (socket_cliente > 0)
 		{
-			log_info(logger, "NUEVA CONEXIÓN!");
+			log_info(logger, "[ Discordiador ] NUEVA CONEXIÓN!");
 			crear_hilo_para_manejar_suscripciones(hilos, socket_cliente);
 		}
 		else
 		{
-			log_error(logger, "ERROR ACEPTANDO CONEXIONES: %s", strerror(errno));
+			log_error(logger, "[ Discordiador ] ERROR ACEPTANDO CONEXIONES: %s", strerror(errno));
 		}
 	} while (1);
 }
@@ -142,11 +204,13 @@ void crear_hilo_para_manejar_suscripciones(t_list *lista_hilos, int socket)
 
 void manejar_suscripciones_discordiador(int *socket_hilo)
 {
-	log_info(logger, "Se creó el hilo correctamente. Socket fd %i", *socket_hilo);
+	int fd = *socket_hilo;
+	free(socket_hilo);
+	log_info(logger, "[ Discordiador ] Atendiendo sabotaje. Socket fd %i", fd);
 	//LLENAME
 	//CON AGUA
-	close(*socket_hilo);
-	free(socket_hilo);
+	//aca manejar el sabotaje
+	close(fd);
 }
 // FIN SERVIDOR PARA SABOTAJES ---------------------------------
 
@@ -159,10 +223,6 @@ void leer_consola(t_log *logger)
 		log_info(logger, leido);
 		validacion_sintactica(leido); // VALIDACION SINTACTICA
 
-		//struct_prueba* una_prueba = malloc(sizeof(struct_prueba));
-		//una_prueba->tamanio = strlen(leido)+1;
-		//una_prueba->contenido = leido;
-		//enviar_paquete(conexion_mi_ram_hq,PRUEBA,una_prueba->tamanio,una_prueba->contenido);
 		add_history(leido);
 		free(leido);
 		leido = readline(">");
@@ -176,36 +236,18 @@ void *planificador_a_corto_plazo()
 {
 	while (1)
 	{
-		if(planificacion_pausada)
-    		sem_wait(&sem_planificador_a_corto_plazo);
+		chequear_planificacion_pausada();
+		sem_wait(&sem_contador_cola_de_ready);
+		sem_wait(&procesadores_disponibles);
+		//Si hay elementos en ready y hay procesadores disponibles, pasar de ready a exec
+		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready antes del ciclo");
+		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_ready, &mutex_cola_de_ready);
+		tripulante->estado = EXEC;
+		agregar_elemento_a_cola(cola_de_exec, &mutex_cola_de_exec, tripulante);
+		sem_post(&sem_contador_cola_de_exec);
+		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready despues del ciclo");
 
-		sem_wait(&sem_planificador_a_corto_plazo);
-		log_info(logger, "Planificador a corto plazo:  Cola ready: %i", list_size(cola_de_ready));
-		log_info(logger, "Ejecutando cosas...");
-
-		// 1- Paso elementos a ready mientras se pueda
-		if (list_size(cola_de_ready) && procesadores_disponibles)
-		{
-			//Si hay elementos en ready y hay procesadores disponibles, pasar de ready a exec
-			dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_ready, &mutex_cola_de_ready);
-			tripulante->estado=EXEC;
-			agregar_elemento_a_cola(cola_de_exec, &mutex_cola_de_exec, tripulante);
-			log_info(logger, "Agregado exitosamente! Ahora la cantidad en ready es %i y en exec, %i", list_size(cola_de_ready), list_size(cola_de_exec));
-		}
-
-		// 2- Ejecuto las colas según el algoritmo configurado
-		// llename
-		// con agua
-		sleep(4);
-		sem_post(&sem_planificador_a_corto_plazo);
-
-		//[se va a repetir muchas veces :C]
-		//log_info(logger, "Planificador a corto plazo: Cola ready: %i", list_size(cola_de_ready));
-
-		sleep(1); //MAGIA NEGRA PARA QUE ANDE
-				  //este sleep es para que el semaforo no sea inmediatamente tomado por este hilo y le de tiempo al
-				  //hilo que pone en pausa la planificacion. Puede ser un sleep de menor tamaño claramente, es
-				  //solo para bloquear al hilo por un momento
+		sleep(2);
 	}
 	return NULL;
 }
@@ -214,29 +256,147 @@ void *planificador_a_largo_plazo()
 {
 	while (1)
 	{
-		if(planificacion_pausada)
-    		sem_wait(&sem_planificador_a_largo_plazo);
-		
+		chequear_planificacion_pausada();
 		//si hay tripulantes enviados a NEW y la planificación está, actuará.
-		sem_wait(&sem_planificador_a_largo_plazo);
 		sem_wait(&sem_contador_cola_de_new);
-		log_info(logger, "Planificador a largo plazo: Cola new: %i", list_size(cola_de_new));
-		log_info(logger, "Pasando elementos de NEW --------> READY");
+		loggear_estado_de_cola(cola_de_new, "Planificador a largo plazo", "New antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_new, &mutex_cola_de_new);
-		tripulante->estado=READY;
+		tripulante->estado = READY;
 		agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
-		log_info(logger, "Planificador a largo plazo: quedaron %i elementos", list_size(cola_de_new));
-		sleep(2);
-		//en este punto, habrá elementos en la cola NEW y la planificacion estará activada.
-		sem_post(&sem_planificador_a_largo_plazo);
-
-		sleep(1); // CREO YA NO IRIRA
-		//este sleep es para que el semaforo no sea inmediatamente tomado por este hilo y le de tiempo al
-		//hilo que pone en pausa la planificacion. Puede ser un sleep de menor tamaño claramente, es
-		//solo para bloquear al hilo por un momento
+		sem_post(&sem_contador_cola_de_ready);
+		sem_post(&(tripulante->sem_tri));
+		loggear_estado_de_cola(cola_de_new, "Planificador a largo plazo", "New despues del ciclo");
 	}
 	return NULL;
 }
+
+// EL 'temp' o 'id' es el identificador del nucleo
+void *procesar_tripulante_fifo(void *temp)
+{
+	int id = *((int *)temp);
+	free(temp);
+
+	while (1)
+	{
+		sem_wait(&sem_contador_cola_de_exec);
+		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_exec, &mutex_cola_de_exec);
+		log_info(logger, "[ Procesador %i ] Ejecutando tripulante %i", id, tripulante->id);
+		while (tripulante->estado == EXEC)
+		{
+			chequear_planificacion_pausada();
+			sem_post(&(tripulante->sem_tri));
+			sem_wait(&(tripulante->procesador));
+			printf("[ Procesador %i ] 1 ciclo ejecutado\n", id);
+		}
+		log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado", id, tripulante->id);
+		switch (tripulante->estado)
+		{
+		case BLOCKED_E_S:
+			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
+			sem_post(&sem_contador_cola_de_block);
+			break;
+		case EXIT:
+			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, tripulante->id);
+			break;
+		case EXPULSADO:
+			log_info(logger, "[ Procesador %i ] El tripulante %i ha sido EXPULSADO", id, tripulante->id);
+			break;
+		default:
+			log_error(logger, "[ Procesador %i ] Que verga pasó, no debería estar aca. Discordiador.c linea 281", id);
+			break;
+		}
+		sem_post(&procesadores_disponibles);
+	}
+	return NULL;
+}
+
+void *procesar_tripulante_rr(void *temp)
+{
+	int id = *((int *)temp);
+	free(temp);
+	int quantum_actual = 0;
+	while (1)
+	{
+		sem_wait(&sem_contador_cola_de_exec);
+		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_exec, &mutex_cola_de_exec);
+		log_info(logger, "[ Procesador %i ] Ejecutando tripulante %i. Quantum actual: %i", id, tripulante->id, quantum_actual);
+		while (quantum_actual < quantum_rr)
+		{
+			chequear_planificacion_pausada();
+			sem_post(&(tripulante->sem_tri));
+			sem_wait(&(tripulante->procesador));
+			printf("[ Procesador %i ] 1 ciclo ejecutado\n", id);
+			quantum_actual++;
+			if (tripulante->estado != EXEC) //quiere decir que se bloqueó, o finalizó
+				break;
+		}
+		log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado. Quantum actual: %i", id, tripulante->id, quantum_actual);
+		switch (tripulante->estado)
+		{
+		case BLOCKED_E_S:
+			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
+			sem_post(&sem_contador_cola_de_block);
+			break;
+		case EXIT:
+			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, quantum_actual);
+			break;
+		case EXEC: //quiere decir que todavia no terminó de ejecutar, por lo que lo envío al final de ready
+			tripulante->estado = READY;
+			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
+			sem_post(&sem_contador_cola_de_ready);
+			break;
+		case EXPULSADO:
+			log_info(logger, "[ Procesador %i ] El tripulante %i ha sido EXPULSADO", id, tripulante->id);
+			break;
+		default:
+			log_error(logger, "[ Procesador %i ] No debería estar aca. Discordiador.c linea 342\n", id);
+			break;
+		}
+		if (quantum_actual == quantum_rr)
+			quantum_actual = 0;
+		// lo reseteo porque si el proceso finalizo/bloqueó justo al fin de quantum
+		// y yo no lo reseteo, lo que va a pasar es que el siguiente proceso que entre a exec va a ser automaticamente
+		// desalojado sin ejecutar nada.
+		// asi que este reset se tiene que hacer.
+		sem_post(&procesadores_disponibles);
+	}
+	return NULL;
+}
+
+void *ejecutar_tripulantes_bloqueados()
+{
+	while (1)
+	{
+		sem_wait(&sem_contador_cola_de_block);
+		dis_tripulante *trip = (dis_tripulante *)list_get(cola_de_block, 0);
+		loggear_estado_de_cola(cola_de_block, "Dispositivo E/S", "block antes de procesar tripulante");
+		while (trip->estado == BLOCKED_E_S)
+		{
+			chequear_planificacion_pausada();
+			sem_post(&(trip->sem_tri));
+			sem_wait(&operacion_entrada_salida_finalizada);
+			printf("[ Dispositivo E/S ] 1 ciclo de E/S completado\n");
+		}
+
+		switch (trip->estado)
+		{
+		case READY:
+			trip = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_block, &mutex_cola_de_block);
+			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, trip);
+			sem_post(&sem_contador_cola_de_ready);
+			break;
+		case EXPULSADO:
+			log_info(logger, "[ Dispositivo E/S ] El tripulante %i ha sido EXPULSADO", trip->id);
+			break;
+		default:
+			log_info(logger, "[ Dispositivo E/S ] No debería estar aca. Discordiador.c Linea 319");
+			break;
+		}
+		loggear_estado_de_cola(cola_de_block, "Dispositivo E/S", "block despues de procesar tripulante");
+	}
+	return NULL;
+}
+
 //----------- FIN PLANIFICADORES ---------
 
 void agregar_elemento_a_cola(t_list *cola, pthread_mutex_t *mutex, void *elemento)
@@ -253,9 +413,20 @@ void *quitar_primer_elemento_de_cola(t_list *cola, pthread_mutex_t *mutex)
 	pthread_mutex_unlock(mutex);
 	return elemento;
 }
+
+void chequear_planificacion_pausada()
+{
+	if (planificacion_pausada)
+	{
+		sem_wait(&sem_para_detener_hilos);
+	}
+}
 //---------- Funciones para ver el estado de las colas ---------
-//LLENAME
-//CON AGUA
+
+void loggear_estado_de_cola(t_list *cola, char *thread, char *tipo_de_cola)
+{
+	log_info(logger, "[ %s ] Estado de la cola %s: %i elementos.", thread, tipo_de_cola, list_size(cola));
+}
 //---------- FIN Funciones para ver el estado de las colas ---------
 
 void catch_sigint_signal(int signal)

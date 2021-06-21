@@ -18760,3 +18760,432 @@
 [INFO] 15:10:13:332 discordiador.log/(13445:13447): INICIANDO PATOTA
 [INFO] 15:10:13:332 discordiador.log/(13445:13447): contenido de archivo actual GENERAR_OXIGENO 12;2;15;50
 [INFO] 15:10:13:332 discordiador.log/(13445:13447): contenido de archivo actual CONSUMIR_OXIGENO 120;12;30;12
+[INFO] 16:22:14:342 discordiador.log/(5025:5027): d
+[WARNING] 16:22:14:342 discordiador.log/(5025:5027): COMANDO NO VALIDO
+[INFO] 16:23:20:531 discordiador.log/(5143:5145): INICIAR_PATOTA 2 src/plantas.txt 1|1 3|4
+[INFO] 16:23:20:531 discordiador.log/(5143:5145): INICIANDO PATOTA
+[INFO] 16:23:20:531 discordiador.log/(5143:5145): contenido de archivo actual GENERAR_OXIGENO 12;2;15;50
+[INFO] 16:23:20:531 discordiador.log/(5143:5145): contenido de archivo actual CONSUMIR_OXIGENO 120;12;30;12
+[INFO] 16:24:33:526 discordiador.log/(5143:5145): hola
+[WARNING] 16:24:33:526 discordiador.log/(5143:5145): COMANDO NO VALIDO
+[INFO] 17:36:20:651 discordiador.log/(7004:7004): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 17:36:20:657 discordiador.log/(7004:7005): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 17:36:38:481 discordiador.log/(7004:7007): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 17:36:38:482 discordiador.log/(7004:7007): INICIANDO PATOTA
+[INFO] 17:36:38:482 discordiador.log/(7004:7006): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 17:36:38:482 discordiador.log/(7004:7006): [ Discordiador ] Patota creada con ID 1
+[INFO] 17:36:46:099 discordiador.log/(7004:7007): INICIAR_PLANIFICACION
+[INFO] 17:36:46:099 discordiador.log/(7004:7007): INICIAR_PLANIFICACION: OK
+[INFO] 17:36:46:099 discordiador.log/(7004:7009): [ Planificador a largo plazo ] Estado de la cola New antes del ciclo: 2 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7009): [ Planificador a largo plazo ] Estado de la cola New despues del ciclo: 1 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7009): [ Planificador a largo plazo ] Estado de la cola New antes del ciclo: 1 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7009): [ Planificador a largo plazo ] Estado de la cola New despues del ciclo: 0 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 1 elementos.
+[INFO] 17:36:46:099 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:36:46:099 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante DESCARGAR_ITINERARIO. Tiempo restante: 1
+[INFO] 17:36:47:099 discordiador.log/(7004:7021): [ Tripulante 1 ] Tarea DESCARGAR_ITINERARIO TERMINADA
+[INFO] 17:36:47:100 discordiador.log/(7004:7021): [ Tripulante 1 ] (1,1) => (2,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:48:099 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:48:099 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:48:099 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:36:48:099 discordiador.log/(7004:7022): [ Tripulante 2 ] (3,4) => (2,4) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:36:48:100 discordiador.log/(7004:7021): [ Tripulante 1 ] (2,1) => (3,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:48:100 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:36:49:099 discordiador.log/(7004:7022): [ Tripulante 2 ] (2,4) => (1,4) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:36:50:099 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:50:100 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:50:100 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:36:50:100 discordiador.log/(7004:7021): [ Tripulante 1 ] (3,1) => (3,2) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:50:100 discordiador.log/(7004:7022): [ Tripulante 2 ] (1,4) => (1,3) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:36:50:100 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:36:51:100 discordiador.log/(7004:7021): [ Tripulante 1 ] (3,2) => (3,3) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:52:100 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:52:100 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:52:101 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:36:52:101 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 2
+[INFO] 17:36:52:101 discordiador.log/(7004:7022): [ Tripulante 2 ] (1,3) => (1,2) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:36:53:101 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:36:53:102 discordiador.log/(7004:7022): [ Tripulante 2 ] (1,2) => (1,1) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:36:54:101 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:54:101 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:54:101 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:36:54:101 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 1
+[INFO] 17:36:54:102 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante DESCARGAR_ITINERARIO. Tiempo restante: 1
+[INFO] 17:36:55:102 discordiador.log/(7004:7021): [ Tripulante 1 ] Tarea REGAR_PLANTAS TERMINADA
+[INFO] 17:36:55:102 discordiador.log/(7004:7021): [ Tripulante 1 ] (3,3) => (4,3) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:36:55:102 discordiador.log/(7004:7022): [ Tripulante 2 ] Tarea DESCARGAR_ITINERARIO TERMINADA
+[INFO] 17:36:55:102 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:36:56:101 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:56:101 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:56:101 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:36:56:102 discordiador.log/(7004:7022): [ Tripulante 2 ] (1,1) => (2,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:56:102 discordiador.log/(7004:7021): [ Tripulante 1 ] (4,3) => (5,3) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:36:56:102 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:36:57:102 discordiador.log/(7004:7022): [ Tripulante 2 ] (2,1) => (3,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:58:102 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:36:58:102 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:36:58:102 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:36:58:102 discordiador.log/(7004:7021): [ Tripulante 1 ] (5,3) => (5,4) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:36:58:103 discordiador.log/(7004:7022): [ Tripulante 2 ] (3,1) => (3,2) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:36:58:103 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:36:59:102 discordiador.log/(7004:7021): [ Tripulante 1 ] (5,4) => (5,5) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:37:00:102 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:00:102 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:00:102 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:00:103 discordiador.log/(7004:7022): [ Tripulante 2 ] (3,2) => (3,3) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)
+[INFO] 17:37:00:103 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante VER_PUBLICIDAD. Tiempo restante: 1
+[INFO] 17:37:01:103 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 2
+[INFO] 17:37:01:103 discordiador.log/(7004:7021): [ Tripulante 1 ] Tarea VER_PUBLICIDAD TERMINADA
+[INFO] 17:37:01:103 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:37:02:103 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:02:103 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 1
+[INFO] 17:37:02:104 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:02:104 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:37:02:104 discordiador.log/(7004:7021): [ Tripulante 1 ] (5,5) => (6,5) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:03:104 discordiador.log/(7004:7022): [ Tripulante 2 ] Tarea REGAR_PLANTAS TERMINADA
+[INFO] 17:37:03:104 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:03:104 discordiador.log/(7004:7021): [ Tripulante 1 ] (6,5) => (7,5) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:04:104 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:04:104 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:04:104 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:04:104 discordiador.log/(7004:7022): [ Tripulante 2 ] (3,3) => (4,3) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:37:04:105 discordiador.log/(7004:7021): [ Tripulante 1 ] (7,5) => (7,6) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:04:105 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:37:05:104 discordiador.log/(7004:7022): [ Tripulante 2 ] (4,3) => (5,3) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:37:06:104 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:06:105 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:06:105 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:37:06:105 discordiador.log/(7004:7021): [ Tripulante 1 ] (7,6) => (7,7) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:06:105 discordiador.log/(7004:7022): [ Tripulante 2 ] (5,3) => (5,4) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:37:06:105 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:07:105 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 2
+[INFO] 17:37:08:105 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:08:105 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:08:105 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:08:105 discordiador.log/(7004:7022): [ Tripulante 2 ] (5,4) => (5,5) | TAREA: VER_PUBLICIDAD - UBICACION: (5,5)
+[INFO] 17:37:08:106 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 1
+[INFO] 17:37:09:105 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante VER_PUBLICIDAD. Tiempo restante: 1
+[INFO] 17:37:09:106 discordiador.log/(7004:7021): [ Tripulante 1 ] Tarea REGAR_PLANTAS TERMINADA
+[INFO] 17:37:09:106 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:37:10:105 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:10:105 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:10:105 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:37:10:106 discordiador.log/(7004:7021): [ Tripulante 1 ] (7,7) => (8,7) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:10:106 discordiador.log/(7004:7022): [ Tripulante 2 ] Tarea VER_PUBLICIDAD TERMINADA
+[INFO] 17:37:10:106 discordiador.log/(7004:7022): [ Tripulante 2 ] (5,5) => (6,5) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:10:106 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:11:106 discordiador.log/(7004:7021): [ Tripulante 1 ] (8,7) => (9,7) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:12:106 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:12:106 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:12:106 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:12:106 discordiador.log/(7004:7022): [ Tripulante 2 ] (6,5) => (7,5) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:12:107 discordiador.log/(7004:7021): [ Tripulante 1 ] (9,7) => (9,8) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:12:107 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:37:13:106 discordiador.log/(7004:7022): [ Tripulante 2 ] (7,5) => (7,6) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:14:106 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:14:107 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:14:107 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:37:14:107 discordiador.log/(7004:7021): [ Tripulante 1 ] (9,8) => (9,9) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:14:107 discordiador.log/(7004:7022): [ Tripulante 2 ] (7,6) => (7,7) | TAREA: REGAR_PLANTAS - UBICACION: (7,7)
+[INFO] 17:37:14:108 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:15:107 discordiador.log/(7004:7021): [ Tripulante 1 ] Realizando Tarea no bloqueante IRSE_A_DORMIR. Tiempo restante: 1
+[INFO] 17:37:16:107 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:16:107 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:16:107 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:16:107 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 2
+[INFO] 17:37:16:107 discordiador.log/(7004:7021): [ Tripulante 1 ] Tarea IRSE_A_DORMIR TERMINADA
+[INFO] 17:37:16:107 discordiador.log/(7004:7021): [ Tripulante 1 ] Lista de tareas TERMINADA. Saliendo de la nave...
+[INFO] 17:37:16:108 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 2
+[INFO] 17:37:16:108 discordiador.log/(7004:7011): [ Procesador 0 ] El tripulante 2 ha finalizado
+[INFO] 17:37:17:107 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante REGAR_PLANTAS. Tiempo restante: 1
+[INFO] 17:37:18:108 discordiador.log/(7004:7022): [ Tripulante 2 ] Tarea REGAR_PLANTAS TERMINADA
+[INFO] 17:37:18:108 discordiador.log/(7004:7022): [ Tripulante 2 ] (7,7) => (8,7) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:18:108 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:18:108 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:18:109 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:18:109 discordiador.log/(7004:7011): [ Procesador 0 ] Ejecutando tripulante 2. Quantum actual: 2
+[INFO] 17:37:19:108 discordiador.log/(7004:7022): [ Tripulante 2 ] (8,7) => (9,7) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:19:109 discordiador.log/(7004:7011): [ Procesador 0 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:20:109 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:37:20:109 discordiador.log/(7004:7008): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:37:20:109 discordiador.log/(7004:7012): [ Procesador 1 ] Ejecutando tripulante 2. Quantum actual: 0
+[INFO] 17:37:20:109 discordiador.log/(7004:7022): [ Tripulante 2 ] (9,7) => (9,8) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:21:110 discordiador.log/(7004:7022): [ Tripulante 2 ] (9,8) => (9,9) | TAREA: IRSE_A_DORMIR - UBICACION: (9,9)
+[INFO] 17:37:22:110 discordiador.log/(7004:7022): [ Tripulante 2 ] Realizando Tarea no bloqueante IRSE_A_DORMIR. Tiempo restante: 1
+[INFO] 17:37:23:111 discordiador.log/(7004:7022): [ Tripulante 2 ] Tarea IRSE_A_DORMIR TERMINADA
+[INFO] 17:37:23:111 discordiador.log/(7004:7022): [ Tripulante 2 ] Lista de tareas TERMINADA. Saliendo de la nave...
+[INFO] 17:37:23:111 discordiador.log/(7004:7012): [ Procesador 1 ] Rafaga finalizada. Tripulante 2 ejecutado. Quantum actual: 3
+[INFO] 17:37:23:111 discordiador.log/(7004:7012): [ Procesador 1 ] El tripulante 3 ha finalizado
+[INFO] 17:51:28:462 discordiador.log/(7622:7622): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 17:51:28:478 discordiador.log/(7622:7623): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 17:51:29:988 discordiador.log/(7622:7625): aa
+[WARNING] 17:51:29:988 discordiador.log/(7622:7625): COMANDO NO VALIDO
+[INFO] 17:51:46:256 discordiador.log/(7622:7625): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 17:51:46:256 discordiador.log/(7622:7625): INICIANDO PATOTA
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 17:51:46:256 discordiador.log/(7622:7624): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 17:55:05:287 discordiador.log/(7732:7732): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 17:55:05:293 discordiador.log/(7732:7733): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 17:55:17:906 discordiador.log/(7732:7735): INICIAR_PATOTA 1 oxigeno.txt 5|5
+[INFO] 17:55:17:906 discordiador.log/(7732:7735): INICIANDO PATOTA
+[INFO] 17:55:17:906 discordiador.log/(7732:7734): [ Discordiador ] Procesando la patota con 1 tripulantes...
+[INFO] 17:55:17:906 discordiador.log/(7732:7734): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 17:55:17:906 discordiador.log/(7732:7734): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 17:55:17:907 discordiador.log/(7732:7734): contenido de archivo actual TOMAR_AGUA;1;1;2
+[INFO] 17:55:17:907 discordiador.log/(7732:7734): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 17:55:17:907 discordiador.log/(7732:7734): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 17:57:00:268 discordiador.log/(7819:7819): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 17:57:00:277 discordiador.log/(7819:7821): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 17:57:07:351 discordiador.log/(7819:7823): INICIAR_PATOTA 1 oxigeno.txt 5|5
+[INFO] 17:57:07:351 discordiador.log/(7819:7823): INICIANDO PATOTA
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): [ Discordiador ] Procesando la patota con 1 tripulantes...
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): contenido de archivo actual TOMAR_AGUA;1;1;2
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 17:57:07:351 discordiador.log/(7819:7822): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 17:57:07:352 discordiador.log/(7819:7822): [ Discordiador ] Patota creada con ID 1
+[INFO] 17:57:26:330 discordiador.log/(7819:7823): INICIAR_PLANIFICACION
+[INFO] 17:57:26:330 discordiador.log/(7819:7823): INICIAR_PLANIFICACION: OK
+[INFO] 17:57:26:330 discordiador.log/(7819:7825): [ Planificador a largo plazo ] Estado de la cola New antes del ciclo: 1 elementos.
+[INFO] 17:57:26:330 discordiador.log/(7819:7825): [ Planificador a largo plazo ] Estado de la cola New despues del ciclo: 0 elementos.
+[INFO] 17:57:26:330 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:26:330 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:26:330 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:26:330 discordiador.log/(7819:7840): [ Tripulante 1 ] (5,5) => (4,5) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:27:331 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,5) => (3,5) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:28:331 discordiador.log/(7819:7840): [ Tripulante 1 ] (3,5) => (2,5) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:28:331 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:28:331 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:28:331 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:28:331 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:29:331 discordiador.log/(7819:7840): [ Tripulante 1 ] (2,5) => (1,5) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:30:331 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,5) => (1,4) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:31:332 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,4) => (1,3) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:31:332 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:31:332 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:31:332 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:31:333 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:32:332 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,3) => (1,2) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:33:333 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,2) => (1,1) | TAREA: DESCARGAR_ITINERARIO - UBICACION: (1,1)
+[INFO] 17:57:34:334 discordiador.log/(7819:7840): [ Tripulante 1 ] Realizando Tarea no bloqueante DESCARGAR_ITINERARIO. Tiempo restante: 1
+[INFO] 17:57:35:334 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea DESCARGAR_ITINERARIO TERMINADA
+[INFO] 17:57:35:334 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:35:334 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:35:335 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:35:335 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:35:335 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,1) => (2,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:36:335 discordiador.log/(7819:7840): [ Tripulante 1 ] (2,1) => (3,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:37:336 discordiador.log/(7819:7840): [ Tripulante 1 ] (3,1) => (4,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:37:336 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:37:336 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:37:336 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:37:336 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:38:336 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,1) => (4,2) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:39:336 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,2) => (4,3) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:40:336 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,3) => (4,4) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:57:40:338 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:40:338 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:40:338 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:40:338 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:42:338 discordiador.log/(7819:7840): [ Tripulante 1 ] Syscall realizada
+[INFO] 17:57:42:338 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 1
+[INFO] 17:57:42:338 discordiador.log/(7819:7826): [ Dispositivo E/S ] Estado de la cola block antes de procesar tripulante: 1 elementos.
+[INFO] 17:57:42:338 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 15
+[INFO] 17:57:43:338 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 14
+[INFO] 17:57:43:339 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 14
+[INFO] 17:57:44:339 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 13
+[INFO] 17:57:44:339 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 13
+[INFO] 17:57:45:340 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 12
+[INFO] 17:57:45:340 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 12
+[INFO] 17:57:46:340 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 11
+[INFO] 17:57:46:341 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 11
+[INFO] 17:57:47:341 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 10
+[INFO] 17:57:47:342 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 10
+[INFO] 17:57:48:343 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 9
+[INFO] 17:57:48:343 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 9
+[INFO] 17:57:49:343 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 8
+[INFO] 17:57:49:343 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 8
+[INFO] 17:57:50:343 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 7
+[INFO] 17:57:50:344 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 7
+[INFO] 17:57:51:344 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 6
+[INFO] 17:57:51:344 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 6
+[INFO] 17:57:52:345 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 5
+[INFO] 17:57:52:346 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 5
+[INFO] 17:57:53:346 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 4
+[INFO] 17:57:53:346 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 4
+[INFO] 17:57:54:347 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 3
+[INFO] 17:57:54:347 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 3
+[INFO] 17:57:55:347 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 2
+[INFO] 17:57:55:347 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 2
+[INFO] 17:57:56:348 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 1
+[INFO] 17:57:56:348 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 1
+[INFO] 17:57:57:348 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO TERMINADA
+[INFO] 17:57:57:349 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea GENERAR_OXIGENO TERMINADA
+[INFO] 17:57:57:349 discordiador.log/(7819:7826): [ Dispositivo E/S ] Estado de la cola block despues de procesar tripulante: 0 elementos.
+[INFO] 17:57:57:349 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:57:349 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:57:349 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:57:57:349 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,4) => (3,4) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:57:58:349 discordiador.log/(7819:7840): [ Tripulante 1 ] (3,4) => (2,4) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:57:59:349 discordiador.log/(7819:7840): [ Tripulante 1 ] (2,4) => (1,4) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:57:59:350 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:57:59:350 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:57:59:350 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:57:59:350 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 1
+[INFO] 17:58:00:350 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,4) => (1,3) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:58:01:350 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,3) => (1,2) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:58:01:350 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:58:01:350 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:58:01:350 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:58:01:350 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:58:02:350 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,2) => (1,1) | TAREA: TOMAR_AGUA - UBICACION: (1,1)
+[INFO] 17:58:03:351 discordiador.log/(7819:7840): [ Tripulante 1 ] Realizando Tarea no bloqueante TOMAR_AGUA. Tiempo restante: 2
+[INFO] 17:58:04:351 discordiador.log/(7819:7840): [ Tripulante 1 ] Realizando Tarea no bloqueante TOMAR_AGUA. Tiempo restante: 1
+[INFO] 17:58:05:352 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea TOMAR_AGUA TERMINADA
+[INFO] 17:58:05:352 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:58:05:352 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:58:05:352 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:58:05:352 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:58:05:352 discordiador.log/(7819:7840): [ Tripulante 1 ] (1,1) => (2,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:06:352 discordiador.log/(7819:7840): [ Tripulante 1 ] (2,1) => (3,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:07:353 discordiador.log/(7819:7840): [ Tripulante 1 ] (3,1) => (4,1) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:07:353 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:58:07:353 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:58:07:353 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:58:07:354 discordiador.log/(7819:7827): [ Procesador 0 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:58:08:353 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,1) => (4,2) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:09:354 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,2) => (4,3) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:10:354 discordiador.log/(7819:7840): [ Tripulante 1 ] (4,3) => (4,4) | TAREA: GENERAR_OXIGENO - UBICACION: (4,4)
+[INFO] 17:58:10:354 discordiador.log/(7819:7827): [ Procesador 0 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 3
+[INFO] 17:58:10:354 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready antes del ciclo: 1 elementos.
+[INFO] 17:58:10:354 discordiador.log/(7819:7824): [ Planificador a corto plazo ] Estado de la cola Ready despues del ciclo: 0 elementos.
+[INFO] 17:58:10:354 discordiador.log/(7819:7828): [ Procesador 1 ] Ejecutando tripulante 1. Quantum actual: 0
+[INFO] 17:58:12:354 discordiador.log/(7819:7840): [ Tripulante 1 ] Syscall realizada
+[INFO] 17:58:12:355 discordiador.log/(7819:7828): [ Procesador 1 ] Rafaga finalizada. Tripulante 1 ejecutado. Quantum actual: 1
+[INFO] 17:58:12:355 discordiador.log/(7819:7826): [ Dispositivo E/S ] Estado de la cola block antes de procesar tripulante: 1 elementos.
+[INFO] 17:58:12:355 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 15
+[INFO] 17:58:13:356 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 14
+[INFO] 17:58:13:356 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 14
+[INFO] 17:58:14:356 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 13
+[INFO] 17:58:14:356 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 13
+[INFO] 17:58:15:357 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 12
+[INFO] 17:58:15:357 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 12
+[INFO] 17:58:16:357 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 11
+[INFO] 17:58:16:358 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 11
+[INFO] 17:58:16:912 discordiador.log/(7819:7823): PAUSAR_PLANIFICACION
+[INFO] 17:58:16:912 discordiador.log/(7819:7823): PAUSAR_PLANIFICACION: OK
+[INFO] 17:58:17:358 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 10
+[INFO] 17:58:17:358 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 10
+[INFO] 17:58:18:359 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 9
+[INFO] 17:58:18:359 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 9
+[INFO] 17:58:19:359 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 8
+[INFO] 17:58:19:359 discordiador.log/(7819:7840): [ Tripulante 1 ] Comenzando Tarea bloqueante GENERAR_OXIGENO. Duracion: 8
+[INFO] 17:58:20:359 discordiador.log/(7819:7840): [ Tripulante 1 ] Tarea bloqueante GENERAR_OXIGENO. Tiempo restante: 7
+[INFO] 17:58:35:031 discordiador.log/(7819:7823): LISTAR_TRIPULANTES
+[INFO] 18:02:01:144 discordiador.log/(8132:8132): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 18:02:01:145 discordiador.log/(8132:8134): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 18:02:09:522 discordiador.log/(8132:8136): INICIAR_PATOTA 1 oxigeno.txt 5|5
+[INFO] 18:02:09:522 discordiador.log/(8132:8136): INICIANDO PATOTA
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): [ Discordiador ] Procesando la patota con 1 tripulantes...
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): contenido de archivo actual TOMAR_AGUA;1;1;2
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 18:02:09:522 discordiador.log/(8132:8135): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 18:02:09:523 discordiador.log/(8132:8135): [ Discordiador ] Patota creada con ID 1
+[INFO] 18:02:20:847 discordiador.log/(8132:8136): LISTAR_TRIPULANTES
+[INFO] 18:02:36:995 discordiador.log/(8132:8136): INICIAR_PATOTA 1 oxigeno.txt 5|5
+[INFO] 18:02:36:995 discordiador.log/(8132:8136): INICIANDO PATOTA
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): [ Discordiador ] Procesando la patota con 1 tripulantes...
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): contenido de archivo actual TOMAR_AGUA;1;1;2
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): contenido de archivo actual GENERAR_OXIGENO 10;4;4;15
+[INFO] 18:02:36:995 discordiador.log/(8132:8135): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 18:11:53:090 discordiador.log/(8947:8947): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 18:11:53:091 discordiador.log/(8947:8949): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 18:12:04:338 discordiador.log/(8947:8951): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 18:12:04:338 discordiador.log/(8947:8951): INICIANDO PATOTA
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 18:12:04:338 discordiador.log/(8947:8950): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 18:12:04:339 discordiador.log/(8947:8950): [ Discordiador ] Patota creada con ID 1
+[INFO] 18:12:31:068 discordiador.log/(8947:8951): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 18:12:31:068 discordiador.log/(8947:8951): INICIANDO PATOTA
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 18:12:31:068 discordiador.log/(8947:8950): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 18:15:03:398 discordiador.log/(9097:9097): [ Discordiador ] Algoritmo: RR. Quantum: 3. Grado de multiprocesamiento: 2.
+[INFO] 18:15:03:398 discordiador.log/(9097:9098): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 18:17:00:227 discordiador.log/(9209:9209): [ Discordiador ] Algoritmo: FIFO. Grado de multiprocesamiento: 1
+[INFO] 18:17:00:231 discordiador.log/(9209:9211): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 18:17:12:785 discordiador.log/(9209:9213): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 18:17:12:785 discordiador.log/(9209:9213): INICIANDO PATOTA
+[INFO] 18:17:12:785 discordiador.log/(9209:9212): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 18:17:12:785 discordiador.log/(9209:9212): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:17:12:785 discordiador.log/(9209:9212): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 18:17:12:786 discordiador.log/(9209:9212): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 18:17:12:786 discordiador.log/(9209:9212): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 18:17:12:786 discordiador.log/(9209:9212): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 18:17:12:786 discordiador.log/(9209:9212): [ Discordiador ] Patota creada con ID 1
+[INFO] 18:17:41:283 discordiador.log/(9209:9213): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 18:17:41:283 discordiador.log/(9209:9213): INICIANDO PATOTA
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 18:17:41:283 discordiador.log/(9209:9212): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 20:00:19:048 discordiador.log/(12137:12137): [ Discordiador ] Algoritmo: FIFO. Grado de multiprocesamiento: 1
+[INFO] 20:00:19:049 discordiador.log/(12137:12139): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 20:00:31:467 discordiador.log/(12137:12141): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 20:00:31:467 discordiador.log/(12137:12141): INICIANDO PATOTA
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 20:00:31:467 discordiador.log/(12137:12140): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 20:00:31:468 discordiador.log/(12137:12140): [ Discordiador ] Patota creada con ID 1
+[INFO] 20:03:03:333 discordiador.log/(12137:12141): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 20:03:03:333 discordiador.log/(12137:12141): INICIANDO PATOTA
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 20:03:03:333 discordiador.log/(12137:12140): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 20:03:53:179 discordiador.log/(12228:12228): [ Discordiador ] Algoritmo: FIFO. Grado de multiprocesamiento: 1
+[INFO] 20:03:53:180 discordiador.log/(12228:12229): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 20:05:11:861 discordiador.log/(12228:12231): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 20:05:11:861 discordiador.log/(12228:12231): INICIANDO PATOTA
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 20:05:11:861 discordiador.log/(12228:12230): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 20:05:22:131 discordiador.log/(12304:12304): [ Discordiador ] Algoritmo: FIFO. Grado de multiprocesamiento: 1
+[INFO] 20:05:22:134 discordiador.log/(12304:12306): [ Discordiador ] SERVIDOR LEVANTADO! ESCUCHANDO EN 5012
+[INFO] 20:05:25:227 discordiador.log/(12304:12308): INICIAR_PATOTA 2 plantas.txt 1|1 3|4
+[INFO] 20:05:25:227 discordiador.log/(12304:12308): INICIANDO PATOTA
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): [ Discordiador ] Procesando la patota con 2 tripulantes...
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): contenido de archivo actual DESCARGAR_ITINERARIO;1;1;1
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): contenido de archivo actual REGAR_PLANTAS;3;3;2
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): contenido de archivo actual VER_PUBLICIDAD;5;5;1
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): contenido de archivo actual REGAR_PLANTAS;7;7;2
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): contenido de archivo actual IRSE_A_DORMIR;9;9;1
+[INFO] 20:05:25:227 discordiador.log/(12304:12307): [ Discordiador ] Patota creada con ID 1
+[INFO] 20:05:35:245 discordiador.log/(12304:12308): LISTAR_TRIPULANTES
