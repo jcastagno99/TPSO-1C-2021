@@ -69,26 +69,27 @@ void listar_tripulantes()
     free(tiempo);
 }
 
-char * armar_tareas_para_enviar(char *path)
+t_list * armar_tareas_para_enviar(char *path)
 {
     FILE *archivo = fopen(path, "r");
-    char caracteres[1000];
-    strcpy(caracteres,"");
+    char caracteres[100];
+    t_list *lista_tareas = list_create();
+
     while (feof(archivo) == 0)
     {
-        char aux[100];
-        fgets(aux, 100, archivo);
-
-        aux[strlen(aux)-1] = '$';
-        aux[strlen(aux)] = '\0';
-        strcat(caracteres,aux);        
-        printf("contenido de archivo actual %s",caracteres);
+        fgets(caracteres, 99, archivo);
+        char * aux = malloc(strlen(caracteres));
+        if(caracteres[strlen(caracteres)-1] == '\n')
+            caracteres[strlen(caracteres)-1] = '\0';
+        //else
+        //    caracteres[strlen(caracteres)] = '\0';
+        strcpy(aux,caracteres);
+        list_add(lista_tareas, aux);
+        log_info(logger, "contenido de archivo actual %s", aux);
 
     }
     fclose(archivo);
-    char * tareas = malloc(strlen(caracteres));
-    tareas = caracteres;
-    return tareas;
+    return lista_tareas;
 }
 
 t_list *crear_tareas_global(char *path)
@@ -212,6 +213,8 @@ void iniciar_patota_global(char **str_split)
     //socket = crear_conexion()
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
     
+    //liberar lista de tareas y sus char*
+
     //recibo respuesta
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     //cerrar conexion

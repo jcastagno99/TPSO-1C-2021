@@ -221,22 +221,27 @@ void* serializar_tripulante_con_tarea(tripulante_con_tarea tct){
 	return stream;
 }
 
+int obtener_tamanio_tareas(t_list *lista)
+{
+    int total = 0;
+    for(int i = 0; i<lista->elements_count; i++){
+        char * tarea = list_get(lista,i);
+		total = total + strlen(tarea)+1;
+    }
+    return total;
+}
+
 void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes* patota_con_tripulantes,uint32_t * size_paquete){
 	
 	int cant_tripu = patota_con_tripulantes->tripulantes->elements_count;
-	//int tamanio_total_nombre = strlen(patota_con_tripulantes->tareas) + 1; // [IMPORTANTE: ESTO CORTA AL PRIMER /0, QUE CENTINELA PONEMOS AL FINAL DE CADA TAREA?]
-	int tamanio_total_nombre = strlen(patota_con_tripulantes->tareas);
-	/*tarea* auxiliar;
-	for(int i=0; i<cant_tareas; i++){
-		auxiliar = list_get(patota_con_tripulantes->tareas,i);
-		tamanio_total_nombre += strlen(auxiliar->nombre_tarea) + 1;
-	}*/
-
+	int tamanio_total_nombre = obtener_tamanio_tareas(patota_con_tripulantes->tareas);
+	
+	*size_paquete = sizeof(uint32_t)*3 + tamanio_total_nombre + cant_tripu*sizeof(uint32_t)*3;
 	//  Mensaje_listo :
-	/*	(los primeros 4 uint32_t) => 2 ceros, 1 para indicar el final de las tareas y el otro para el final de los tripulantes, el pid y el size de las tareas
+	/*	(los primeros 3 uint32_t) => pid, tamanio char* tareas y centinela de tripulantes
+		tamanio total nombre => longitud del char * (tareas)
 		(cant_tripu*sizeof(uint32_t)*3) => toda la struct estatica de los nuevo_tripulante_sin_pid 
 	*/ 
-	*size_paquete = sizeof(uint32_t)*4 + tamanio_total_nombre + cant_tripu*sizeof(uint32_t)*3;
 	void* mensaje_listo = malloc(*size_paquete); 
 
 	int desplazamiento = 0;
@@ -247,32 +252,12 @@ void* serializar_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes* pato
 	memcpy(mensaje_listo + desplazamiento, &tamanio_total_nombre, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	memcpy(mensaje_listo + desplazamiento, patota_con_tripulantes->tareas, tamanio_total_nombre);
-	desplazamiento += tamanio_total_nombre;
-
-	/*uint32_t tamanio_nombre_tarea;
-	for(int i = 0; i<cant_tareas; i++){
-		auxiliar = list_get(patota_con_tripulantes->tareas,i);
-		tamanio_nombre_tarea = strlen(auxiliar->nombre_tarea) +1;
-		memcpy(mensaje_listo + desplazamiento,&(tamanio_nombre_tarea),(sizeof(uint32_t)));
-		desplazamiento += sizeof(uint32_t);
-		memcpy(mensaje_listo + desplazamiento,auxiliar->nombre_tarea,tamanio_nombre_tarea);
-		desplazamiento += tamanio_nombre_tarea;
-		memcpy(mensaje_listo + desplazamiento, &auxiliar->cantidad_parametro,sizeof(uint32_t));
-		desplazamiento += sizeof(uint32_t);
-		memcpy(mensaje_listo + desplazamiento, &auxiliar->parametro,sizeof(uint32_t));
-		desplazamiento += sizeof(uint32_t);
-		memcpy(mensaje_listo + desplazamiento, &auxiliar->pos_x,sizeof(uint32_t));
-		desplazamiento += sizeof(uint32_t);
-		memcpy(mensaje_listo + desplazamiento, &auxiliar->pos_y,sizeof(uint32_t));
-		desplazamiento += sizeof(uint32_t);
-		memcpy(mensaje_listo + desplazamiento, &auxiliar->tiempo,sizeof(uint32_t));
-		desplazamiento += sizeof(uint32_t);
-		//free(auxiliar->nombre_tarea); dejaria afuera la liberacion de las funciones de serializacion
-	}*/
-	uint32_t centinela = 0;
-	memcpy(mensaje_listo + desplazamiento,&centinela,sizeof(uint32_t));
-	desplazamiento+= sizeof(uint32_t);
+	for(int i = 0; i<patota_con_tripulantes->tareas->elements_count; i++){
+		char * auxiliar = list_get(patota_con_tripulantes->tareas,i);
+		int tamanio_nombre_tarea = strlen(auxiliar) + 1;
+		memcpy(mensaje_listo + desplazamiento, auxiliar,tamanio_nombre_tarea);	
+		desplazamiento += tamanio_nombre_tarea;		
+	}
 	
 	// LOS TRIPULANTES *********************************************************
 	nuevo_tripulante_sin_pid* aux_trip;
@@ -535,18 +520,19 @@ pid_con_tareas deserializar_pid_con_tareas(void* stream){
 	return pct;
 }
 
-pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* stream){
-	pid_con_tareas_y_tripulantes pct;
+pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(void* stream){
+	pid_con_tareas_y_tripulantes_miriam pct;
 	pct.tripulantes = list_create();
 	int offset = 0;
-	uint32_t tamanio_palabra = 0;
 	memcpy(&pct.pid,stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
-	memcpy(&tamanio_palabra,stream+offset,sizeof(uint32_t));
+	memcpy(&pct.longitud_palabra,stream+offset,sizeof(uint32_t));
 	offset+= sizeof(uint32_t);
-	pct.tareas = malloc(tamanio_palabra);
-	memcpy(pct.tareas,stream + offset, tamanio_palabra);
-	offset= offset+tamanio_palabra + sizeof(uint32_t);
+	
+	pct.tareas = malloc(pct.longitud_palabra);
+	memcpy(pct.tareas,stream + offset, pct.longitud_palabra);
+
+	offset= offset+pct.longitud_palabra;
 	uint32_t tid;
 	memcpy(&tid,stream+offset,sizeof(uint32_t));
 	while(tid != 0){

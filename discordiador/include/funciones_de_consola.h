@@ -13,7 +13,7 @@
 #include "estructuras.h"
 #include "discordiador.h" // Al terner esto automaticamente borro lo de arriba
 
-char * armar_tareas_para_enviar(char *);
+t_list * armar_tareas_para_enviar(char *);
 t_list *crear_tareas_local(char*);
 t_list *crear_tareas_global(char *);
 

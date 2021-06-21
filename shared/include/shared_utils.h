@@ -99,9 +99,17 @@ typedef struct
 typedef struct
 {
 	uint32_t pid;
-	char *tareas;
+	t_list *tareas;
 	t_list *tripulantes;
 }pid_con_tareas_y_tripulantes;
+
+typedef struct
+{
+	uint32_t pid;
+	uint32_t longitud_palabra;
+	char *tareas;
+	t_list *tripulantes;
+}pid_con_tareas_y_tripulantes_miriam;
 
 
 typedef struct 
@@ -225,6 +233,6 @@ uint32_t deserializar_tid(void* stream);
 estado deserializar_estado(void* stream);
 operacion_recurso deserializar_operacion_recurso(void* stream);
 char* deserializar_recurso(void* stream);
-pid_con_tareas_y_tripulantes deserializar_pid_con_tareas_y_tripulantes(void* stream);
+pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(void* stream);
 
 #endif

@@ -110,7 +110,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			{
 			case INICIAR_PATOTA:
 			{
-				pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+				pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
 				respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
 				void *respuesta = serializar_respuesta_ok_fail(resultado);
 				enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
@@ -287,7 +287,7 @@ void crear_estructuras_administrativas()
 
 //Falta eliminar el elemento de la t_list cuando la operacion se rechace, necesito hacer funciones iterativas para encontrar el indice y usar list_remove...
 
-respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patota_con_tareas_y_tripulantes)
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes)
 {
 	pthread_mutex_lock(&mutex_patotas);
 	t_tabla_de_segmento* patota = buscar_patota(patota_con_tareas_y_tripulantes.pid);
@@ -342,7 +342,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patot
 	pthread_mutex_init(segmento_pcb->mutex_segmento,NULL);
 	patota->segmento_pcb = segmento_pcb;
 	
-	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas_y_tripulantes.tareas); 
+	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas_y_tripulantes.longitud_palabra); 
 	if(!segmento_a_usar_tareas){
 		log_info(logger_ram_hq,"No encontre un segmento disponible para las tareas, voy a compactar");
 		//TODO: compactar
@@ -418,7 +418,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes patot
 	uint32_t direccion_logica_tareas = 0; //TODO: Calcular la direccion logica real
 	//Los semaforos se toman dentro de las funciones:
 	cargar_pcb_en_segmento(patota_con_tareas_y_tripulantes.pid,direccion_logica_tareas,segmento_pcb);
-	cargar_tareas_en_segmento(patota_con_tareas_y_tripulantes.tareas,segmento_tarea);
+	cargar_tareas_en_segmento(patota_con_tareas_y_tripulantes.tareas,patota_con_tareas_y_tripulantes.longitud_palabra,segmento_tarea);
 	
 	pthread_mutex_unlock(&mutex_memoria);
 	list_destroy_and_destroy_elements(bakcup_lista_memoria,free);
@@ -718,9 +718,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 	return NULL;
 };
 
-t_segmento_de_memoria* buscar_segmento_tareas(char* tareas){
-	size_t tamanio_tareas = strlen(tareas);
-	
+t_segmento_de_memoria* buscar_segmento_tareas(uint32_t tamanio_tareas){	
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
 	if(strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
@@ -798,10 +796,9 @@ void cargar_pcb_en_segmento(uint32_t pid, uint32_t direccion_logica_tareas, t_se
 }
 
 //Aclaración: Esta función asume que las tareas incluyen un /0 al final de la cadena de char*
-void cargar_tareas_en_segmento(char* tareas, t_segmento* segmento){
+void cargar_tareas_en_segmento(char* tareas,uint32_t longitud_palabra, t_segmento* segmento){
 	pthread_mutex_lock(segmento->mutex_segmento);
-	char* auxiliar;
-	memcpy(segmento->base, tareas, strlen(tareas) + 1);
+	memcpy(segmento->base, tareas, longitud_palabra);
 	pthread_mutex_unlock(segmento->mutex_segmento);
 	recorrer_tareas(segmento);
 }
@@ -912,6 +909,7 @@ void recorrer_tareas(t_segmento * tareas){
 	char* auxiliar = malloc (tareas->tamanio);
 	memcpy(auxiliar, tareas->base, tareas->tamanio);
 	pthread_mutex_unlock(tareas->mutex_segmento);
+	//quiza hay que recorrer distinto pq frena en el primer /0
 	printf ("Lista de tareas = %s\n",auxiliar);
 }
 void recorrer_tcb(t_list * tripulantes_list){
