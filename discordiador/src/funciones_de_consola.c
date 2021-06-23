@@ -193,6 +193,7 @@ void ejecucion_tripulante(int indice)
 // FUNCIONES QUE USA EL HILO TRIPULANTE ----------------------
 dis_tarea *pedir_tarea(int id_patota, int indice)
 {
+    //DAMI crear conexion y enviar mensaje obtener proxima tarea
     dis_patota *patota = list_get(lista_de_patotas, id_patota - 1);
     t_list *lista_tareas = patota->list_tareas;
     dis_tarea *tarea = NULL;

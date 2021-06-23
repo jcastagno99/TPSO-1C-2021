@@ -910,7 +910,18 @@ void recorrer_tareas(t_segmento * tareas){
 	memcpy(auxiliar, tareas->base, tareas->tamanio);
 	pthread_mutex_unlock(tareas->mutex_segmento);
 	//quiza hay que recorrer distinto pq frena en el primer /0
-	printf ("Lista de tareas = %s\n",auxiliar);
+	
+	printf ("Lista de tareas: \n",auxiliar);
+	printf ("%s\n",auxiliar);
+	printf ("%s\n",auxiliar+1);
+	printf ("%c\n",*auxiliar);
+	for(int i = 0;i<tareas->tamanio -1;i++){
+		//printf ("%c\n",*(auxiliar+i));
+		 if( *(auxiliar+i) == '\0'){
+			printf ("%s\n",auxiliar+i+1);
+		}
+
+	}
 }
 void recorrer_tcb(t_list * tripulantes_list){
 	for(int i = 0;i < tripulantes_list->elements_count;i++){
