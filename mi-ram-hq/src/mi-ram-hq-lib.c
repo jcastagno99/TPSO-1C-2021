@@ -110,6 +110,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
 			respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
+			funcion_test_memoria(1);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
 			break;
@@ -126,6 +127,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
 			respuesta_ok_fail resultado = actualizar_ubicacion_segmentacion(tripulante_y_posicion);
+			funcion_test_memoria(1);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
 			break;
@@ -445,8 +447,8 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 	pthread_mutex_lock(&mutex_patotas);
 	log_info(logger_ram_hq,"Buscando el tripulante %d",tripulante_con_posicion.tid);
 	for(int i=0; i<patotas->elements_count; i++){
-		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
 		auxiliar_patota = list_get(patotas,i);
+		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
 		for(int j=0; j<auxiliar_patota->segmentos_tripulantes->elements_count; j++){
 			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
 			uint32_t tid_aux;
@@ -455,7 +457,7 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 			
 			if(tid_aux == tripulante_con_posicion.tid){
 				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria, actualizando estado",tripulante_con_posicion.tid);
-				uint32_t offset_x = sizeof(uint32_t) + sizeof(estado);
+				uint32_t offset_x = sizeof(uint32_t) + sizeof(char);
 				uint32_t offset_y = offset_x + sizeof(uint32_t);
 				memcpy(segmento_tripulante_auxiliar -> base + offset_x,&tripulante_con_posicion.pos_x,sizeof(uint32_t));
 				memcpy(segmento_tripulante_auxiliar -> base + offset_y,&tripulante_con_posicion.pos_y,sizeof(uint32_t));
@@ -761,7 +763,7 @@ t_segmento_de_memoria* buscar_segmento_tareas(uint32_t tamanio_tareas){
 t_segmento_de_memoria* buscar_segmento_tcb(){
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
-	uint32_t size_tcb = sizeof(uint32_t)*5 + sizeof(estado);
+	uint32_t size_tcb = sizeof(uint32_t)*5 + sizeof(char);
 	if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
@@ -835,7 +837,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	pthread_mutex_lock(segmento->mutex_segmento);
 	
 	uint32_t cero = 0;
-	char est = '0';
+	char est = 'N';
 
 	int offset = 0;
 	memcpy(segmento->base + offset, & (tripulante->tid), sizeof(uint32_t));
@@ -936,7 +938,7 @@ void recorrer_tcb(t_list * tripulantes_list){
 		pthread_mutex_lock(tripulante->mutex_segmento);
 		
 		uint32_t tid = 0;
-		estado estado_actual = NEW;
+		char estado_actual;
 		uint32_t posX = 0;
 		uint32_t posY = 0;
 		uint32_t tareaActual = 0;
@@ -945,8 +947,8 @@ void recorrer_tcb(t_list * tripulantes_list){
 		int offset = 0;
 		memcpy(&tid, tripulante->base + offset, sizeof(uint32_t));
 		offset = offset + sizeof(uint32_t);
-		memcpy(&estado_actual, tripulante->base + offset, sizeof(estado));
-		offset = offset + sizeof(estado);
+		memcpy(&estado_actual, tripulante->base + offset, sizeof(char));
+		offset = offset + sizeof(char);
 		memcpy(&posX, tripulante->base + offset, sizeof(uint32_t));
 		offset = offset + sizeof(uint32_t);
 		memcpy(&posY, tripulante->base + offset, sizeof(uint32_t));
@@ -957,7 +959,7 @@ void recorrer_tcb(t_list * tripulantes_list){
 		offset = offset + sizeof(uint32_t);
 		
 		pthread_mutex_unlock(tripulante->mutex_segmento);
-		printf ("Tripulante tid %i, estado %i, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
+		printf ("Tripulante tid %i, estado %c, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
 	}
 }
 

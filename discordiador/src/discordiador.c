@@ -243,6 +243,7 @@ void *planificador_a_corto_plazo()
 		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_ready, &mutex_cola_de_ready);
 		tripulante->estado = EXEC;
+		//DAMI actualizar_estado tripulante de ready a excec
 		agregar_elemento_a_cola(cola_de_exec, &mutex_cola_de_exec, tripulante);
 		sem_post(&sem_contador_cola_de_exec);
 		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready despues del ciclo");
@@ -262,6 +263,7 @@ void *planificador_a_largo_plazo()
 		loggear_estado_de_cola(cola_de_new, "Planificador a largo plazo", "New antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_new, &mutex_cola_de_new);
 		tripulante->estado = READY;
+		//DAMI actualizar_estado tripulante de new a ready
 		agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
 		sem_post(&sem_contador_cola_de_ready);
 		sem_post(&(tripulante->sem_tri));
@@ -292,6 +294,7 @@ void *procesar_tripulante_fifo(void *temp)
 		switch (tripulante->estado)
 		{
 		case BLOCKED_E_S:
+			//DAMI actualizar_estado tripulante de excec a bloqueado
 			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
 			sem_post(&sem_contador_cola_de_block);
 			break;
@@ -334,14 +337,17 @@ void *procesar_tripulante_rr(void *temp)
 		switch (tripulante->estado)
 		{
 		case BLOCKED_E_S:
+			//DAMI actualizar_estado tripulante de excec a bloqueado
 			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
 			sem_post(&sem_contador_cola_de_block);
 			break;
 		case EXIT:
+			//DAMI actualizar_estado tripulante de excec a finalizado
 			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, quantum_actual);
 			break;
 		case EXEC: //quiere decir que todavia no terminó de ejecutar, por lo que lo envío al final de ready
 			tripulante->estado = READY;
+			//DAMI actualizar_estado tripulante de excec a ready
 			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
 			sem_post(&sem_contador_cola_de_ready);
 			break;
@@ -382,6 +388,7 @@ void *ejecutar_tripulantes_bloqueados()
 		{
 		case READY:
 			trip = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_block, &mutex_cola_de_block);
+			//DAMI actualizar_estado tripulante de bloq a ready
 			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, trip);
 			sem_post(&sem_contador_cola_de_ready);
 			break;

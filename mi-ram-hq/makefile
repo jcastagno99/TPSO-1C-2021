@@ -6,7 +6,7 @@ CFLAGS=-I$(IDIR) -I$(SHARED_IDIR) -g -Wall
 
 ODIR=./obj
 SRCDIR =./src
-LIBS=-lcommons -lpthread -lreadline -lcunit -lrt
+LIBS=-lcommons -lpthread -lreadline -lcunit -lrt -lnivel-gui -lncurses
 
 SHARED_SRCDIR = ../shared/src
 SHARED_ODIR = ../shared/obj

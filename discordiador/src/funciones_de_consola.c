@@ -160,6 +160,7 @@ void ejecucion_tripulante(int indice)
     dis_tripulante *trip = list_get(list_total_tripulantes, indice - 1);
     int indice_tarea = 0;
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
+    // modificar pedir_tarea(tid);
     dis_tarea *tarea = pedir_tarea(trip->id_patota, indice_tarea);
     printf("Ya pedi mi tarea \n");
     // ESTOY EN EXEC voy a ejecuta2r la tarea que tengo
@@ -195,6 +196,7 @@ void ejecucion_tripulante(int indice)
 dis_tarea *pedir_tarea(int id_patota, int indice)
 {
     //DAMI crear conexion y enviar mensaje obtener proxima tarea
+
     dis_patota *patota = list_get(lista_de_patotas, id_patota - 1);
     t_list *lista_tareas = patota->list_tareas;
     dis_tarea *tarea = NULL;
@@ -228,12 +230,52 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
             perror("pthread_kill failed");
         return;
     }
-
+    /* crear_conexion
+    enviar_mensaje
+    close
+    comparar mensaje con local*/
+    //DAMI mandar mensaje obtener_ubicacion
+    
     if (tarea->pos_x != trip->pos_x || tarea->pos_y != trip->pos_y)
     {
         int pos_vieja_x = trip->pos_x;
         int pos_vieja_y = trip->pos_y;
+       
+        //DAMI mandar mensaje actualizar_ubicacion
         mover_tri_hacia_tarea(tarea, trip);
+        
+        tripulante_y_posicion tripulante_posicion;
+        tripulante_posicion.tid = trip->id;
+        tripulante_posicion.pos_x = trip->pos_x;
+        tripulante_posicion.pos_y = trip->pos_y;
+        
+        int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+        void * info = serializar_tripulante_y_posicion(tripulante_posicion);
+        uint32_t size_paquete = sizeof(uint32_t) *3;
+        enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
+        t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+        close(conexion_mi_ram_hq);
+
+        if (paquete_recibido->codigo_operacion == RESPUESTA_ACTUALIZAR_UBICACION){
+            printf("Recibi opcode de respuesta okfail\n");
+            //desserializo la respuesta
+            respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+
+            //analizo respuesta
+            if (respuesta == RESPUESTA_OK)
+            {
+                printf("Recibi respuesta OK\n");
+            }
+            else if (respuesta == RESPUESTA_FAIL)
+            {
+                printf("Recibi respuesta FAIL\n");
+            }
+            else
+                printf("Recibi respuesta INVALIDA\n");
+        }
+        else
+            printf("Recibi opcode de respuesta INVALIDO\n");
+
         log_info(logger, "[ Tripulante %i ] (%d,%d) => (%d,%d) | TAREA: %s - UBICACION: (%d,%d)", trip->id, pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
         sem_post(&(trip->procesador));
         sleep(tiempo_retardo_ciclo_cpu);
