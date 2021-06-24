@@ -728,7 +728,7 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 t_segmento_de_memoria* buscar_segmento_tareas(uint32_t tamanio_tareas){	
 	t_segmento_de_memoria* iterador;
 	t_segmento_de_memoria* auxiliar = malloc(sizeof(t_segmento_de_memoria));
-	if(!(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
+	if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"FF")){
 		for(int i=0; i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			if(iterador->tamanio_segmento >= tamanio_tareas && iterador->libre){
