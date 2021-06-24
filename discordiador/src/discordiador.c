@@ -82,7 +82,7 @@ void inicializar_discordiador()
 	/******************************************
 	***			𝗖𝗢𝗡𝗘𝗫𝗜𝗢𝗡𝗘𝗦			   ***
 	******************************************/
-	conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+	//conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
 
 
 	pthread_t hilo_server;

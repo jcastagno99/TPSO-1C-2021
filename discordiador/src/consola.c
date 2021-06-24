@@ -95,8 +95,34 @@ void validacion_sintactica(char *text)
         {
             if (atoi(str_split[1]) != 0)
             {
-                printf("EXPULSAR_TRIPULANTE : OK\n");
-                expulsar_tripulante(atoi(str_split[1]));
+                int size_paquete = sizeof(uint32_t);
+                int tid = atoi(str_split[1]);
+                void *info = pserializar_tid(tid); 
+
+                int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+                enviar_paquete(conexion_mi_ram_hq, EXPULSAR_TRIPULANTE, size_paquete, info);
+                t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+                close(conexion_mi_ram_hq);
+                if (paquete_recibido->codigo_operacion == RESPUESTA_EXPULSAR_TRIPULANTE){
+                    printf("Recibi opcode de respuesta okfail\n");
+                    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+
+                    if (respuesta == RESPUESTA_OK)
+                    {
+                        printf("EXPULSAR_TRIPULANTE : OK\n");
+                        expulsar_tripulante(atoi(str_split[1]));
+
+                    }
+                    else if (respuesta == RESPUESTA_FAIL)
+                    {
+                        printf("Recibi respuesta FAIL\n");
+                    }
+                    else
+                        printf("Recibi respuesta INVALIDA\n");
+                }
+                else
+                    printf("Recibi opcode de respuesta INVALIDO\n");
+
             }
             else
                 printf("EXPULSAR_TRIPULANTE : id tripulante no es un [int]\n");

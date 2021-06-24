@@ -20,7 +20,10 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/config.h>
+#include <commons/temporal.h>
 #include <shared_utils.h>
+#include <nivel-gui/nivel-gui.h>
+#include <nivel-gui/tad_nivel.h>
 
 #define MAX_CLIENTS 128
 
@@ -128,6 +131,15 @@ int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria
 void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, t_segmento*);
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
 
+
+//Funciones del dump
+
+void imprimir_dump(void);
+uint32_t obtener_patota_memoria(t_segmento*);
+void recorrer_pcb_dump(t_segmento*);
+void recorrer_tareas_dump(uint32_t,t_segmento*);
+void recorrer_tcb_dump(uint32_t,t_list*);
+t_list* duplicar_lista_memoria(t_list*);
 
 #endif /* MI_RAM_HQ_LIB_H */
 

@@ -28,7 +28,7 @@ char *ip_mi_ram_hq;
 char *puerto_mi_ram_hq;
 char *ip_i_mongo_store;
 char *puerto_i_mongo_store;
-int conexion_mi_ram_hq;
+//int conexion_mi_ram_hq;
 int quantum_rr;
 int puerto_escucha;
 char *algoritmo;

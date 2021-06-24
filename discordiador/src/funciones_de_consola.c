@@ -57,12 +57,13 @@ void iniciar_patota_global(char **str_split)
     // Serializo el paquete ------------------------------------------
     void *info = serializar_pid_con_tareas_y_tripulantes(patota_full,&size_paquete); 
     
-    //socket = crear_conexion()
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
     
     // recibo respuesta
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    
+    close(conexion_mi_ram_hq);
+
     if (paquete_recibido->codigo_operacion == RESPUESTA_INICIAR_PATOTA){
         printf("Recibi opcode de respuesta okfail\n");
         //desserializo la respuesta
