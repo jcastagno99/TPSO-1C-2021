@@ -161,11 +161,11 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		case OBTENER_UBICACION:
 		{
-			uint32_t tripulante_tid = deserializar_pid(paquete->stream);
+			uint32_t tripulante_tid = deserializar_tid(paquete->stream);
 			//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
 			posicion posicion = obtener_ubicacion_segmentacion(tripulante_tid);
 			void *respuesta = serializar_posicion(posicion);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
+			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(uint32_t)*2, respuesta);
 			break;
 		}
 		default:
@@ -640,11 +640,17 @@ posicion obtener_ubicacion_segmentacion(uint32_t tid)
 				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria", tid);
 				memcpy(&posicion.pos_x,tripulante_aux->base + sizeof(uint32_t) + sizeof(char),sizeof(uint32_t));
 				memcpy(&posicion.pos_y,tripulante_aux->base + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t), sizeof(uint32_t));
+				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
+				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
 				return posicion;
 			}
+			pthread_mutex_unlock(tripulante_aux->mutex_segmento);
 		}
+		pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
 	}
 	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
+	pthread_mutex_unlock(&mutex_patotas);
 	return posicion; // Los campos estan vacios
 }
 

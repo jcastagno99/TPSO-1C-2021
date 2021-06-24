@@ -234,16 +234,25 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
     enviar_mensaje
     close
     comparar mensaje con local*/
-    //DAMI mandar mensaje obtener_ubicacion
-    
+    //Mandar mensaje obtener_ubicacion a miriam
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void * info = pserializar_tid((uint32_t)trip->id);
+    uint32_t size_paquete = sizeof(uint32_t);
+    enviar_paquete(conexion_mi_ram_hq, OBTENER_UBICACION, size_paquete, info); 
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    posicion pos = deserializar_posicion(paquete_recibido->stream);
+    printf("Recibi pos %d:%d del tripulante %d\n",pos.pos_x,pos.pos_y,trip->id);
+    close(conexion_mi_ram_hq);
+    //chequear respuesta
+
     if (tarea->pos_x != trip->pos_x || tarea->pos_y != trip->pos_y)
     {
         int pos_vieja_x = trip->pos_x;
         int pos_vieja_y = trip->pos_y;
        
-        //DAMI mandar mensaje actualizar_ubicacion
         mover_tri_hacia_tarea(tarea, trip);
         
+        //mensaje actualizar ubicacion a miriam
         tripulante_y_posicion tripulante_posicion;
         tripulante_posicion.tid = trip->id;
         tripulante_posicion.pos_x = trip->pos_x;
