@@ -90,4 +90,8 @@ void *procesar_tripulante_rr();
 void *ejecutar_tripulantes_bloqueados();
 void chequear_planificacion_pausada();
 
+// PONER DONDE CORRESPONDA
+respuesta_ok_fail actualizar_estado_miriam(int,estado);
+//
+
 #endif /* DISCORDIADOR_H */

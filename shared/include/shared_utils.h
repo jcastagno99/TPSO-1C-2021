@@ -235,5 +235,7 @@ estado deserializar_estado(void* stream);
 operacion_recurso deserializar_operacion_recurso(void* stream);
 char* deserializar_recurso(void* stream);
 pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(void* stream);
+void* serializar_estado_tcb(estado ,uint32_t );
+estado deserializar_estado_tcb(void*,uint32_t *);
 
 #endif

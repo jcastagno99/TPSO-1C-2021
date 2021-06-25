@@ -198,7 +198,6 @@ void ejecucion_tripulante(int indice)
 // FUNCIONES QUE USA EL HILO TRIPULANTE ----------------------
 char *pedir_tarea_miriam(uint32_t tid)
 {
-    //DAMI crear conexion y enviar mensaje obtener proxima tarea
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     void *info = pserializar_tid(tid); 
     uint32_t size_paquete = sizeof(uint32_t);

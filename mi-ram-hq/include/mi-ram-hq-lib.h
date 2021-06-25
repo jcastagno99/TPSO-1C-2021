@@ -144,6 +144,8 @@ t_list* duplicar_lista_memoria(t_list*);
 void actualizarTareaActual(t_tabla_de_segmento* ,uint32_t );
 char * obtener_proxima_tarea(char *,uint32_t,uint32_t);
 
+char obtener_char_estado (estado);
+respuesta_ok_fail actualizar_estado_segmentacion(uint32_t ,estado );
 #endif /* MI_RAM_HQ_LIB_H */
 
 

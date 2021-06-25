@@ -243,7 +243,7 @@ void *planificador_a_corto_plazo()
 		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_ready, &mutex_cola_de_ready);
 		tripulante->estado = EXEC;
-		//DAMI actualizar_estado tripulante de ready a excec
+		respuesta_ok_fail respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
 		agregar_elemento_a_cola(cola_de_exec, &mutex_cola_de_exec, tripulante);
 		sem_post(&sem_contador_cola_de_exec);
 		loggear_estado_de_cola(cola_de_ready, "Planificador a corto plazo", "Ready despues del ciclo");
@@ -263,7 +263,7 @@ void *planificador_a_largo_plazo()
 		loggear_estado_de_cola(cola_de_new, "Planificador a largo plazo", "New antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_new, &mutex_cola_de_new);
 		tripulante->estado = READY;
-		//DAMI actualizar_estado tripulante de new a ready
+		respuesta_ok_fail respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
 		agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
 		sem_post(&sem_contador_cola_de_ready);
 		sem_post(&(tripulante->sem_tri));
@@ -277,6 +277,7 @@ void *procesar_tripulante_fifo(void *temp)
 {
 	int id = *((int *)temp);
 	free(temp);
+	respuesta_ok_fail respuesta;
 
 	while (1)
 	{
@@ -294,11 +295,13 @@ void *procesar_tripulante_fifo(void *temp)
 		switch (tripulante->estado)
 		{
 		case BLOCKED_E_S:
-			//DAMI actualizar_estado tripulante de excec a bloqueado
+			respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
 			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
 			sem_post(&sem_contador_cola_de_block);
 			break;
 		case EXIT:
+			respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
+			
 			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, tripulante->id);
 			break;
 		case EXPULSADO:
@@ -318,6 +321,7 @@ void *procesar_tripulante_rr(void *temp)
 	int id = *((int *)temp);
 	free(temp);
 	int quantum_actual = 0;
+	respuesta_ok_fail respuesta;
 	while (1)
 	{
 		sem_wait(&sem_contador_cola_de_exec);
@@ -337,17 +341,16 @@ void *procesar_tripulante_rr(void *temp)
 		switch (tripulante->estado)
 		{
 		case BLOCKED_E_S:
-			//DAMI actualizar_estado tripulante de excec a bloqueado
+			respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
 			agregar_elemento_a_cola(cola_de_block, &mutex_cola_de_block, tripulante);
 			sem_post(&sem_contador_cola_de_block);
 			break;
 		case EXIT:
-			//DAMI actualizar_estado tripulante de excec a finalizado
-			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, quantum_actual);
+			respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);			log_info(logger, "[ Procesador %i ] El tripulante %i ha finalizado", id, quantum_actual);
 			break;
 		case EXEC: //quiere decir que todavia no terminó de ejecutar, por lo que lo envío al final de ready
 			tripulante->estado = READY;
-			//DAMI actualizar_estado tripulante de excec a ready
+			respuesta = actualizar_estado_miriam(tripulante->id,tripulante->estado);
 			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, tripulante);
 			sem_post(&sem_contador_cola_de_ready);
 			break;
@@ -388,7 +391,7 @@ void *ejecutar_tripulantes_bloqueados()
 		{
 		case READY:
 			trip = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_block, &mutex_cola_de_block);
-			//DAMI actualizar_estado tripulante de bloq a ready
+			respuesta_ok_fail respuesta = actualizar_estado_miriam(trip->id,trip->estado);
 			agregar_elemento_a_cola(cola_de_ready, &mutex_cola_de_ready, trip);
 			sem_post(&sem_contador_cola_de_ready);
 			break;
@@ -447,4 +450,20 @@ void terminar_programa()
 	log_destroy(logger);
 	config_destroy(config);
 	exit(0);
+}
+
+
+//----------FUNCION HECHA POR DAMI PASAR A DONDE CORRESPONDA ----------//
+respuesta_ok_fail actualizar_estado_miriam(int tid,estado est){
+	int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void *info = serializar_estado_tcb(est,tid); 
+    uint32_t size_paquete = sizeof(uint32_t)+sizeof(estado);
+    enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+    printf("Recibi respuesta %i\n",respuesta);
+    close(conexion_mi_ram_hq);
+    //chequear respuesta
+    
+	return respuesta;
 }

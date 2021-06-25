@@ -153,12 +153,15 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
-		case OBTENER_ESTADO:
+		case ACTUALIZAR_ESTADO:
 		{
-			uint32_t tripulante_tid = deserializar_pid(paquete->stream);
-			estado estado = obtener_estado_segmentacion(tripulante_tid);
-			void *respuesta = serializar_estado(estado);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
+			//deserializar el estado tambien
+			uint32_t tripulante_tid;
+			estado estado_nuevo = deserializar_estado_tcb (paquete->stream,&tripulante_tid);
+			//estado estado_tid = obtener_estado_segmentacion(tripulante_tid);	
+			respuesta_ok_fail resultado = actualizar_estado_segmentacion(tripulante_tid,estado_nuevo);
+			void *respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_ESTADO, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
 		case OBTENER_UBICACION:
@@ -596,6 +599,122 @@ estado obtener_estado_paginacion(uint32_t tripulante_tid)
 	estado estado_obtenido;
 	//TODO
 	return estado_obtenido;
+}
+
+respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est)
+{
+	t_tabla_de_segmento* patota_aux;
+	t_segmento* tripulante_aux;
+	uint32_t tid_aux;
+	
+	char estado = obtener_char_estado(est);
+
+	pthread_mutex_lock(&mutex_patotas);
+	log_info(logger_ram_hq,"Buscando el tripulante %d",tid);
+	for(int i=0; i<patotas->elements_count; i++){
+		patota_aux = list_get(patotas,i);
+		pthread_mutex_lock(patota_aux->mutex_segmentos_tripulantes);
+		for(int j=0; j<patota_aux->segmentos_tripulantes->elements_count; j++){
+			tripulante_aux = list_get(patota_aux->segmentos_tripulantes,j);
+			pthread_mutex_lock(tripulante_aux->mutex_segmento);
+			memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
+			if(tid_aux == tid){
+				
+				log_info(logger_ram_hq,"Encontre al tripulante %d en memoria", tid);
+				memcpy(tripulante_aux->base + sizeof(uint32_t),&estado,sizeof(char));
+
+				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
+				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
+				return RESPUESTA_OK;
+			}
+			pthread_mutex_unlock(tripulante_aux->mutex_segmento);
+		}
+		pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+
+	}
+	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
+	pthread_mutex_unlock(&mutex_patotas);
+	return RESPUESTA_FAIL;
+}
+
+char obtener_char_estado (estado est){
+	switch (est)
+	{
+		case NEW:
+		{
+			return 'N';
+		}
+		case READY:
+		{
+			return 'R';
+		}
+		case BLOCKED_E_S:
+		{
+			return 'B';
+		}
+		case BLOCKED_SABOTAJE:
+		{
+			return 'S';
+		}
+		case EXIT:
+		{
+			return 'E';
+		}
+		case EXPULSADO:
+		{
+			return 'X';
+		}
+		case ERROR:
+		{
+			return 'F';
+		}
+		default:
+		{
+			log_error(logger_ram_hq, "El estado es invalido");
+			return 'Z';
+		}
+	}
+
+}
+estado obtener_estado_char (char est){
+	switch (est)
+	{
+		case 'N':
+		{
+			return NEW;
+		}
+		case 'R':
+		{
+			return READY;
+		}
+		case 'B':
+		{
+			return BLOCKED_E_S;
+		}
+		case 'S':
+		{
+			return BLOCKED_SABOTAJE;
+		}
+		case 'E':
+		{
+			return EXIT;
+		}
+		case 'X':
+		{
+			return EXPULSADO;
+		}
+		case 'F':
+		{
+			return ERROR;
+		}
+		default:
+		{
+			log_error(logger_ram_hq, "El caracter es invalido");
+			return ERROR;
+		}
+	}
+
 }
 
 estado obtener_estado_segmentacion(uint32_t tid)

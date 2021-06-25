@@ -323,6 +323,13 @@ void* serializar_estado(estado estado){
 	memcpy(stream,&estado,sizeof(estado));
 	return stream;
 }
+void* serializar_estado_tcb(estado est,uint32_t tid){
+	void* stream = malloc(sizeof(estado)+sizeof(uint32_t));
+	memcpy(stream,&tid,sizeof(uint32_t));
+	int offset = sizeof(uint32_t);
+	memcpy(stream+offset,&est,sizeof(estado));
+	return stream;
+}
 
 
 void* pserializar_operacion_recurso(char* recurso, uint32_t cantidad){
@@ -587,6 +594,16 @@ char* deserializar_recurso(void* stream){
 	memcpy(recurso,stream+offset,longitud);
 	offset+=longitud;
 	return recurso;
+}
+
+estado deserializar_estado_tcb(void* stream,uint32_t * tid){
+	estado est;
+	uint32_t aux_tid;
+	memcpy(&aux_tid,stream,sizeof(uint32_t));
+	*tid = aux_tid;
+	int offset = sizeof(uint32_t);
+	memcpy(&est,stream+offset,sizeof(estado));
+	return est;
 }
 //------------------------------------------------CONEXIONES-----------------------------------------------
 
