@@ -161,6 +161,8 @@ void ejecucion_tripulante(int indice)
     int indice_tarea = 0;
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
     // modificar pedir_tarea(tid);
+    char *tarea_miriam;
+    tarea_miriam = pedir_tarea_miriam((uint32_t) trip->id);
     dis_tarea *tarea = pedir_tarea(trip->id_patota, indice_tarea);
     printf("Ya pedi mi tarea \n");
     // ESTOY EN EXEC voy a ejecuta2r la tarea que tengo
@@ -186,6 +188,7 @@ void ejecucion_tripulante(int indice)
         tarea->estado_tarea = EN_CURSO;  // Le devuelvo su estado dado que fue modificado a FINALIZAR
         //if (!(trip->tarea_actual->es_de_sabotaje))
         indice_tarea++;
+        tarea_miriam = pedir_tarea_miriam((uint32_t)trip->id);
         tarea = pedir_tarea(trip->id_patota, indice_tarea);
     }
     // EL TRIPULANTE YA NO TIENE MAS TAREAS POR REALIZAR
@@ -193,9 +196,23 @@ void ejecucion_tripulante(int indice)
 }
 
 // FUNCIONES QUE USA EL HILO TRIPULANTE ----------------------
-dis_tarea *pedir_tarea(int id_patota, int indice)
+char *pedir_tarea_miriam(uint32_t tid)
 {
     //DAMI crear conexion y enviar mensaje obtener proxima tarea
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void *info = pserializar_tid(tid); 
+    uint32_t size_paquete = sizeof(uint32_t);
+    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info); 
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
+    printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
+    close(conexion_mi_ram_hq);
+    //chequear respuesta
+    return tarea_recibida;
+}
+
+dis_tarea *pedir_tarea(int id_patota, int indice)
+{
 
     dis_patota *patota = list_get(lista_de_patotas, id_patota - 1);
     t_list *lista_tareas = patota->list_tareas;

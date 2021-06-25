@@ -68,35 +68,25 @@ void* pserializar_tid(uint32_t tid){
 }
 
 void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
-	tarea nueva_tarea;
-	nueva_tarea.nombre_tarea = nombre;
+	char * nueva_tarea;
+	/*nueva_tarea.nombre_tarea = nombre;
 	nueva_tarea.cantidad_parametro = cantidad_parametros;
 	nueva_tarea.parametro = parametro;
 	nueva_tarea.pos_x = posx;
 	nueva_tarea.pos_y = posy;
 	nueva_tarea.tiempo = tiempo;
-	return serializar_tarea(nueva_tarea);
+	*/
+	return serializar_tarea(nueva_tarea,0);
 }
 
-void* serializar_tarea(tarea tarea){
+void* serializar_tarea(char* tarea,uint32_t longitud_nombre){
 	int offset = 0;
-	uint32_t longitud_nombre = strlen(tarea.nombre_tarea)+1;
-	void* stream = malloc(6*sizeof(uint32_t)+longitud_nombre);
+	void* stream = malloc(sizeof(uint32_t)+longitud_nombre);
 	memcpy(stream+offset,&longitud_nombre,sizeof(uint32_t));
 	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,tarea.nombre_tarea,longitud_nombre);
-	offset+=longitud_nombre;
-	memcpy(stream+offset,&tarea.cantidad_parametro,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tarea.parametro,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tarea.pos_x,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tarea.pos_y,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&tarea.tiempo,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
+	memcpy(stream+offset,tarea,longitud_nombre);
 	return stream;
+	
 }
 
 void* pserializar_respuesta_verificar_finalizacion(char okfail, char sino){
@@ -420,24 +410,14 @@ respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream){
 	return rta;
 }
 
-tarea deserializar_tarea(void* stream){
+char* deserializar_tarea(void* stream){
 	int offset = 0;
-	tarea tarea;
+	char* tarea;
 	uint32_t longitud;
 	memcpy(&longitud,stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
-	memcpy(tarea.nombre_tarea,stream+offset,longitud);
-	offset+= longitud;
-	memcpy(&tarea.cantidad_parametro, stream+offset,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(&tarea.parametro, stream+offset,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(&tarea.pos_x,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&tarea.pos_y,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&tarea.tiempo,stream+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
+	tarea = malloc(longitud);
+	memcpy(tarea,stream+offset,longitud);
 	return tarea;
 }
 

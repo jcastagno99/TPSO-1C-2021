@@ -196,7 +196,7 @@ void* serializar_nuevo_tripulante(nuevo_tripulante tripulante);
 void* pserializar_respuesta_ok_fail(char caracter);
 void* serializar_respuesta_ok_fail(respuesta_ok_fail resultado);
 void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
-void* serializar_tarea(tarea tarea);
+void* serializar_tarea(char* tarea,uint32_t);
 void* pserializar_respuesta_verificar_finalizacion(char okfail, char sino);
 void* serializar_respuesta_verificar_finalizacion(respuesta_ok_fail res, resultado_verificacion siono);
 void* pserializar_posicion(uint32_t posx, uint32_t posy);
@@ -221,7 +221,7 @@ void* pserializar_tid(uint32_t );
 
 nuevo_tripulante deserializar_nuevo_tripulante(void* stream);
 respuesta_ok_fail deserializar_respuesta_ok_fail(void* stream);
-tarea deserializar_tarea(void* stream);
+char* deserializar_tarea(void* stream);
 respuesta_verificar_finalizacion deserializar_respuesta_verificar_finalizacion(void* stream);
 posicion deserializar_posicion (void* stream);
 tripulante_y_posicion deserializar_tripulante_y_posicion(void* stream);

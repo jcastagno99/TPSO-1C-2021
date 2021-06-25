@@ -24,7 +24,8 @@ void *gestion_patotas_a_memoria();
 void expulsar_tripulante(int);
 
 int longitud_lista_string(char **);
-dis_tarea *pedir_tarea(int, int);
+dis_tarea *pedir_tarea(int,int);
+char * pedir_tarea_miriam(uint32_t);
 void realizar_operacion(dis_tarea *, dis_tripulante *);
 
 void destroy_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes *);

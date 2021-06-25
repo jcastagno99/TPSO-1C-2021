@@ -135,9 +135,11 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		case OBTENER_PROXIMA_TAREA:
 		{
 			uint32_t tripulante_tid = deserializar_tid(paquete->stream);
-			tarea proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); 
-			void *respuesta = serializar_tarea(proxima_tarea);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
+			char* proxima_tarea = obtener_proxima_tarea_segmentacion(tripulante_tid); 
+			uint32_t long_tarea = strlen(proxima_tarea)+1;
+			void *respuesta = serializar_tarea(proxima_tarea,long_tarea);
+			free(proxima_tarea);
+			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, long_tarea+sizeof(uint32_t), respuesta);
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
@@ -211,8 +213,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
 			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			tarea proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
-			void *respuesta = serializar_tarea(proxima_tarea);
+			char * proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
+			void *respuesta = serializar_tarea(proxima_tarea,0);
 			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
 			break;
 		}
@@ -483,39 +485,50 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 }
 
 
-tarea obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
+char * obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
 {
-	tarea proxima_tarea;
+	char * proxima_tarea;
 	return proxima_tarea;
 }
 
-tarea obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid)
+char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid)
 {
-	tarea proxima_tarea;
+	char* proxima_tarea;
 	t_segmento* tripulante_aux;
 	uint32_t tid_aux;
 	t_tabla_de_segmento* auxiliar_patota = buscar_patota_con_tid(tripulante_tid);
 	if(!auxiliar_patota){
-		for(int i=0; i<auxiliar_patota->segmentos_tripulantes->elements_count; i++){
+		log_error(logger_ram_hq,"El tripulante %d no esta dado de alta en ninguna patota", tripulante_tid);
+		return NULL;
+	}
+	//obtengo las tareas de la patota
+	pthread_mutex_lock(auxiliar_patota->segmento_tarea->mutex_segmento);
+	char* tareas = malloc(auxiliar_patota->segmento_tarea->tamanio);
+	memcpy(tareas,auxiliar_patota->segmento_tarea->base,auxiliar_patota->segmento_tarea->tamanio); //Me traigo todo el contenido del segmento de tareas
+	pthread_mutex_unlock(auxiliar_patota->segmento_tarea->mutex_segmento);
+	
+	//obtengo el numero de tarea que le corresponde al tripulante
+	uint32_t id_tarea = -1;
+	for(int i=0; i<auxiliar_patota->segmentos_tripulantes->elements_count; i++){
 		pthread_mutex_lock(auxiliar_patota->mutex_segmentos_tripulantes);
 		tripulante_aux = list_get(auxiliar_patota->segmentos_tripulantes,i);
 		memcpy(&tid_aux,tripulante_aux->base,sizeof(uint32_t));
-			if(tid_aux == tripulante_tid){
-				char* tareas;
-				uint32_t id_tarea;
-				memcpy(&id_tarea,tripulante_aux->base + 3*(sizeof(uint32_t)) + 1, sizeof(uint32_t));
-				memcpy(tareas,auxiliar_patota->segmento_tarea,auxiliar_patota->segmento_tarea->tamanio); //Me traigo todo el contenido del segmento de tareas
-				
-			}
+		if(tid_aux == tripulante_tid){
+			memcpy(&id_tarea,tripulante_aux->base + 3*(sizeof(uint32_t)) + 1, sizeof(uint32_t));			
+			pthread_mutex_unlock(auxiliar_patota->mutex_segmentos_tripulantes);
+			break;	
 		}
+		pthread_mutex_unlock(auxiliar_patota->mutex_segmentos_tripulantes);
 	}
-	log_error(logger_ram_hq,"El tripulante %d no esta dado de alta en ninguna patota", tripulante_tid);
-	//uint32 pid = obtener_pid(auxiliar_patota);
-	//tarea = obtener_proxima_tarea(pid);
-	//Ta bueno pasarle el pid ya que lo tengo para ahorrar iteraciones
-	//actualizarTareaActual(pid,tid,tarea);
+	if(id_tarea == -1){
+		log_error(logger_ram_hq,"No encontre id tarea, %i", id_tarea);
+	}
 
-	return proxima_tarea;
+	strcpy(tareas,obtener_proxima_tarea(tareas,id_tarea,auxiliar_patota->segmento_tarea->tamanio));
+	
+	actualizarTareaActual(auxiliar_patota,tripulante_tid);
+
+	return tareas;
 }
 
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
@@ -1033,4 +1046,44 @@ t_list* duplicar_lista_memoria(t_list* memoria){
 		list_add(aux,segmento_copia);
 	}
 	return aux;
+}
+
+char * obtener_proxima_tarea(char * tareas,uint32_t id_tarea,uint32_t size_tareas){
+	int n_tarea = 0;
+	for(int i = 0;i<size_tareas-1;i++){
+		if(n_tarea == id_tarea){
+			//char * aux = malloc (strlen(tareas+i));
+			//strcpy(aux,tareas+i);
+			return tareas+i;
+		}
+		if(*(tareas+i) == '\0'){
+			n_tarea++;
+		}
+	}
+	
+	return tareas+strlen(tareas);
+}
+
+void actualizarTareaActual(t_tabla_de_segmento* auxiliar_patota,uint32_t tripulante_tid){
+	pthread_mutex_lock(auxiliar_patota->mutex_segmentos_tripulantes);
+	for(int i = 0;i < auxiliar_patota->segmentos_tripulantes->elements_count;i++){
+		t_segmento * tripulante = list_get(auxiliar_patota->segmentos_tripulantes,i);
+		uint32_t tid = 0;
+		
+		pthread_mutex_lock(tripulante->mutex_segmento);
+		memcpy(&tid, tripulante->base, sizeof(uint32_t));
+		if(tid == tripulante_tid){			
+			int offset = sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t) + sizeof(uint32_t);
+			uint32_t tareaActual;
+			memcpy(&tareaActual, tripulante->base + offset, sizeof(uint32_t));
+			tareaActual++;
+			memcpy(tripulante->base + offset,&tareaActual , sizeof(uint32_t));
+			
+		}
+		pthread_mutex_unlock(tripulante->mutex_segmento);
+		
+	}
+	pthread_mutex_unlock(auxiliar_patota->mutex_segmentos_tripulantes);
+	
+	return;
 }
