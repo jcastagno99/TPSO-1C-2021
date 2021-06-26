@@ -182,14 +182,13 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
-		//TODO: Mismo handler pero con las funciones que utilizan el esquema de memoria de PAGINACION
 		switch (paquete->codigo_operacion)
 		{
 		case INICIAR_PATOTA:
 		{
-			pid_con_tareas patota_con_tareas = deserializar_pid_con_tareas(paquete->stream);
+			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
 			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
-			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas);
+			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas_y_tripulantes);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
 			break;
@@ -280,7 +279,18 @@ void crear_estructuras_administrativas()
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
-		//crear_estructuras_administrativas_paginacion;
+		int cantidad_frames = mi_ram_hq_configuracion->TAMANIO_MEMORIA / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		int offset = 0;
+		for(int i =0; i<cantidad_frames; i++){
+			t_frame_en_memoria* un_frame = malloc(sizeof(t_frame_en_memoria));
+			un_frame->inicio = memoria_principal + offset;
+			un_frame->libre = true;
+			un_frame->pagina_a_la_que_pertenece = NULL;
+			un_frame->mutex = malloc(sizeof(pthread_mutex_t));
+			pthread_mutex_init(un_frame->mutex,NULL);
+			offset += mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			list_add(frames,un_frame);
+		}
 	}
 	else
 	{
@@ -431,8 +441,37 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	return RESPUESTA_OK;
 }
 
-respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas patota_con_tareas)
+respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes)
 {
+	pthread_mutex_lock(&mutex_patotas);
+	t_tabla_de_paginas* patota = buscar_patota_paginacion(patota_con_tareas_y_tripulantes.pid);
+	if(patota){
+		pthread_mutex_unlock(&mutex_patotas);
+		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",patota_con_tareas_y_tripulantes.pid);
+		free(patota_con_tareas_y_tripulantes.tareas);
+		list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
+		return RESPUESTA_FAIL;
+	}
+	pthread_mutex_unlock(&mutex_patotas);
+
+	patota = malloc(sizeof(t_tabla_de_paginas));
+	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
+	patota->paginas = list_create();
+	pthread_mutex_lock(&mutex_patotas);
+	list_add(patotas,patota);
+	pthread_mutex_unlock(&mutex_patotas);
+
+	//Calcular tamaño total del pcb + tareas + n tcbs y guardarlo en un buffer(?)
+	int tamanio_patota = sizeof(uint32_t) + patota_con_tareas_y_tripulantes.longitud_palabra + (patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char)));
+	double cantidad_paginas_aux = tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	int cantidad_paginas_a_usar = 1; //ceil(cantidad_paginas_aux); no me esta tomando la funcion ceil
+	pthread_mutex_lock(&mutex_memoria);
+	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
+	pthread_mutex_unlock(&mutex_memoria);
+	//Buscar tantas paginas para que todo lo anterior entre (va a depender del tamaño de paginas)
+	//Cargar de manera conjunta, aca creo que voy a necesitar usar aritmetica de punteros
+
 	return RESPUESTA_OK;
 }
 
@@ -787,6 +826,38 @@ posicion obtener_ubicacion_segmentacion(uint32_t tid)
 }
 
 //-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
+
+//Puede aparecer el caso borde de que la primer pagina sea tan chica que no llegue a almacenar ni siquiera el pid?
+t_tabla_de_paginas* buscar_patota_paginacion(uint32_t pid){
+	t_tabla_de_paginas* auxiliar;
+	t_pagina* auxiliar_pagina;
+	uint32_t pid_auxiliar;
+	for(int i=0; i<patotas->elements_count; i++){
+		auxiliar = list_get(patotas,i);
+		auxiliar_pagina = list_get(auxiliar->paginas,1);
+		memcpy(&pid_auxiliar,auxiliar_pagina->inicio_memoria,sizeof(uint32_t));
+		if(pid_auxiliar == pid){
+			return auxiliar;
+		}
+	}
+	return NULL;
+}
+
+t_list* buscar_cantidad_frames_libres(int cantidad){
+	
+	t_list* frames_a_usar;
+	t_frame_en_memoria* auxiliar;
+	for(int i=0; i<frames->elements_count; i++){
+		while(i<cantidad){
+			auxiliar = list_get(frames,i);
+			if(auxiliar->libre){
+			auxiliar->libre = false;
+			list_add(frames_a_usar,auxiliar);
+			}
+		}
+	}
+	return frames_a_usar;
+}
 
 t_tabla_de_segmento* buscar_patota(uint32_t pid){
 	t_tabla_de_segmento* auxiliar;

@@ -2,6 +2,7 @@
 #ifndef MI_RAM_HQ_LIB_H
 #define MI_RAM_HQ_LIB_H
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -24,6 +25,7 @@
 #include <shared_utils.h>
 #include <nivel-gui/nivel-gui.h>
 #include <nivel-gui/tad_nivel.h>
+
 
 #define MAX_CLIENTS 128
 
@@ -70,6 +72,31 @@ typedef struct
 
 }t_segmento_de_memoria;
 
+typedef struct{
+
+	void* inicio_memoria;
+	char* id_pagina;
+	uint8_t presente;
+	pthread_mutex_t* mutex_pagina;
+
+}t_pagina;
+
+typedef struct{
+
+	t_list* paginas;
+	pthread_mutex_t* mutex_tabla_paginas;
+
+}t_tabla_de_paginas;
+
+typedef struct{
+
+	void* inicio;
+	t_pagina* pagina_a_la_que_pertenece;
+	pthread_mutex_t* mutex;
+	bool libre;
+
+}t_frame_en_memoria;
+
 //------------Variables Globales------------
 
 mi_ram_hq_config* mi_ram_hq_configuracion;
@@ -87,6 +114,7 @@ t_list* segmentos_memoria;
 
 uint32_t numero_segmento_global;
 
+t_list* frames;
 
 //------------Firmas de funciones------------
 
@@ -117,13 +145,16 @@ void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
 void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento* );
 void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
 
-respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas);
+respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam);
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion);
 char* obtener_proxima_tarea_paginacion(uint32_t);
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
 estado obtener_estado_paginacion(uint32_t);
 posicion obtener_ubicacion_paginacion(uint32_t);
+
+t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
+t_list* buscar_cantidad_frames_libres(int);
 
 void compactar_memoria();
 int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
