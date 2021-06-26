@@ -110,6 +110,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
 			respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
+			//rompe porque quiere leer la patota 2 y no esta en memoria
 			funcion_test_memoria(1);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
@@ -317,7 +318,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	
 	patota = malloc(sizeof(t_tabla_de_segmento));
 	patota->segmento_pcb = NULL;
-	patota->segmento_tarea = list_create();
+	patota->segmento_tarea = NULL;
 	patota->segmentos_tripulantes = list_create();
 	patota->mutex_segmentos_tripulantes = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_segmentos_tripulantes,NULL);
@@ -337,10 +338,12 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 			pthread_mutex_unlock(&mutex_memoria);
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el PCB aun luego de compactar, solicitud rechazada");
 			//TODO: Sacar patota de lista de patotas (con indice)
-			free(patota_con_tareas_y_tripulantes.tareas);
+			//no needed
+			//free(patota_con_tareas_y_tripulantes.tareas);
 			list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
+			list_remove(patotas,(patotas->elements_count)-1);
 			t_list* auxiliar = segmentos_memoria;
 			list_destroy_and_destroy_elements(auxiliar,free);
 			segmentos_memoria = bakcup_lista_memoria;
@@ -367,12 +370,13 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 			pthread_mutex_unlock(&mutex_memoria);
 			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada");
 			//TODO: Sacar patota de lista de patotas (con indice)
-			free(patota_con_tareas_y_tripulantes.tareas);
+			//free(patota_con_tareas_y_tripulantes.tareas);
 			list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 			free(segmento_pcb->mutex_segmento);
 			free(segmento_pcb);
 			free(patota->mutex_segmentos_tripulantes);
 			free(patota);
+			list_remove(patotas,(patotas->elements_count)-1);
 			t_list* auxiliar = segmentos_memoria;
 			list_destroy_and_destroy_elements(auxiliar,free);
 			segmentos_memoria = bakcup_lista_memoria;
@@ -393,18 +397,27 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	for(int i=0; i<patota_con_tareas_y_tripulantes.tripulantes->elements_count; i++){
 		t_segmento_de_memoria* segmento_a_usar_tripulante = buscar_segmento_tcb();
 		if(!segmento_a_usar_tripulante){
-		log_info(logger_ram_hq,"No encontre un segmento disponible para el tripulante numero: %i, voy a compactar",i+1);
-		//TODO: compactar
-		t_segmento_de_memoria* segmento_a_usar_tripulante = buscar_segmento_tcb();
+			log_info(logger_ram_hq,"No encontre un segmento disponible para el tripulante numero: %i, voy a compactar",i+1);
+			//TODO: compactar
+			t_segmento_de_memoria* segmento_a_usar_tripulante = buscar_segmento_tcb();
 			if(!segmento_a_usar_tripulante){
 				log_error(logger_ram_hq,"No hay suficiente espacio para almacenar al tripulante numero: %i , solicitud rechazada", i+1);
 				//TODO: Sacar patota de lista de patotas (con indice)
+				
+				while(patota->segmentos_tripulantes->elements_count){
+					t_segmento* aux = list_get(patota->segmentos_tripulantes,0);
+					free(aux->mutex_segmento);
+					free(aux);
+					list_remove(patota->segmentos_tripulantes,0);
+				}
+				list_destroy(patota->segmentos_tripulantes);
 				free(patota_con_tareas_y_tripulantes.tareas);
 				list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 				free(segmento_pcb->mutex_segmento);
 				free(segmento_pcb);
 				free(segmento_tarea->mutex_segmento);
 				free(segmento_tarea);
+				list_remove(patotas,(patotas->elements_count)-1);
 				free(patota->mutex_segmentos_tripulantes);
 				//TODO: liberar tripulantes de patota
 				free(patota);
