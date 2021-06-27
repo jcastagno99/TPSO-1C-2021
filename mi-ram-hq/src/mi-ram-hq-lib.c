@@ -331,7 +331,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 
 	pthread_mutex_lock(&mutex_memoria);
 	//t_list* bakcup_lista_memoria = list_duplicate(segmentos_memoria);
-	//t_list* bakcup_lista_memoria = duplicar_lista_memoria(segmentos_memoria);
+	t_list* bakcup_lista_memoria = duplicar_lista_memoria(segmentos_memoria);
 	t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb();
 	if(!segmento_a_usar_pcb){
 		//TODO: compactar
@@ -350,7 +350,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 			list_remove(patotas,(patotas->elements_count)-1);
 			t_list* auxiliar = segmentos_memoria;
 			list_destroy_and_destroy_elements(auxiliar,free);
-			//segmentos_memoria = bakcup_lista_memoria;
+			segmentos_memoria = bakcup_lista_memoria;
 			return RESPUESTA_FAIL;
 		}
 	}
@@ -384,7 +384,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 			list_remove(patotas,(patotas->elements_count)-1);
 			t_list* auxiliar = segmentos_memoria;
 			list_destroy_and_destroy_elements(auxiliar,free);
-			//segmentos_memoria = bakcup_lista_memoria;
+			segmentos_memoria = bakcup_lista_memoria;
 			return RESPUESTA_FAIL;
 		}
 	}
@@ -429,7 +429,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 				free(patota);
 				t_list* auxiliar = segmentos_memoria;
 				list_destroy_and_destroy_elements(auxiliar,free);
-				//segmentos_memoria = bakcup_lista_memoria;
+				segmentos_memoria = bakcup_lista_memoria;
 				return RESPUESTA_FAIL;
 			}
 		}	
@@ -457,7 +457,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	cargar_tareas_en_segmento(patota_con_tareas_y_tripulantes.tareas,patota_con_tareas_y_tripulantes.longitud_palabra,patota->segmento_tarea);
 	
 	pthread_mutex_unlock(&mutex_memoria);
-	//list_destroy_and_destroy_elements(bakcup_lista_memoria,free);
+	list_destroy_and_destroy_elements(bakcup_lista_memoria,free);
 	return RESPUESTA_OK;
 }
 
