@@ -57,20 +57,23 @@ typedef struct
 
 typedef struct
 {
-	t_segmento* segmento_pcb;
-	t_segmento* segmento_tarea;
+	bool libre;
+	void* inicio_segmento;
+	uint32_t tamanio_segmento;
+	uint32_t numero_segmento;
+
+}t_segmento_de_memoria;
+
+typedef struct
+{
+	t_segmento_de_memoria * segmento_pcb;
+	t_segmento_de_memoria* segmento_tarea;
+	pthread_mutex_t* mutex_segmento_pcb;
+	pthread_mutex_t* mutex_segmento_tcb;
 	t_list* segmentos_tripulantes;
 	pthread_mutex_t* mutex_segmentos_tripulantes;
 
 }t_tabla_de_segmento;
-
-typedef struct
-{
-	bool libre;
-	void* inicio_segmento;
-	uint32_t tamanio_segmento;
-
-}t_segmento_de_memoria;
 
 typedef struct{
 
@@ -141,9 +144,9 @@ t_segmento_de_memoria* buscar_segmento_tareas(uint32_t);
 t_segmento_de_memoria* buscar_segmento_pcb();
 t_segmento_de_memoria* buscar_segmento_tcb();
 
-void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
-void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento* );
-void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
+void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento_de_memoria*);
+void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento_de_memoria* );
+void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento_de_memoria*);
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam);
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
@@ -157,18 +160,18 @@ t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
 t_list* buscar_cantidad_frames_libres(int);
 
 void compactar_memoria();
-int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
+//int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
 
-void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, t_segmento*);
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*, t_segmento_de_memoria*);
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
 
 
 //Funciones del dump
 
 void imprimir_dump(void);
-uint32_t obtener_patota_memoria(t_segmento*);
-void recorrer_pcb_dump(t_segmento*);
-void recorrer_tareas_dump(uint32_t,t_segmento*);
+uint32_t obtener_patota_memoria(t_segmento_de_memoria*);
+void recorrer_pcb_dump(t_segmento_de_memoria*);
+void recorrer_tareas_dump(uint32_t,t_segmento_de_memoria*);
 void recorrer_tcb_dump(uint32_t,t_list*);
 t_list* duplicar_lista_memoria(t_list*);
 
