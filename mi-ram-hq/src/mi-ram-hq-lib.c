@@ -482,17 +482,50 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_patotas);
 
-	//Calcular tamaño total del pcb + tareas + n tcbs y guardarlo en un buffer(?)
 	int tamanio_patota = sizeof(uint32_t) + patota_con_tareas_y_tripulantes.longitud_palabra + (patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char)));
 	double cantidad_paginas_aux = tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	int cantidad_paginas_a_usar = 1; //ceil(cantidad_paginas_aux); no me esta tomando la funcion ceil
 	pthread_mutex_lock(&mutex_memoria);
 	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
-	pthread_mutex_unlock(&mutex_memoria);
-	//Buscar tantas paginas para que todo lo anterior entre (va a depender del tamaño de paginas)
-	//Cargar de manera conjunta, aca creo que voy a necesitar usar aritmetica de punteros
 
+	t_frame_en_memoria* auxiliar;
+	int bytes_ya_escritos;
+	pthread_mutex_lock(patota->mutex_tabla_paginas);
+	for(int i=0; i<frames_patota->elements_count; i++){
+		
+		auxiliar = list_get(frames_patota,i);
+		t_pagina* pagina = malloc(sizeof(t_pagina));
+		pagina->id_pagina = id_pagina;
+		id_pagina ++;
+		pagina->inicio_memoria = auxiliar->inicio;
+		pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(pagina->mutex_pagina,NULL);
+		pagina->presente = true;
+		list_add(patota->paginas,pagina);
+		auxiliar->pagina_a_la_que_pertenece = pagina;
+		auxiliar->libre = false;
+		int offset = 0;
+		memcpy(auxiliar->inicio,&patota_con_tareas_y_tripulantes.pid + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota));
+		offset += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota);
+		bytes_ya_escritos += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota);
+	}
+
+	if(frames_patota->elements_count < cantidad_paginas_a_usar){
+		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos
+	}
+
+	pthread_mutex_unlock(patota->mutex_tabla_paginas);
+	pthread_mutex_unlock(&mutex_memoria);
 	return RESPUESTA_OK;
+}
+
+int minimo_entre(int un_valor, int otro_valor){
+	if(un_valor >= otro_valor){
+		return un_valor;
+	}
+	else{
+		return otro_valor;
+	}
 }
 
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
@@ -1092,6 +1125,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	offset = offset + sizeof(uint32_t);
 	//pthread_mutex_unlock(segmento->mutex_segmento);
 }
+
 
 //-------------------------------------------------------------------------FUNCION DE COMPACTACION-----------------------------------------------------
 
