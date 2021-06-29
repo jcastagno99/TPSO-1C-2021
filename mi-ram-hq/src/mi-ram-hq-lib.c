@@ -191,6 +191,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		case INICIAR_PATOTA:
 		{
 			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+			//void* patota_con_tareas_y_tripulantes = deserializar_patota_paginacion(paquete->stream);
 			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
 			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas_y_tripulantes);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
@@ -881,18 +882,36 @@ posicion obtener_ubicacion_segmentacion(uint32_t tid)
 
 //-----------------------------------------------------------FUNCIONES DE BUSQUEDA DE SEGMENTOS--------------------------------------
 
-//Puede aparecer el caso borde de que la primer pagina sea tan chica que no llegue a almacenar ni siquiera el pid?
 t_tabla_de_paginas* buscar_patota_paginacion(uint32_t pid){
 	t_tabla_de_paginas* auxiliar;
 	t_pagina* auxiliar_pagina;
 	uint32_t pid_auxiliar;
+	uint32_t espacio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - 0; // 0 es la posicion donde arranca el dato que estoy buscando dentro de la pagina
+	uint32_t espacio_a_leer = 4;
+	uint32_t offset = 0;
+	uint32_t espacio_leido = 0;
 	for(int i=0; i<patotas->elements_count; i++){
 		auxiliar = list_get(patotas,i);
-		auxiliar_pagina = list_get(auxiliar->paginas,1);
-		memcpy(&pid_auxiliar,auxiliar_pagina->inicio_memoria,sizeof(uint32_t));
-		if(pid_auxiliar == pid){
-			return auxiliar;
+		for(int j=0; j<auxiliar->paginas->elements_count; j++){
+			auxiliar_pagina = list_get(auxiliar->paginas,j);
+			if(espacio_a_leer > espacio_disponible_pagina){
+				memcpy(&pid_auxiliar + espacio_leido,auxiliar_pagina->inicio_memoria + offset,espacio_disponible_pagina);
+				espacio_leido += espacio_disponible_pagina;
+				espacio_disponible_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+
+			}
+			else{
+				memcpy(&pid_auxiliar + espacio_leido,auxiliar_pagina->inicio_memoria + offset,espacio_a_leer - espacio_leido);
+				if(pid_auxiliar == pid){
+					return auxiliar;
+				}
+				else{
+					break;
+				}
+			}
+			
 		}
+
 	}
 	return NULL;
 }

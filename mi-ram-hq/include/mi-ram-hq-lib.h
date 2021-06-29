@@ -78,7 +78,7 @@ typedef struct
 typedef struct{
 
 	void* inicio_memoria;
-	uint32_t* id_pagina;
+	uint32_t id_pagina;
 	uint8_t presente;
 	pthread_mutex_t* mutex_pagina;
 
