@@ -20,7 +20,8 @@
 			"i-mongo-store-lib.h": "c",
 			"shared_utils.h": "c",
 			"mi-ram-hq-lib.h": "c",
-			"math.h": "c"
+			"math.h": "c",
+			"mathcalls.h": "c"
 		}
 	}
 }

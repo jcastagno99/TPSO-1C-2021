@@ -261,7 +261,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	liberar_paquete(paquete);
 	close(*socket_hilo);
 	free(socket_hilo);
-	imprimir_dump();
+	imprimir_dump(); //Esto rompe para paginacion
 }
 
 void crear_estructuras_administrativas()
@@ -284,6 +284,8 @@ void crear_estructuras_administrativas()
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
+		printf("Creando los frames de la memoria: \n");
+		frames = list_create();
 		int cantidad_frames = mi_ram_hq_configuracion->TAMANIO_MEMORIA / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 		int offset = 0;
 		for(int i =0; i<cantidad_frames; i++){
@@ -295,6 +297,7 @@ void crear_estructuras_administrativas()
 			pthread_mutex_init(un_frame->mutex,NULL);
 			offset += mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			list_add(frames,un_frame);
+			printf("Cree el frame %i, inicia en %i \n",i,un_frame->inicio);
 		}
 	}
 	else
@@ -464,7 +467,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 
 respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes)
 {
-	pthread_mutex_lock(&mutex_patotas);
+	/* pthread_mutex_lock(&mutex_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_paginacion(patota_con_tareas_y_tripulantes.pid);
 	if(patota){
 		pthread_mutex_unlock(&mutex_patotas);
@@ -473,8 +476,9 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 		list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 		return RESPUESTA_FAIL;
 	}
-	pthread_mutex_unlock(&mutex_patotas);
+	pthread_mutex_unlock(&mutex_patotas);*/
 
+	t_tabla_de_paginas* patota;
 	patota = malloc(sizeof(t_tabla_de_paginas));
 	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
@@ -483,9 +487,10 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_patotas);
 
-	int tamanio_patota = sizeof(uint32_t) + patota_con_tareas_y_tripulantes.longitud_palabra + (patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char)));
-	double cantidad_paginas_aux = tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
-	int cantidad_paginas_a_usar = 1; //ceil(cantidad_paginas_aux); no me esta tomando la funcion ceil
+	int tamanio_patota = sizeof(uint32_t) * 2 + patota_con_tareas_y_tripulantes.longitud_palabra - 1 + (patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char)));
+	float a = tamanio_patota;
+	float cant = a / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	int cantidad_paginas_a_usar = ceilf(cant);
 	pthread_mutex_lock(&mutex_memoria);
 	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
 
@@ -508,7 +513,7 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 		int offset = 0;
 		memcpy(auxiliar->inicio,&patota_con_tareas_y_tripulantes.pid + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota));
 		offset += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota);
-		bytes_ya_escritos += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota);
+		bytes_ya_escritos += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota); //esto esta re mal
 	}
 
 	if(frames_patota->elements_count < cantidad_paginas_a_usar){
@@ -918,15 +923,18 @@ t_tabla_de_paginas* buscar_patota_paginacion(uint32_t pid){
 
 t_list* buscar_cantidad_frames_libres(int cantidad){
 	
-	t_list* frames_a_usar;
+	t_list* frames_a_usar = list_create();
 	t_frame_en_memoria* auxiliar;
+	int contador = 0;
 	for(int i=0; i<frames->elements_count; i++){
-		while(i<cantidad){
-			auxiliar = list_get(frames,i);
-			if(auxiliar->libre){
-			auxiliar->libre = false;
-			list_add(frames_a_usar,auxiliar);
-			}
+		if(contador >= cantidad){
+			return frames_a_usar;
+		}
+		auxiliar = list_get(frames,i);
+		if(auxiliar->libre){
+		auxiliar->libre = false;
+		list_add(frames_a_usar,auxiliar);
+		contador ++;
 		}
 	}
 	return frames_a_usar;
