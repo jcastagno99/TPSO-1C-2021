@@ -149,7 +149,7 @@ void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento_de_memoria*);
 void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento_de_memoria* );
 void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento_de_memoria*);
 
-respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam);
+respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion);
 respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion);
 char* obtener_proxima_tarea_paginacion(uint32_t);

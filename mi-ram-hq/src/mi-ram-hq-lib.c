@@ -190,9 +190,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 		case INICIAR_PATOTA:
 		{
-			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
-			//void* patota_con_tareas_y_tripulantes = deserializar_patota_paginacion(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de INICIAR_PATOTA
+			pid_con_tareas_y_tripulantes_miriam pid_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+			patota_stream_paginacion patota_con_tareas_y_tripulantes = orginizar_stream_paginacion(pid_con_tareas_y_tripulantes);
 			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas_y_tripulantes);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
@@ -465,7 +464,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	return RESPUESTA_OK;
 }
 
-respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes)
+respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
 {
 	/* pthread_mutex_lock(&mutex_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_paginacion(patota_con_tareas_y_tripulantes.pid);
@@ -487,18 +486,18 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_patotas);
 
-	int tamanio_patota = sizeof(uint32_t) * 2 + patota_con_tareas_y_tripulantes.longitud_palabra - 1 + (patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char)));
-	float a = tamanio_patota;
-	float cant = a / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	float cant = patota_con_tareas_y_tripulantes.tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	int cantidad_paginas_a_usar = ceilf(cant);
 	pthread_mutex_lock(&mutex_memoria);
 	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
 
 	t_frame_en_memoria* auxiliar;
 	int bytes_ya_escritos;
+	int bytes_que_faltan = patota_con_tareas_y_tripulantes.tamanio_patota;;
+	int offset = 0;
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
+
 	for(int i=0; i<frames_patota->elements_count; i++){
-		
 		auxiliar = list_get(frames_patota,i);
 		t_pagina* pagina = malloc(sizeof(t_pagina));
 		pagina->id_pagina = id_pagina;
@@ -510,11 +509,18 @@ respuesta_ok_fail iniciar_patota_paginacion(pid_con_tareas_y_tripulantes_miriam 
 		list_add(patota->paginas,pagina);
 		auxiliar->pagina_a_la_que_pertenece = pagina;
 		auxiliar->libre = false;
-		int offset = 0;
-		memcpy(auxiliar->inicio,&patota_con_tareas_y_tripulantes.pid + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota));
-		offset += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota);
-		bytes_ya_escritos += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,tamanio_patota); //esto esta re mal
+		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota));
+		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
+		bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
+		offset += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan);
 	}
+	//Probando que se hayan guardado bien
+	t_pagina* aux = list_get(patota->paginas,0);
+	uint32_t pid;
+	char* tareas = malloc(sizeof(patota_con_tareas_y_tripulantes.tamanio_tareas));
+	uint32_t tid;
+	memcpy(&pid,aux->inicio_memoria,sizeof(uint32_t));
+	memcpy(tareas,auxiliar->inicio + 8,56);
 
 	if(frames_patota->elements_count < cantidad_paginas_a_usar){
 		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos

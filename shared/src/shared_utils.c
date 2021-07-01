@@ -532,6 +532,48 @@ pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(vo
 
 }
 
+//Pasa algo raro con el stream, no me deja leer ningun dato
+patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulantes_miriam pct){
+
+	patota_stream_paginacion patota;
+	patota.tamanio_patota = 2 * sizeof(uint32_t) + pct.longitud_palabra - 1 + (pct.tripulantes->elements_count * 5 * sizeof(uint32_t) + sizeof(char));
+	patota.tamanio_tareas = pct.longitud_palabra;
+	void* stream = malloc(patota.tamanio_patota);
+
+	int offset = 0;
+	memcpy(stream + offset,&pct.pid,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	uint32_t dir_tareas = 0;
+	memcpy(stream + offset,&dir_tareas,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset,pct.tareas,patota.tamanio_tareas);
+	offset += patota.tamanio_tareas;
+
+	nuevo_tripulante_sin_pid* aux;
+	for(int i=0; i<pct.tripulantes->elements_count; i++){
+		aux = list_get(pct.tripulantes,i);
+		memcpy(stream + offset,&aux->tid, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		char estado = 'N';
+		memcpy(stream + offset,&estado, sizeof(char));
+		offset += sizeof(char);
+		memcpy(stream + offset,&aux->pos_x, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		memcpy(stream + offset,&aux->pos_y, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		uint32_t proxima_tarea = 0;
+		uint32_t dir_pcb = 0;
+		memcpy(stream + offset,&proxima_tarea, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		memcpy(stream + offset,&dir_pcb, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+	}
+	patota.stream = stream;
+	uint32_t pid;
+	memcpy(&pid, patota.stream,sizeof(uint32_t));
+
+	return patota;
+}
 
 tarea* deserializar_tarea_alt(void* stream,uint32_t longitud){
 	int offset = 0;

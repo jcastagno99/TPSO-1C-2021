@@ -120,6 +120,13 @@ typedef struct
 	uint32_t pos_y;	
 }nuevo_tripulante_sin_pid;
 
+typedef struct{
+
+	void* stream;
+	uint32_t tamanio_tareas;
+	float tamanio_patota;
+}patota_stream_paginacion;
+
 //---------------------------------------------------------------------------------------------------------------------
 
 typedef struct
@@ -237,5 +244,6 @@ char* deserializar_recurso(void* stream);
 pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(void* stream);
 void* serializar_estado_tcb(estado ,uint32_t );
 estado deserializar_estado_tcb(void*,uint32_t *);
+patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulantes_miriam);
 
 #endif
