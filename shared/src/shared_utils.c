@@ -532,7 +532,6 @@ pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(vo
 
 }
 
-//Pasa algo raro con el stream, no me deja leer ningun dato
 patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulantes_miriam pct){
 
 	patota_stream_paginacion patota;
@@ -569,9 +568,9 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 		offset += sizeof(uint32_t);
 	}
 	patota.stream = stream;
-	uint32_t pid;
-	memcpy(&pid, patota.stream,sizeof(uint32_t));
-
+	char* t = malloc(20);
+	memcpy(t,stream + 8,20);
+	printf("%s",t);
 	return patota;
 }
 
