@@ -45,7 +45,7 @@ typedef struct
 typedef struct
 {
     int id_patota;
-    t_list *list_tareas;
+    //t_list *list_tareas; YA NO SE USA y tampoco lo debemos tener
     int cantidad_de_tareas;
 } dis_patota;
 

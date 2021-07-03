@@ -95,34 +95,9 @@ void validacion_sintactica(char *text)
         {
             if (atoi(str_split[1]) != 0)
             {
-                int size_paquete = sizeof(uint32_t);
-                int tid = atoi(str_split[1]);
-                void *info = pserializar_tid(tid); 
-
-                int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-                enviar_paquete(conexion_mi_ram_hq, EXPULSAR_TRIPULANTE, size_paquete, info);
-                t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-                close(conexion_mi_ram_hq);
-                if (paquete_recibido->codigo_operacion == RESPUESTA_EXPULSAR_TRIPULANTE){
-                    printf("Recibi opcode de respuesta okfail\n");
-                    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-
-                    if (respuesta == RESPUESTA_OK)
-                    {
-                        printf("EXPULSAR_TRIPULANTE : OK\n");
-                        expulsar_tripulante(atoi(str_split[1]));
-
-                    }
-                    else if (respuesta == RESPUESTA_FAIL)
-                    {
-                        printf("Recibi respuesta FAIL\n");
-                    }
-                    else
-                        printf("Recibi respuesta INVALIDA\n");
-                }
-                else
-                    printf("Recibi opcode de respuesta INVALIDO\n");
-
+                printf("EXPULSAR_TRIPULANTE : OK\n");
+                // No confundir con (_local)
+                expulsar_tripulante(atoi(str_split[1]));
             }
             else
                 printf("EXPULSAR_TRIPULANTE : id tripulante no es un [int]\n");
@@ -135,14 +110,8 @@ void validacion_sintactica(char *text)
         printf("Posible intento de iniciar planificacion\n");
         if (str_split[1] == NULL)
         {
-            planificacion_pausada = false;
-            for (int i = 0; i < cantidad_hilos_pausables; i++)
-            {
-                sem_post(&sem_para_detener_hilos);
-            }
-
+            iniciar_planificacion();
             log_info(logger, "INICIAR_PLANIFICACION: OK");
-            // [TODO]
         }
         else
             printf("INICIAR_PLANIFICACION : no contiene parametros\n");
@@ -151,7 +120,7 @@ void validacion_sintactica(char *text)
     case PAUSE_PLANIFICATION:
         if (str_split[1] == NULL)
         {
-            planificacion_pausada = true;
+            pausar_planificacion();
             log_info(logger, "PAUSAR_PLANIFICACION: OK");
         }
         else
@@ -181,4 +150,34 @@ void validacion_sintactica(char *text)
     }
     // Para liberar una ves se termino el case. pero como lo gestiona un hilo [TODO]
     //liberar_lista_string(str_split);// Creo que cada uno lo debe gestionar si no ROMPE por que se pierde
+}
+
+
+
+// FUNCION CON CONEXION
+void expulsar_tripulante (int tid){
+
+    int size_paquete = sizeof(uint32_t);
+    void *info = pserializar_tid(tid); 
+
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    enviar_paquete(conexion_mi_ram_hq, EXPULSAR_TRIPULANTE, size_paquete, info);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    close(conexion_mi_ram_hq);
+    if (paquete_recibido->codigo_operacion == RESPUESTA_EXPULSAR_TRIPULANTE){
+        printf("Recibi opcode de respuesta okfail\n");
+        respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+
+        if (respuesta == RESPUESTA_OK){
+            printf("EXPULSAR_TRIPULANTE : OK\n");
+            expulsar_tripulante_local(tid);
+        }
+        else if (respuesta == RESPUESTA_FAIL){
+            printf("Recibi respuesta FAIL\n");
+        }
+        else
+            printf("Recibi respuesta INVALIDA\n");
+    }
+    else
+        printf("Recibi opcode de respuesta INVALIDO\n");
 }

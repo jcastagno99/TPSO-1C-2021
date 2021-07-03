@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
@@ -28,7 +29,7 @@ char *ip_mi_ram_hq;
 char *puerto_mi_ram_hq;
 char *ip_i_mongo_store;
 char *puerto_i_mongo_store;
-//int conexion_mi_ram_hq;
+//int conexion_mi_ram_hq; no existe una global se crea una local por conexion
 int quantum_rr;
 int puerto_escucha;
 char *algoritmo;
@@ -40,7 +41,10 @@ int id_tcb;
 
 // Planificacion
 bool planificacion_pausada;
-int cantidad_hilos_pausables;
+bool sabotaje;
+int pos_sab_x;
+int pos_sab_y;
+int duracion_sabotaje;
 
 // Mutex
 pthread_mutex_t mutex_cola_iniciar_patota;
@@ -49,15 +53,18 @@ pthread_mutex_t mutex_cola_de_ready;
 pthread_mutex_t mutex_cola_de_exec;
 pthread_mutex_t mutex_cola_de_block;
 pthread_mutex_t mutex_tarea;
+
 // Contadores
 sem_t sem_contador_cola_iniciar_patota;
 sem_t sem_contador_cola_de_new;
 sem_t sem_contador_cola_de_block;
 sem_t sem_contador_cola_de_ready;
-sem_t sem_contador_cola_de_exec;
 sem_t operacion_entrada_salida_finalizada;
 sem_t procesadores_disponibles;
-sem_t sem_para_detener_hilos;
+sem_t sem_sabotaje;
+sem_t sem_sabotaje_fin;
+sem_t sem_planificador_a_largo_plazo;
+sem_t sem_hilo_de_bloqueados;
 
 // Colas
 t_list *cola_de_new;
@@ -67,6 +74,7 @@ t_list *cola_de_block;
 t_list *lista_de_patotas;
 t_queue *cola_de_iniciar_patotas;
 t_list *list_total_tripulantes;
+t_list *hilos_pausables;
 
 void leer_consola(t_log *);
 void leer_consola_prueba(t_log *);
@@ -79,8 +87,9 @@ void manejar_suscripciones_discordiador(int *);
 void catch_sigint_signal();
 void inicializar_discordiador();
 void cargar_config();
+void pausar_planificacion();
+void iniciar_planificacion();
 
-void *planificador_a_corto_plazo();
 void *planificador_a_largo_plazo();
 void agregar_elemento_a_cola(t_list *, pthread_mutex_t *, void *);
 void *quitar_primer_elemento_de_cola(t_list *, pthread_mutex_t *);
@@ -88,10 +97,22 @@ void loggear_estado_de_cola(t_list *, char *, char *);
 void *procesar_tripulante_fifo(void *);
 void *procesar_tripulante_rr();
 void *ejecutar_tripulantes_bloqueados();
-void chequear_planificacion_pausada();
+void chequear_planificacion_pausada(sem_t *, int);
+void manejar_sabotaje();
+int calcular_distancia(int, int, int, int);
+dis_tripulante *minimum(dis_tripulante *, dis_tripulante *);
 
-// PONER DONDE CORRESPONDA
-respuesta_ok_fail actualizar_estado_miriam(int,estado);
-//
+///void iterate_distancias(dis_tripulante *);
+
+bool ordenar_por_tid(dis_tripulante *, dis_tripulante *);
+void bloqueo_por_sabotaje(dis_tripulante *);
+void enviar_a_ready(dis_tripulante *);
+void vaciar_lista(t_list *);
+dis_tripulante *seleccionar_tripulante_a_ejecutar();
+void atender_interrupciones(sem_t *, int, dis_tripulante *);
+
+
+// Funciones de serializacion
+void actualizar_estado_miriam(int,estado);
 
 #endif /* DISCORDIADOR_H */

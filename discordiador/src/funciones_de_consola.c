@@ -8,17 +8,17 @@ void *gestion_patotas_a_memoria()
         sem_wait(&sem_contador_cola_iniciar_patota);
 
         pthread_mutex_lock(&mutex_cola_iniciar_patota);
-        char **res = queue_pop(cola_de_iniciar_patotas);
+        char **res = queue_pop(cola_de_iniciar_patotas);// TA BIEN
         pthread_mutex_unlock(&mutex_cola_iniciar_patota);
 
         log_info(logger, "[ Discordiador ] Procesando la patota con %s tripulantes...", res[1]);
-        iniciar_patota_global(res);
-        log_info(logger, "[ Discordiador ] Patota creada con ID %i", id_patota - 1);
+        iniciar_patota(res);
         liberar_lista_string(res);
     }
 }
 
-void iniciar_patota_global(char **str_split)
+// Cambiar nombre quitar el global
+void iniciar_patota(char **str_split)
 {
     int cant_tripulantes = atoi(str_split[1]);
     int tripu_pos_inicial_no_nula = longitud_lista_string(str_split) - 3;
@@ -51,47 +51,52 @@ void iniciar_patota_global(char **str_split)
         id_tcb++;
     }
 
-    // Guardo el tamaño en una variable para poder debugearlo
+    // ENVIAR A MI-RAM
     uint32_t size_paquete;
-
-    // Serializo el paquete ------------------------------------------
     void *info = serializar_pid_con_tareas_y_tripulantes(patota_full,&size_paquete); 
-    
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
-    
-    // recibo respuesta
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     close(conexion_mi_ram_hq);
 
     if (paquete_recibido->codigo_operacion == RESPUESTA_INICIAR_PATOTA){
         printf("Recibi opcode de respuesta okfail\n");
-        //desserializo la respuesta
         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
 
-        //analizo respuesta
+        // ANALIZAR LAS RESPUESTAS
         if (respuesta == RESPUESTA_OK)
         {
-            printf("Recibi respuesta OK\n");
-            //ESTO SERA DEPRECADO ES TEMPORAL HASTA QUE MI RAM ME ENVIO LO QUE PIDO
-            patota_full->tareas = crear_tareas_global(path); // sugiero cambiar nombre crear_tareas_discordiador()
+            log_info(logger, "[ Discordiador ] Patota creada con ID %i", id_patota);
             iniciar_patota_local(patota_full);
         }
-        else if (respuesta == RESPUESTA_FAIL)
-        {
-            printf("Recibi respuesta FAIL\n");
-            // RESETEAR LOS VALORES DEL PATOTA Y ID_TRIP DE LAS VAR. GLOBALES
+        else {
+            if (respuesta == RESPUESTA_FAIL)
+                printf("Recibi respuesta FAIL de iniciar patota\n");
+            else
+                printf("Recibi respuesta INVALIDA\n");
+
+            for (int i = 0; i < cant_tripulantes; i++){
+                id_tcb--;
+            }
+            //destroy_pid_con_tareas_y_tripulantes(patota_full); //YA NO ME SIRVE
+            log_error(logger, "[ MI-RAM-HQ ]  No se pudo crear la patota");
         }
-        else
-            printf("Recibi respuesta INVALIDA\n");
     }
-    else
+    else{
         printf("Recibi opcode de respuesta INVALIDO\n");
+        for (int i = 0; i < cant_tripulantes; i++){
+                id_tcb--;
+        }
+        //destroy_pid_con_tareas_y_tripulantes(patota_full); //YA NO ME SIRVE
+        log_error(logger, "[ MI-RAM-HQ ]  No se pudo crear la patota");
+    }
+        
 }
 
+// Carga las estrucuras localmente
 void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
 {
-    t_list *tareas_de_serializacion = patota_full->tareas;
+    //t_list *tareas_de_serializacion = patota_full->tareas;
     t_list *tripulantes_sin_pid = patota_full->tripulantes;
 
     for (int i = 0; i < tripulantes_sin_pid->elements_count; i++)
@@ -122,105 +127,61 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
 
     id_patota++;
 
-    t_list *lista_tareas = list_create();
-    // LO DE TAREAS TAMBIEN UN FOR QUE SE ARREGLA
-    int cant_tareas = 0;
-    for (int i = 0; i < tareas_de_serializacion->elements_count; i++)
-    {
-        tarea *tarea_ser = list_get(tareas_de_serializacion, i);
-        dis_tarea *nueva_tarea = malloc(sizeof(dis_tarea));
-
-        char *nombre_de_tarea = string_duplicate(tarea_ser->nombre_tarea);
-
-        nueva_tarea->estado_tarea = DISPONIBLE;
-        nueva_tarea->nombre_tarea = nombre_de_tarea;
-        nueva_tarea->parametro = tarea_ser->parametro;
-        nueva_tarea->pos_x = tarea_ser->pos_x;
-        nueva_tarea->pos_y = tarea_ser->pos_y;
-        nueva_tarea->tiempo = tarea_ser->tiempo;
-        nueva_tarea->es_de_sabotaje = false;
-        cant_tareas++;
-        list_add(lista_tareas, nueva_tarea);
-    }
-
     dis_patota *new_patota = malloc(sizeof(dis_patota));
-    new_patota->list_tareas = lista_tareas;
     new_patota->id_patota = id_patota;
-    new_patota->cantidad_de_tareas = cant_tareas;
+    new_patota->cantidad_de_tareas = patota_full->tareas->elements_count;
     list_add(lista_de_patotas, new_patota);
 
-    destroy_pid_con_tareas_y_tripulantes(patota_full); //YA NO ME SIRVE
+    //destroy_pid_con_tareas_y_tripulantes(patota_full); //CUIDADO CON ESTO HACIA SEGMENT FAULT QUISA CON ALGUNA ACTUALIZACION DE LAS ESTRUCTURAS
 }
 
 //  FUNCION DEL HILO: TRIPULANTE ----------------------------
 void ejecucion_tripulante(int indice)
 {
-    // TRUCAZO COMO EL ID DEL TRIPULANTE ES 0,1,2,3 concuerda con el indice de la lista total
-    // UPDATE PARA BUSCAR AL TRIP ES CON "indice-1" decision de serializacion que usan el 0 como centinela
     dis_tripulante *trip = list_get(list_total_tripulantes, indice - 1);
     int indice_tarea = 0;
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
-    // modificar pedir_tarea(tid);
-    char *tarea_miriam;
-    tarea_miriam = pedir_tarea_miriam((uint32_t) trip->id);
-    dis_tarea *tarea = pedir_tarea(trip->id_patota, indice_tarea);
-    printf("Ya pedi mi tarea \n");
+
+    dis_tarea *tarea = pedir_tarea_miriam((uint32_t)trip->id);
+    printf("[Tripulante %d] pidio una tarea y recibio  %s\n",trip->id,tarea->nombre_tarea);
     // ESTOY EN EXEC voy a ejecuta2r la tarea que tengo
 
-    while (tarea)
-    { // tarea != NULL (PROBAR si no funciona)
-        tarea->estado_tarea = EN_CURSO;
+    while (tarea != NULL){
+        tarea->estado_tarea = EN_CURSO;// ME parece que no sirve porque cuando creo una tarea la seteo con 'EN_CURSO'
         trip->tarea_actual = tarea;
-        int tiempo_original = tarea->tiempo;
         while (trip->tarea_actual->estado_tarea == EN_CURSO)
         {
             // CUANDO la tarea sea de sabotaje va a poder ejecutarse por si solo sin signals que mande el plani corto plazo (éste, en sabotaje, debe estar pausado [ALTAS ESFERAS])
             //if (!(trip->tarea_actual->es_de_sabotaje))
             sem_wait(&(trip->sem_tri));
             realizar_operacion(trip->tarea_actual, trip);
+            // NO pord dios ese log de la linea 180
+            //log_info(logger, "[ Tripulante %i ] Tarea %s en estado %i. El estado TERMINADO es %i", trip->id, tarea->nombre_tarea, trip->tarea_actual->estado_tarea, TERMINADA);
         }
-        log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, tarea->nombre_tarea);
+        log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, trip->tarea_actual->nombre_tarea);
         // Sale porque la funcion cambia realizar_operacion() : tarea->estado_tarea = TERMINADA;
-        /*  1. NOTIFICAR A MIRAMHQ que la tarea finalizo ? Para la BITACORA tambien a i-Mongo-Store ?
+        /*  1. NOTIFICAR A IMONGO que la tarea finalizo ? Para la BITACORA
             2. LIBERAR RECURSO de la tarea (free_tarea(*tarea))
         */
-        tarea->tiempo = tiempo_original; // Le devuelvo su tiempo original
-        tarea->estado_tarea = EN_CURSO;  // Le devuelvo su estado dado que fue modificado a FINALIZAR
-        //if (!(trip->tarea_actual->es_de_sabotaje))
-        indice_tarea++;
-        tarea_miriam = pedir_tarea_miriam((uint32_t)trip->id);
-        tarea = pedir_tarea(trip->id_patota, indice_tarea);
+
+        // Solo el trip que tenga una tarea con nombre SABOTAJE podra entrar en el IF
+        if (strcmp(trip->tarea_actual->nombre_tarea, "SABOTAJE") == 0){
+            //No hago nada para que se setee la tarea vieja. El wait lo hago para no pisar el valor y que el hilo sabotaje lea "EN_CURSO".
+            sem_wait(&sem_sabotaje);
+            sem_post(&sem_sabotaje_fin);
+        }
+        else
+        {
+            indice_tarea++; 
+            tarea = pedir_tarea_miriam((uint32_t)trip->id);
+            if (tarea)
+                printf("[Tripulante %d] pidio una tarea y recibio  %s\n",trip->id,tarea->nombre_tarea);
+            
+            
+        }
     }
     // EL TRIPULANTE YA NO TIENE MAS TAREAS POR REALIZAR
-    log_info(logger, "[ Tripulante %i ] Lista de tareas TERMINADA. Saliendo de la nave...", trip->id);
-}
-
-// FUNCIONES QUE USA EL HILO TRIPULANTE ----------------------
-char *pedir_tarea_miriam(uint32_t tid)
-{
-    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-    void *info = pserializar_tid(tid); 
-    uint32_t size_paquete = sizeof(uint32_t);
-    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info); 
-    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
-    printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
-    close(conexion_mi_ram_hq);
-    //chequear respuesta
-    return tarea_recibida;
-}
-
-dis_tarea *pedir_tarea(int id_patota, int indice)
-{
-
-    dis_patota *patota = list_get(lista_de_patotas, id_patota - 1);
-    t_list *lista_tareas = patota->list_tareas;
-    dis_tarea *tarea = NULL;
-
-    if (lista_tareas->elements_count > indice)
-        tarea = list_get(lista_tareas, indice);
-
-    return tarea;
+    log_info(logger, "[ Tripulante %i ] Lista de tareas TERMINADA. Estado %i. El de EXIT es %i. Saliendo de la nave...", trip->id, trip->estado, EXIT);
 }
 
 void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
@@ -246,64 +207,16 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
             perror("pthread_kill failed");
         return;
     }
-    /* crear_conexion
-    enviar_mensaje
-    close
-    comparar mensaje con local*/
-    //Mandar mensaje obtener_ubicacion a miriam
-    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-    void * info = pserializar_tid((uint32_t)trip->id);
-    uint32_t size_paquete = sizeof(uint32_t);
-    enviar_paquete(conexion_mi_ram_hq, OBTENER_UBICACION, size_paquete, info); 
-    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    posicion pos = deserializar_posicion(paquete_recibido->stream);
-    printf("Recibi pos %d:%d del tripulante %d\n",pos.pos_x,pos.pos_y,trip->id);
-    close(conexion_mi_ram_hq);
-    //chequear respuesta
 
     if (tarea->pos_x != trip->pos_x || tarea->pos_y != trip->pos_y)
     {
         int pos_vieja_x = trip->pos_x;
         int pos_vieja_y = trip->pos_y;
-       
         mover_tri_hacia_tarea(tarea, trip);
-        
-        //mensaje actualizar ubicacion a miriam
-        tripulante_y_posicion tripulante_posicion;
-        tripulante_posicion.tid = trip->id;
-        tripulante_posicion.pos_x = trip->pos_x;
-        tripulante_posicion.pos_y = trip->pos_y;
-        
-        int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-        void * info = serializar_tripulante_y_posicion(tripulante_posicion);
-        uint32_t size_paquete = sizeof(uint32_t) *3;
-        enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
-        t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-        close(conexion_mi_ram_hq);
-
-        if (paquete_recibido->codigo_operacion == RESPUESTA_ACTUALIZAR_UBICACION){
-            printf("Recibi opcode de respuesta okfail\n");
-            //desserializo la respuesta
-            respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-
-            //analizo respuesta
-            if (respuesta == RESPUESTA_OK)
-            {
-                printf("Recibi respuesta OK\n");
-            }
-            else if (respuesta == RESPUESTA_FAIL)
-            {
-                printf("Recibi respuesta FAIL\n");
-            }
-            else
-                printf("Recibi respuesta INVALIDA\n");
-        }
-        else
-            printf("Recibi opcode de respuesta INVALIDO\n");
-
+        notificar_movimiento_a_miram(trip);
         log_info(logger, "[ Tripulante %i ] (%d,%d) => (%d,%d) | TAREA: %s - UBICACION: (%d,%d)", trip->id, pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
-        sem_post(&(trip->procesador));
         sleep(tiempo_retardo_ciclo_cpu);
+        sem_post(&(trip->procesador));
     }
     else
     {
@@ -327,8 +240,11 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
                     log_info(logger, "[ Tripulante %i ] Tarea bloqueante %s TERMINADA", trip->id, tarea->nombre_tarea);
                     trip->estado = READY;
                     trip->hice_ciclo_inicial_tarea_es = false;
-                    trip->tareas_realizadas++;
+                    trip->tareas_realizadas++; // TODO hay un error por aca. por alguna razon no se incrementa y no me pasa a exit al tripulante, por lo que los procesadores se bloquean
                     tarea->estado_tarea = TERMINADA;
+
+                    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1); //TODO borrar estas 2 lineas
+                    log_info(logger, "[ Tripulante %i ] Realizadas %i - Totales %i\n", trip->id, trip->tareas_realizadas, patota->cantidad_de_tareas);
                 }
                 else
                 {
@@ -351,10 +267,10 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         {
             // [NO ES TAREA DE RECURSO E/S] ----------------------------------------
             //  POR LO QUE SOLO CONSUMIMOS DE A 1 EL TIEMPO
-            log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %d", trip->id, tarea->nombre_tarea, tarea->tiempo);
+            log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
             sleep(tiempo_retardo_ciclo_cpu);
-            tarea->tiempo--;
-
+            tarea->tiempo = tarea->tiempo - 1;
+            //log_info(logger, "[ Tripulante %i ] Ciclo de Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
             // ACTUALIZAMOS EL ESTADO DE LA TAREA
             chequear_tarea_terminada(tarea, trip);
             chequear_tripulante_finalizado(trip);
@@ -362,57 +278,6 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         }
     }
 }
-
-//  CONSOLA: LISTAR_TRIPULANTES -----------------------------
-void listar_tripulantes()
-{
-    printf("----------------------------------------------------------\n");
-    char *tiempo = temporal_get_string_time("%d/%m/%y %H:%M:%S");
-    printf("Estado de la Nave: %s\n", tiempo);
-    list_iterate(list_total_tripulantes, (void *)iterador_listar_tripulantes);
-    free(tiempo);
-}
-
-//  CONSOLA: EXPULSAR_TRIPULANTE-----------------------------
-void expulsar_tripulante(int id)
-{
-    dis_tripulante *trip = list_get(list_total_tripulantes, id - 1);
-    pthread_mutex_lock(&(trip->mutex_expulsado));
-    trip->expulsado = true;
-    pthread_mutex_unlock(&(trip->mutex_expulsado));
-}
-
-/********************************************
-***              𝗠𝗜-𝗥𝗔𝗠 𝗛𝗤             ***
-********************************************/
-
-t_list * armar_tareas_para_enviar(char *path)
-{
-    FILE *archivo = fopen(path, "r");
-    char caracteres[100];
-    t_list *lista_tareas = list_create();
-
-    while (feof(archivo) == 0)
-    {
-        fgets(caracteres, 99, archivo);
-        char * aux = malloc(strlen(caracteres));
-        if(caracteres[strlen(caracteres)-1] == '\n')
-            caracteres[strlen(caracteres)-1] = '\0';
-        //else
-        //    caracteres[strlen(caracteres)] = '\0';
-        strcpy(aux,caracteres);
-        list_add(lista_tareas, aux);
-        log_info(logger, "contenido de archivo actual %s", aux);
-
-    }
-    fclose(archivo);
-    return lista_tareas;
-}
-
-
-/************************************************************
-***              𝗙𝗨𝗡𝗖𝗜𝗢𝗡𝗘𝗦   𝗦𝗘𝗖𝗨𝗡𝗗𝗔𝗥𝗜𝗔𝗦             ***
-************************************************************/
 
 bool chequear_tripulante_expulsado(dis_tripulante *tripulante)
 {
@@ -425,20 +290,141 @@ bool chequear_tripulante_expulsado(dis_tripulante *tripulante)
 
 void chequear_tarea_terminada(dis_tarea *tarea, dis_tripulante *tripulante)
 {
+    //log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo);
+    // log_info(logger, "[ Tripulante %i ] Tiempo %i", tripulante->id, tarea->tiempo);
     if (tarea->tiempo == 0)
     {
+        log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo);
         tarea->estado_tarea = TERMINADA;
-        tripulante->tareas_realizadas++;
+        
+        if (strcmp(tarea->nombre_tarea, "SABOTAJE") != 0)
+        {   // LA TAREA DE SABOTAJE NO CUENTA COMO TAREA REALIZADA
+            tripulante->tareas_realizadas++;
+        }
+        
     }
 }
 
 void chequear_tripulante_finalizado(dis_tripulante *tripulante)
 {
     dis_patota *patota = list_get(lista_de_patotas, tripulante->id_patota - 1);
-    printf("Realizadas vs totales: %i %i\n", tripulante->tareas_realizadas, patota->cantidad_de_tareas);
+    //log_info(logger, "[ Tripulante %i ] Realizadas %i - Totales %i\n", tripulante->id, tripulante->tareas_realizadas, patota->cantidad_de_tareas); //TODO borrarlo
     if (tripulante->tareas_realizadas == patota->cantidad_de_tareas)
+    {
         tripulante->estado = EXIT;
+        printf("Exit...\n");
+    }
 }
+
+//  CONSOLA: LISTAR_TRIPULANTES -----------------------------
+void listar_tripulantes()
+{
+    printf("----------------------------------------------------------\n");
+    char *tiempo = temporal_get_string_time("%d/%m/%y %H:%M:%S");
+    printf("Estado de la Nave: %s\n", tiempo);
+    list_iterate(list_total_tripulantes, (void *)iterador_listar_tripulantes);
+    printf("Ready: %i | Exec: %i | Bloq: %i\n", list_size(cola_de_ready), list_size(cola_de_exec), list_size(cola_de_block));
+    free(tiempo);
+}
+
+//  CONSOLA: EXPULSAR_TRIPULANTE-----------------------------
+void expulsar_tripulante_local(int id)
+{
+    dis_tripulante *trip = list_get(list_total_tripulantes, id - 1);
+    pthread_mutex_lock(&(trip->mutex_expulsado));
+    trip->expulsado = true;
+    pthread_mutex_unlock(&(trip->mutex_expulsado));
+}
+
+/*******************************************************
+***                   𝗠𝗜-𝗥𝗔𝗠 𝗛𝗤                   ***
+*******************************************************/
+
+dis_tarea* pedir_tarea_miriam(uint32_t tid)
+{
+    // PEDIR A MI-RAM-HQ -----------------------------------------
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void *info = pserializar_tid(tid); 
+    uint32_t size_paquete = sizeof(uint32_t);
+    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info); 
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
+    //Recibi tarea IRSE_A_DORMIR;9;9;1 del tripulante 1 PODEMOS LOGUEARLO
+    printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
+
+    if(strlen(tarea_recibida)==0){
+        printf("Ya no hay mas proxima tarea\n");
+        return NULL;
+    }
+    
+    close(conexion_mi_ram_hq);
+    
+    // SPLITEAR TAREA RECIBIDA -------------------------------------------
+    char **str_spl = string_split(tarea_recibida, ";");
+    char **tarea_p = string_split(str_spl[0], " ");
+
+    dis_tarea *nueva_tarea = malloc(sizeof(dis_tarea));
+
+    char *nombre_de_tarea = string_duplicate(tarea_p[0]);
+    bool tiene_parametro = longitud_lista_string(tarea_p) - 1;
+
+    if (tiene_parametro){
+        //nueva_tarea->cantidad_parametro = 1; NO LO USAMOS APARTE CREO QUE CUANDO LE MANDAMOS A IMONGO LE MANDAMOS UN CHAR*
+        nueva_tarea->parametro = atoi(tarea_p[1]);
+    }
+    nueva_tarea->estado_tarea = DISPONIBLE;
+    nueva_tarea->nombre_tarea = nombre_de_tarea;
+
+    nueva_tarea->pos_x = atoi(str_spl[1]);
+    nueva_tarea->pos_y = atoi(str_spl[2]);
+    nueva_tarea->tiempo = atoi(str_spl[3]);
+    nueva_tarea->es_de_sabotaje = false;// NUNCA LO USAMOS para identificar usamos que el nombre de la tarea sea "SABOTAJE"
+
+    liberar_lista_string(str_spl);
+    liberar_lista_string(tarea_p);
+    return nueva_tarea;
+}
+
+void notificar_movimiento_a_miram(dis_tripulante *trip){
+
+    //              𝗦𝗘𝗥𝗜𝗔𝗟𝗜𝗭𝗔𝗥
+    tripulante_y_posicion tripulante_posicion;
+    tripulante_posicion.tid = trip->id;
+    tripulante_posicion.pos_x = trip->pos_x;
+    tripulante_posicion.pos_y = trip->pos_y;
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void * info = serializar_tripulante_y_posicion(tripulante_posicion);
+    uint32_t size_paquete = sizeof(uint32_t) *3;
+    enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
+    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    close(conexion_mi_ram_hq);
+
+    // Verificar respuesta: Ver si es nesesario en un futuro
+    // if (paquete_recibido->codigo_operacion == RESPUESTA_ACTUALIZAR_UBICACION){
+    //         printf("Recibi opcode de respuesta okfail\n");
+    //         //desserializo la respuesta
+    //         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+
+    //         //analizo respuesta
+    //         if (respuesta == RESPUESTA_OK)
+    //         {
+    //             printf("Recibi respuesta OK\n");
+    //         }
+    //         else if (respuesta == RESPUESTA_FAIL)
+    //         {
+    //             printf("Recibi respuesta FAIL\n");
+    //         }
+    //         else
+    //             printf("Recibi respuesta INVALIDA\n");
+    //     }
+    //     else
+    //         printf("Recibi opcode de respuesta INVALIDO\n");
+}
+
+
+/************************************************************
+***              𝗙𝗨𝗡𝗖𝗜𝗢𝗡𝗘𝗦   𝗦𝗘𝗖𝗨𝗡𝗗𝗔𝗥𝗜𝗔𝗦             ***
+************************************************************/
 
 // FUNCIONES COMUNES DE LISTAS ---------------------------
 void liberar_lista_string(char **lista)
@@ -472,7 +458,7 @@ void tarea_destroy(tarea *t)
 
 void destroy_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes *patota_full)
 {
-    list_destroy_and_destroy_elements(patota_full->tareas, (void *)tarea_destroy);
+    list_destroy_and_destroy_elements(patota_full->tareas, free);
     list_destroy_and_destroy_elements(patota_full->tripulantes, free);
     free(patota_full);
 }
@@ -481,6 +467,28 @@ void destroy_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes *patota_f
 void iterator(dis_tarea *t)
 { // [ITERAR USANDO COMMONS]
     printf("%-18s | %3d | %3d | %3d | %3d\n", t->nombre_tarea, t->parametro, t->pos_x, t->pos_y, t->tiempo);
+}
+
+t_list * armar_tareas_para_enviar(char *path)
+{
+    FILE *archivo = fopen(path, "r");
+    char caracteres[100];
+    t_list *lista_tareas = list_create();
+
+    while (feof(archivo) == 0)
+    {
+        fgets(caracteres, 99, archivo);
+        char * aux = malloc(strlen(caracteres));
+        if(caracteres[strlen(caracteres)-1] == '\n')
+            caracteres[strlen(caracteres)-1] = '\0';
+        //else
+        //    caracteres[strlen(caracteres)] = '\0';
+        strcpy(aux,caracteres);
+        list_add(lista_tareas, aux);
+
+    }
+    fclose(archivo);
+    return lista_tareas;
 }
 
 void iterador_listar_tripulantes(dis_tripulante *t)
@@ -514,48 +522,6 @@ void iterador_listar_tripulantes(dis_tripulante *t)
     }
 
     printf("Tripulante: %2d    Patota: %2d\tStatus: %s\n", t->id, t->id_patota, status);
-}
-
-// CONSOLA: INICIAR PATOTA ------------------------------------
-t_list *crear_tareas_global(char *path)
-{
-    FILE *archivo = fopen(path, "r");
-    char caracteres[100];
-
-    t_list *lista_tareas = list_create();
-
-    while (feof(archivo) == 0)
-    {
-        fgets(caracteres, 100, archivo);
-        char **str_spl = string_split(caracteres, ";");
-        char **tarea_p = string_split(str_spl[0], " ");
-
-        tarea *nueva_tarea = malloc(sizeof(tarea));
-
-        char *nombre_de_tarea = string_duplicate(tarea_p[0]);
-        nueva_tarea->nombre_tarea = nombre_de_tarea;
-
-        bool tiene_parametro = longitud_lista_string(tarea_p) - 1;
-
-        if (tiene_parametro)
-        {
-            nueva_tarea->cantidad_parametro = 1;
-            nueva_tarea->parametro = atoi(tarea_p[1]);
-        }
-        else
-            nueva_tarea->cantidad_parametro = 0;
-
-        nueva_tarea->pos_x = atoi(str_spl[1]);
-        nueva_tarea->pos_y = atoi(str_spl[2]);
-        nueva_tarea->tiempo = atoi(str_spl[3]);
-
-        list_add(lista_tareas, nueva_tarea);
-        liberar_lista_string(str_spl);
-        liberar_lista_string(tarea_p);
-    }
-    fclose(archivo);
-
-    return lista_tareas;
 }
 
 void mover_tri_hacia_tarea(dis_tarea *tarea, dis_tripulante *trip)

@@ -16,7 +16,7 @@ typedef enum
 
 Comando_Discordiador obtener_comando(char *);
 
-void liberar_lista_string(char **lista);
+//void liberar_lista_string(char **lista);
 
 bool posicion_validas_tripulantes(char **str_split);
 
@@ -26,4 +26,5 @@ uint32_t crear_tareas_enviar_patota_test();
 
 void crear_tripulante_test(uint32_t, int,int,int);
 
+void expulsar_tripulante (int);
 #endif
