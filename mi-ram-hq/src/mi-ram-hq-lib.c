@@ -257,10 +257,13 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		}
 	}
+	/*if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
+		imprimir_dump_paginacion();
+	}*/
 	liberar_paquete(paquete);
 	close(*socket_hilo);
 	free(socket_hilo);
-	imprimir_dump(); //Esto rompe para paginacion
+	//imprimir_dump(); //Esto rompe para paginacion
 }
 
 void crear_estructuras_administrativas()
@@ -298,11 +301,29 @@ void crear_estructuras_administrativas()
 			list_add(frames,un_frame);
 			printf("Cree el frame %i, inicia en %i \n",i,un_frame->inicio);
 		}
+		inicializar_swap();
 	}
 	else
 	{
 		log_error(logger_ram_hq, "El esquema de memoria no es soportado por el sistema");
 	}
+}
+
+ 
+void inicializar_swap(){
+	int  fd;
+	fd = open(mi_ram_hq_configuracion->PATH_SWAP, O_RDWR | O_CREAT, (mode_t) 0777);
+	if(fd == -1){
+		log_error(logger_ram_hq,"hubo un error al intentar abrir swap");
+		exit(-1);
+	}
+	fallocate(fd,0,0,mi_ram_hq_configuracion->TAMANIO_SWAP);
+	memoria_swap = mmap(NULL, mi_ram_hq_configuracion->TAMANIO_SWAP, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (memoria_swap == MAP_FAILED){
+		log_error(logger_ram_hq,"hubo un error al mapear el archivo");
+		exit(-1);
+	}
+	//paginas_swap = list_create();
 }
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
@@ -492,8 +513,8 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
 
 	t_frame_en_memoria* auxiliar;
-	int bytes_ya_escritos;
-	int bytes_que_faltan = patota_con_tareas_y_tripulantes.tamanio_patota;;
+	int bytes_ya_escritos = 0;
+	int bytes_que_faltan = patota_con_tareas_y_tripulantes.tamanio_patota;
 	int offset = 0;
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
 
@@ -509,18 +530,18 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		list_add(patota->paginas,pagina);
 		auxiliar->pagina_a_la_que_pertenece = pagina;
 		auxiliar->libre = false;
-		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota));
+		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
 		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
 		bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
-		offset += minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan);
+		offset += bytes_ya_escritos;
 	}
 	//Probando que se hayan guardado bien
 	t_pagina* aux = list_get(patota->paginas,0);
 	uint32_t pid;
 	char* tareas = malloc(sizeof(patota_con_tareas_y_tripulantes.tamanio_tareas));
-	uint32_t tid;
 	memcpy(&pid,aux->inicio_memoria,sizeof(uint32_t));
-	memcpy(tareas,auxiliar->inicio + 8,56);
+	memcpy(tareas,aux->inicio_memoria + 8,20);
+	log_info(logger_ram_hq,"las tareas son %s",tareas); 
 
 	if(frames_patota->elements_count < cantidad_paginas_a_usar){
 		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos
@@ -1406,6 +1427,19 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes){
 		printf ("Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,tripulante->numero_segmento,tripulante->inicio_segmento,tripulante->tamanio_segmento);
 	}
 }
+
+
+/* void imprimir_dump_paginacion(){
+	printf ("--------------------------------------------------------------------------\n");printf ("--------------------------------------------------------------------------\n");
+	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
+	printf ("Dump: %s \n",time);
+
+	for(int i=0; i<frames->elements_count; i++){
+		t_frame_en_memoria* frame = list_get(frames,i);
+		printf("Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,)
+	}
+}*/
+
 /*
 --------------------------------------------------------------------------
 Dump: 09/07/21 10:11:12

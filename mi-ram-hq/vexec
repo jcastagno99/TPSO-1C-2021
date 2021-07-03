@@ -2,5 +2,5 @@
 FILE=mi-ram-hq
 make $FILE
 if test -f "./$FILE"; then
-    valgrind --tool=memcheck --leak-check=yes --show-possibly-lost=no --show-reachable=no --num-callers=20 ./$FILE cfg/mi-ram-hq.config cfg/mi-ram-hq.log
+    valgrind --tool=memcheck --track-origins=yes --leak-check=yes --show-possibly-lost=no --show-reachable=no --num-callers=20 ./$FILE cfg/mi-ram-hq.config cfg/mi-ram-hq.log
 fi
