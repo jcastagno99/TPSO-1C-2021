@@ -61,6 +61,7 @@ typedef struct
 	void* inicio_segmento;
 	uint32_t tamanio_segmento;
 	uint32_t numero_segmento;
+	pthread_mutex_t* mutex_segmento;
 
 }t_segmento_de_memoria;
 
@@ -68,8 +69,6 @@ typedef struct
 {
 	t_segmento_de_memoria * segmento_pcb;
 	t_segmento_de_memoria* segmento_tarea;
-	pthread_mutex_t* mutex_segmento_pcb;
-	pthread_mutex_t* mutex_segmento_tcb;
 	t_list* segmentos_tripulantes;
 	pthread_mutex_t* mutex_segmentos_tripulantes;
 

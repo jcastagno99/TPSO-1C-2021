@@ -711,9 +711,9 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid)
 			}
 			//pthread_mutex_unlock(tripulante_aux->mutex_segmento);
 		}
+		pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
 	}
 	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
-	pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
 	pthread_mutex_unlock(&mutex_patotas);
 	return RESPUESTA_FAIL;
 }
@@ -782,9 +782,13 @@ char obtener_char_estado (estado est){
 		{
 			return 'S';
 		}
-		case EXIT:
+		case EXEC:
 		{
 			return 'E';
+		}
+		case EXIT:
+		{
+			return 'Q';
 		}
 		case EXPULSADO:
 		{
@@ -820,8 +824,12 @@ estado obtener_estado_char (char est){
 		case 'S':
 		{
 			return BLOCKED_SABOTAJE;
-		}
+		}		
 		case 'E':
+		{
+			return EXEC;
+		}
+		case 'Q':
 		{
 			return EXIT;
 		}
@@ -863,11 +871,15 @@ estado obtener_estado_segmentacion(uint32_t tid)
 				memcpy(estado,tripulante_aux->inicio_segmento + sizeof(uint32_t),sizeof(char));
 				estado_numerico = atoi(estado);
 				//faltan los unlock
+				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_patotas);
 				return estado_numerico;
 
 			}
 		}
+		pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
 	}
+	pthread_mutex_unlock(&mutex_patotas);
 	log_error(logger_ram_hq,"No se pudo encontrar el tripulante %d en memoria, solicitud rechazada", tid);
 	return estado_numerico = 6;
 }
@@ -972,7 +984,7 @@ t_tabla_de_segmento* buscar_patota(uint32_t pid){
 	uint32_t pid_auxiliar;
 	for(int i=0; i<patotas->elements_count; i++){
 		auxiliar = list_get(patotas,i);
-		memcpy(&pid_auxiliar,auxiliar->segmento_pcb->inicio_segmento,auxiliar->segmento_pcb->tamanio_segmento);
+		memcpy(&pid_auxiliar,auxiliar->segmento_pcb->inicio_segmento,sizeof(uint32_t));
 		if(pid_auxiliar == pid){
 			return auxiliar;
 		}
