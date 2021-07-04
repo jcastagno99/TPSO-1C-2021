@@ -257,13 +257,15 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		}
 	}
-	/*if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
-		imprimir_dump_paginacion();
-	}*/
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
+		//imprimir_dump_paginacion();
+	}
+	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
+		imprimir_dump();
+	}
 	liberar_paquete(paquete);
 	close(*socket_hilo);
 	free(socket_hilo);
-	//imprimir_dump(); //Esto rompe para paginacion
 }
 
 void crear_estructuras_administrativas()
@@ -323,6 +325,7 @@ void inicializar_swap(){
 		log_error(logger_ram_hq,"hubo un error al mapear el archivo");
 		exit(-1);
 	}
+	offset_swap = 0;
 	//paginas_swap = list_create();
 }
 
@@ -518,12 +521,13 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	int offset = 0;
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
 
-	for(int i=0; i<frames_patota->elements_count; i++){
+	for(int i =0; i<frames_patota->elements_count; i++){
 		auxiliar = list_get(frames_patota,i);
 		t_pagina* pagina = malloc(sizeof(t_pagina));
 		pagina->id_pagina = id_pagina;
 		id_pagina ++;
 		pagina->inicio_memoria = auxiliar->inicio;
+		pagina->inicio_swap = NULL;
 		pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(pagina->mutex_pagina,NULL);
 		pagina->presente = true;
@@ -535,16 +539,25 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 		offset += bytes_ya_escritos;
 	}
-	//Probando que se hayan guardado bien
-	t_pagina* aux = list_get(patota->paginas,0);
-	uint32_t pid;
-	char* tareas = malloc(sizeof(patota_con_tareas_y_tripulantes.tamanio_tareas));
-	memcpy(&pid,aux->inicio_memoria,sizeof(uint32_t));
-	memcpy(tareas,aux->inicio_memoria + 8,20);
-	log_info(logger_ram_hq,"las tareas son %s",tareas); 
 
-	if(frames_patota->elements_count < cantidad_paginas_a_usar){
+	if(frames_patota->elements_count < cantidad_paginas_a_usar){ //Esto es que no toda la patota se cargo en memoria
 		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos
+		for(int i=0;i<(cantidad_paginas_a_usar - frames_patota->elements_count); i++){
+			t_pagina* pagina = malloc(sizeof(t_pagina));
+			pagina->id_pagina = id_pagina;
+			id_pagina ++;
+			pagina->inicio_memoria = NULL;
+			pagina->inicio_swap = memoria_swap + offset_swap;
+			pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
+			pthread_mutex_init(pagina->mutex_pagina,NULL);
+			pagina->presente = false;
+			list_add(patota->paginas,pagina);
+			memcpy(memoria_swap + offset_swap,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
+			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
+			bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
+			offset += bytes_ya_escritos;
+			offset_swap += bytes_ya_escritos;
+		}	
 	}
 
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);

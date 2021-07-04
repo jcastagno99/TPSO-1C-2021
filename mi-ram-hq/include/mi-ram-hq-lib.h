@@ -77,6 +77,7 @@ typedef struct
 typedef struct{
 
 	void* inicio_memoria;
+	void* inicio_swap;
 	uint32_t id_pagina;
 	uint8_t presente;
 	pthread_mutex_t* mutex_pagina;
@@ -118,6 +119,7 @@ uint32_t numero_segmento_global;
 
 t_list* frames;
 uint32_t id_pagina;
+int offset_swap;
 
 //------------Firmas de funciones------------
 
