@@ -97,6 +97,8 @@ typedef struct{
 	t_pagina* pagina_a_la_que_pertenece;
 	pthread_mutex_t* mutex;
 	bool libre;
+	uint32_t pid_duenio;
+	uint32_t indice_pagina; 
 
 }t_frame_en_memoria;
 
@@ -118,7 +120,6 @@ t_list* segmentos_memoria;
 uint32_t numero_segmento_global;
 
 t_list* frames;
-uint32_t id_pagina;
 int offset_swap;
 
 //------------Firmas de funciones------------
@@ -182,6 +183,8 @@ char * obtener_proxima_tarea(char *,uint32_t,uint32_t);
 
 char obtener_char_estado (estado);
 respuesta_ok_fail actualizar_estado_segmentacion(uint32_t ,estado );
+
+void imprimir_dump_paginacion(void);
 #endif /* MI_RAM_HQ_LIB_H */
 
 

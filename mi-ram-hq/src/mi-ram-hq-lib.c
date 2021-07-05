@@ -258,7 +258,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 	}
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
-		//imprimir_dump_paginacion();
+		imprimir_dump_paginacion();
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
 		imprimir_dump();
@@ -326,7 +326,6 @@ void inicializar_swap(){
 		exit(-1);
 	}
 	offset_swap = 0;
-	//paginas_swap = list_create();
 }
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
@@ -490,18 +489,19 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 
 respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
 {
-	/* pthread_mutex_lock(&mutex_patotas);
-	t_tabla_de_paginas* patota = buscar_patota_paginacion(patota_con_tareas_y_tripulantes.pid);
+	uint32_t pid;
+	memcpy(&pid,patota_con_tareas_y_tripulantes.stream,sizeof(uint32_t));
+	pthread_mutex_lock(&mutex_patotas);
+	t_tabla_de_paginas* patota = buscar_patota_paginacion(pid);
 	if(patota){
 		pthread_mutex_unlock(&mutex_patotas);
-		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",patota_con_tareas_y_tripulantes.pid);
-		free(patota_con_tareas_y_tripulantes.tareas);
-		list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
+		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",pid);
+		//free(patota_con_tareas_y_tripulantes->stream); ????????????
+		//free(&patota_con_tareas_y_tripulantes);
 		return RESPUESTA_FAIL;
 	}
-	pthread_mutex_unlock(&mutex_patotas);*/
+	pthread_mutex_unlock(&mutex_patotas);
 
-	t_tabla_de_paginas* patota;
 	patota = malloc(sizeof(t_tabla_de_paginas));
 	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
@@ -519,13 +519,13 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	int bytes_ya_escritos = 0;
 	int bytes_que_faltan = patota_con_tareas_y_tripulantes.tamanio_patota;
 	int offset = 0;
+	uint32_t id_pagina = 0;
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
 
 	for(int i =0; i<frames_patota->elements_count; i++){
 		auxiliar = list_get(frames_patota,i);
 		t_pagina* pagina = malloc(sizeof(t_pagina));
 		pagina->id_pagina = id_pagina;
-		id_pagina ++;
 		pagina->inicio_memoria = auxiliar->inicio;
 		pagina->inicio_swap = NULL;
 		pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
@@ -534,6 +534,11 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		list_add(patota->paginas,pagina);
 		auxiliar->pagina_a_la_que_pertenece = pagina;
 		auxiliar->libre = false;
+		// -------------------------------------------- ESTO ES PARA EL DUMP -------------------------------------------------------------
+		auxiliar->pid_duenio = pid;
+		auxiliar->indice_pagina = id_pagina;
+		id_pagina ++;
+		// -------------------------------------------------------------------------------------------------------------------------------
 		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
 		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
 		bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
@@ -542,6 +547,7 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 
 	if(frames_patota->elements_count < cantidad_paginas_a_usar){ //Esto es que no toda la patota se cargo en memoria
 		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos
+		log_info(logger_ram_hq,"No hay espacio suficiente en memoria para guardar todo el proceso, se procede a almacenar en SWAP %i bytes",bytes_que_faltan);
 		for(int i=0;i<(cantidad_paginas_a_usar - frames_patota->elements_count); i++){
 			t_pagina* pagina = malloc(sizeof(t_pagina));
 			pagina->id_pagina = id_pagina;
@@ -562,6 +568,7 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
+	log_info(logger_ram_hq,"La estructuras administrativas fueron creadas correctamente");
 	return RESPUESTA_OK;
 }
 
@@ -1454,16 +1461,17 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes){
 }
 
 
-/* void imprimir_dump_paginacion(){
+//Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
+ void imprimir_dump_paginacion(){
 	printf ("--------------------------------------------------------------------------\n");printf ("--------------------------------------------------------------------------\n");
 	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
 	printf ("Dump: %s \n",time);
 
 	for(int i=0; i<frames->elements_count; i++){
 		t_frame_en_memoria* frame = list_get(frames,i);
-		printf("Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,)
+		printf("Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
 	}
-}*/
+}
 
 /*
 --------------------------------------------------------------------------
