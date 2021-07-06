@@ -87,6 +87,7 @@ typedef struct{
 typedef struct{
 
 	t_list* paginas;
+	t_list* tareas; // Esto se usa como indice para obtener la proxima tarea
 	pthread_mutex_t* mutex_tabla_paginas;
 
 }t_tabla_de_paginas;

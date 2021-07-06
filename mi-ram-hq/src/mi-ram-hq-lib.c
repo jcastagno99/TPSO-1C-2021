@@ -496,7 +496,7 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	if(patota){
 		pthread_mutex_unlock(&mutex_patotas);
 		log_error(logger_ram_hq,"La patota de pid %i ya existe, solicitud rechazada",pid);
-		//free(patota_con_tareas_y_tripulantes->stream); ????????????
+		free(patota_con_tareas_y_tripulantes.stream);
 		//free(&patota_con_tareas_y_tripulantes);
 		return RESPUESTA_FAIL;
 	}
@@ -506,6 +506,7 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
 	patota->paginas = list_create();
+	patota->tareas = patota_con_tareas_y_tripulantes.tareas;
 	pthread_mutex_lock(&mutex_patotas);
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_patotas);
