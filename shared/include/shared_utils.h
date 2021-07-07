@@ -10,6 +10,7 @@
 #include <string.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include <commons/string.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <errno.h>
@@ -99,6 +100,12 @@ typedef struct
 
 typedef struct
 {
+	char* tarea;
+	int tamanio; //CUENTA EL /0
+}tarea_ram;
+
+typedef struct
+{
 	uint32_t pid;
 	t_list *tareas;
 	t_list *tripulantes;
@@ -125,6 +132,7 @@ typedef struct{
 	void* stream;
 	uint32_t tamanio_tareas;
 	float tamanio_patota;
+	t_list* tareas;
 }patota_stream_paginacion;
 
 //---------------------------------------------------------------------------------------------------------------------

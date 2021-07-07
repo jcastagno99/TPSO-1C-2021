@@ -532,11 +532,34 @@ pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(vo
 
 }
 
+// TODO HAY UNA LECTURA INVALIDA DE 1 BYTE
 patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulantes_miriam pct){
 
 	patota_stream_paginacion patota;
+	patota.tareas = list_create();
+
+	int contador = 0;
+	int puntero = 0;
+	while(puntero < pct.longitud_palabra){
+		if(*(pct.tareas + puntero) == '\0'){
+			contador ++;
+		}
+		puntero++;
+	}
+
+	int offset_tarea = 0;
+	for(int i =0; i<contador; i++){
+		char* auxiliar = string_substring(pct.tareas,offset_tarea,99);
+		offset_tarea += string_length(auxiliar) + 1;
+		tarea_ram* una_tarea = malloc(sizeof(tarea_ram));
+		una_tarea->tarea = auxiliar;
+		una_tarea->tamanio = string_length(auxiliar) + 1;
+		list_add(patota.tareas,una_tarea);
+
+	}
+
 	patota.tamanio_patota = 2 * sizeof(uint32_t) + pct.longitud_palabra - 1 + (pct.tripulantes->elements_count * 5 * sizeof(uint32_t) + sizeof(char));
-	patota.tamanio_tareas = pct.longitud_palabra;
+	patota.tamanio_tareas = pct.longitud_palabra - 1;
 	void* stream = malloc(patota.tamanio_patota);
 
 	int offset = 0;
@@ -568,9 +591,6 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 		offset += sizeof(uint32_t);
 	}
 	patota.stream = stream;
-	char* t = malloc(20);
-	memcpy(t,stream + 8,20);
-	printf("%s",t);
 	return patota;
 }
 
