@@ -297,6 +297,8 @@ void crear_estructuras_administrativas()
 			un_frame->inicio = memoria_principal + offset;
 			un_frame->libre = true;
 			un_frame->pagina_a_la_que_pertenece = NULL;
+			un_frame->pid_duenio = NULL;
+			un_frame->indice_pagina = NULL;
 			un_frame->mutex = malloc(sizeof(pthread_mutex_t));
 			pthread_mutex_init(un_frame->mutex,NULL);
 			offset += mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -541,8 +543,8 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		id_pagina ++;
 		// -------------------------------------------------------------------------------------------------------------------------------
 		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
-		bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
+		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
+		bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 		offset += bytes_ya_escritos;
 	}
 
@@ -559,9 +561,9 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 			pthread_mutex_init(pagina->mutex_pagina,NULL);
 			pagina->presente = false;
 			list_add(patota->paginas,pagina);
-			memcpy(memoria_swap + offset_swap,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,patota_con_tareas_y_tripulantes.tamanio_patota);
-			bytes_ya_escritos += (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
+			memcpy(pagina->inicio_swap,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
+			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
+			bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 			offset += bytes_ya_escritos;
 			offset_swap += bytes_ya_escritos;
 		}	
