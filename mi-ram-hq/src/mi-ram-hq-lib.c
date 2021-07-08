@@ -543,9 +543,10 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		id_pagina ++;
 		// -------------------------------------------------------------------------------------------------------------------------------
 		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
+		//PORQUE MIERDA ESTO ME ESTA DANDO 0 SI CLARAMENTE AL DEBUGGEAR TE DICE minimo_entre(64,144 - 0) -> deberia devolver 64 y esta devolviendo 0!!!
 		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
 		bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
-		offset += bytes_ya_escritos;
+		offset = bytes_ya_escritos;
 	}
 
 	if(frames_patota->elements_count < cantidad_paginas_a_usar){ //Esto es que no toda la patota se cargo en memoria
@@ -562,10 +563,11 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 			pagina->presente = false;
 			list_add(patota->paginas,pagina);
 			memcpy(pagina->inicio_swap,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
+			int a = patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos;
+			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,a);
 			bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 			offset += bytes_ya_escritos;
-			offset_swap += bytes_ya_escritos;
+			offset_swap = bytes_ya_escritos;
 		}	
 	}
 
@@ -576,12 +578,13 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 }
 
 int minimo_entre(int un_valor, int otro_valor){
-	if(un_valor >= otro_valor){
+	if(un_valor < otro_valor){
 		return un_valor;
 	}
 	else{
 		return otro_valor;
 	}
+	return un_valor;
 }
 
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
