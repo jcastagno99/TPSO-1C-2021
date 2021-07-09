@@ -168,6 +168,7 @@ void compactar_memoria();
 
 void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*, t_segmento_de_memoria*);
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
+int minimo_entre(int, int);
 
 
 //Funciones del dump

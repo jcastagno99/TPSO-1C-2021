@@ -268,6 +268,22 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	free(socket_hilo);
 }
 
+void inicializar_swap(){
+	int  fd;
+	fd = open(mi_ram_hq_configuracion->PATH_SWAP, O_RDWR | O_CREAT, (mode_t) 0777);
+	if(fd == -1){
+		log_error(logger_ram_hq,"hubo un error al intentar abrir swap");
+		exit(-1);
+	}
+	fallocate(fd,0,0,mi_ram_hq_configuracion->TAMANIO_SWAP);
+	memoria_swap = mmap(NULL, mi_ram_hq_configuracion->TAMANIO_SWAP, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (memoria_swap == MAP_FAILED){
+		log_error(logger_ram_hq,"hubo un error al mapear el archivo");
+		exit(-1);
+	}
+	offset_swap = 0;
+}
+
 void crear_estructuras_administrativas()
 {
 	patotas = list_create();
@@ -314,21 +330,7 @@ void crear_estructuras_administrativas()
 }
 
  
-void inicializar_swap(){
-	int  fd;
-	fd = open(mi_ram_hq_configuracion->PATH_SWAP, O_RDWR | O_CREAT, (mode_t) 0777);
-	if(fd == -1){
-		log_error(logger_ram_hq,"hubo un error al intentar abrir swap");
-		exit(-1);
-	}
-	fallocate(fd,0,0,mi_ram_hq_configuracion->TAMANIO_SWAP);
-	memoria_swap = mmap(NULL, mi_ram_hq_configuracion->TAMANIO_SWAP, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
-	if (memoria_swap == MAP_FAILED){
-		log_error(logger_ram_hq,"hubo un error al mapear el archivo");
-		exit(-1);
-	}
-	offset_swap = 0;
-}
+
 
 //------------------------------------------MANEJO DE LOGICA DE MENSAJES-------------------------------------
 
@@ -543,14 +545,12 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		id_pagina ++;
 		// -------------------------------------------------------------------------------------------------------------------------------
 		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-		//PORQUE MIERDA ESTO ME ESTA DANDO 0 SI CLARAMENTE AL DEBUGGEAR TE DICE minimo_entre(64,144 - 0) -> deberia devolver 64 y esta devolviendo 0!!!
 		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
 		bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 		offset = bytes_ya_escritos;
 	}
 
-	if(frames_patota->elements_count < cantidad_paginas_a_usar){ //Esto es que no toda la patota se cargo en memoria
-		//cargar paginas restantes en swap, agregar las paginas a la tabla, recordar necesito cargar tamanio_total - bytes_ya_escritos
+	if(frames_patota->elements_count < cantidad_paginas_a_usar){
 		log_info(logger_ram_hq,"No hay espacio suficiente en memoria para guardar todo el proceso, se procede a almacenar en SWAP %i bytes",bytes_que_faltan);
 		for(int i=0;i<(cantidad_paginas_a_usar - frames_patota->elements_count); i++){
 			t_pagina* pagina = malloc(sizeof(t_pagina));
@@ -568,7 +568,8 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 			bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
 			offset += bytes_ya_escritos;
 			offset_swap = bytes_ya_escritos;
-		}	
+		}
+		log_info(logger_ram_hq,"La informacion se guardo satisfactoriamente en el almacenamiento secundario");	
 	}
 
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
@@ -578,13 +579,12 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 }
 
 int minimo_entre(int un_valor, int otro_valor){
-	if(un_valor < otro_valor){
+	if(un_valor <= otro_valor){
 		return un_valor;
 	}
 	else{
 		return otro_valor;
 	}
-	return un_valor;
 }
 
 respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante tripulante)
@@ -634,10 +634,59 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulante_con_posicion){
 	respuesta_ok_fail respuesta;
+	//t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_con_posicion.tid);
 	//TODO
 	return respuesta;
 }
 
+
+//PENDIENTE DE REVISION
+t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
+	t_tabla_de_paginas* auxiliar;
+	tarea_ram* tarea_aux;
+	t_pagina* pagina_aux;
+	for(int i=0; i<patotas->elements_count; i++){
+		auxiliar = list_get(patotas,i);
+		int indice_tripulantes = 2 * sizeof(uint32_t);
+		uint32_t tid_aux;
+		for(int j=0; j<auxiliar->tareas->elements_count; j++){
+			tarea_aux = list_get(auxiliar->paginas,j);
+			indice_tripulantes += tarea_aux->tamanio;
+		}
+		double offset_pagina = modf(indice_tripulantes,&indice_tripulantes);
+		for(int k=indice_tripulantes; k<auxiliar->paginas->elements_count; k++){
+			pagina_aux = list_get(auxiliar->paginas,k);
+			int bytes_a_leer = sizeof(uint32_t);
+			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina;
+			int espacio_leido = 0;
+			if(!pagina_aux->presente){
+				//TODO: traerme la pagina desde swap
+				//traer_pagina_a_memoria(pagina_aux);
+			}
+			if(bytes_a_leer > espacio_disponible_en_pagina){
+			//	memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina,minimo_entre(espacio_disponible_en_pagina,4));
+				espacio_leido += minimo_entre(espacio_disponible_en_pagina,4);
+				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+				offset_pagina = 0;
+				if(espacio_leido >= 4){
+					uint32_t tid_aux_posta;
+					memcpy(&tid_aux_posta,&tid_aux,4);
+					if(tid_aux_posta == tid){
+						return auxiliar;
+					}
+				}
+			}
+			else{
+			//	memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina,sizeof(uint32_t));
+				if(tid_aux == tid){
+					return auxiliar;
+				}
+			}
+		}
+		
+	}
+	return NULL;
+}
 
 char * obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
 {
