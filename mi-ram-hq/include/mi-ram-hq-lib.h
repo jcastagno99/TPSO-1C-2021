@@ -93,6 +93,12 @@ typedef struct{
 }t_tabla_de_paginas;
 
 typedef struct{
+	t_pagina* pagina;
+	int indice;
+	int offset;
+}inicio_tcb;
+
+typedef struct{
 
 	void* inicio;
 	t_pagina* pagina_a_la_que_pertenece;
