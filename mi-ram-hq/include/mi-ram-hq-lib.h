@@ -168,6 +168,8 @@ posicion obtener_ubicacion_paginacion(uint32_t);
 
 t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
 t_list* buscar_cantidad_frames_libres(int);
+t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t);
+inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,int, int);
 
 void compactar_memoria();
 //int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);

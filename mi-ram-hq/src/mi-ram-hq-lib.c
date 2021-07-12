@@ -682,7 +682,7 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	bytes_escritos = 0;
 	offset_lectura = 0;
 	offset_posicion += sizeof(uint32_t);
-	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_posicion;
+	tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_posicion;
 
 
 	return respuesta;
