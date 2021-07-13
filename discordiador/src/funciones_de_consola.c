@@ -192,14 +192,17 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         {
         case EXEC:
             trip->estado = EXPULSADO;
+            actualizar_estado_miriam(trip->id,trip->estado);
             sem_post(&(trip->procesador));
             break;
         case BLOCKED_E_S:
             trip->estado = EXPULSADO;
+            actualizar_estado_miriam(trip->id,trip->estado);
             sem_post(&operacion_entrada_salida_finalizada);
             break;
         default:
             trip->estado = EXPULSADO;
+            actualizar_estado_miriam(trip->id,trip->estado);
             break;
         }
         int status = pthread_kill(trip->threadid, 0);
@@ -327,13 +330,46 @@ void listar_tripulantes()
     free(tiempo);
 }
 
+int get_indice(t_list* l,int id_trip){
+    for (int i = 0; i < l->elements_count; i++)
+    {
+        dis_tripulante* t = list_get(l,i);
+        if ( t->id == id_trip )
+            return i;   
+    }
+    return 666;
+} 
+
 //  CONSOLA: EXPULSAR_TRIPULANTE-----------------------------
 void expulsar_tripulante_local(int id)
 {
     dis_tripulante *trip = list_get(list_total_tripulantes, id - 1);
+    // [MUTEX] Para asegurar que se eliminen de auno
     pthread_mutex_lock(&(trip->mutex_expulsado));
     trip->expulsado = true;
     pthread_mutex_unlock(&(trip->mutex_expulsado));
+    
+    // [PARCHE] SI ESTA EN NEW, no deberia pedir tarea ni seguir estando en new
+    // [ISSUE] esto funciona, supongo que cuando este en READY cuando pase a exec se dara cuenta
+    if (trip->estado==NEW)
+    {
+        trip->estado=EXPULSADO;
+        actualizar_estado_miriam(trip->id,trip->estado);
+        sem_wait(&sem_contador_cola_de_new); // esto es para quitarle 1 push
+
+        //tengo que sacarlo de NEW porque se quedaria en esa cola/ listar trip usa la lista global
+        int indice = get_indice(cola_de_new,trip->id); // se podria fucionar con el list_remove con get_indice
+
+        pthread_mutex_lock(&mutex_cola_de_new);
+	    list_remove(cola_de_new, indice);
+	    pthread_mutex_unlock(&mutex_cola_de_new);
+
+        int status = pthread_kill(trip->threadid, 0);
+        if (status < 0)
+            perror("pthread_kill failed");
+    }
+    
+
 }
 
 /*******************************************************
