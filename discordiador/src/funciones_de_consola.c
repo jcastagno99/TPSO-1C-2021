@@ -315,7 +315,7 @@ void chequear_tripulante_finalizado(dis_tripulante *tripulante)
     if (tripulante->tareas_realizadas == patota->cantidad_de_tareas)
     {
         tripulante->estado = EXIT;
-        printf("Exit...\n");
+        actualizar_estado_miriam(tripulante->id,tripulante->estado);
     }
 }
 
