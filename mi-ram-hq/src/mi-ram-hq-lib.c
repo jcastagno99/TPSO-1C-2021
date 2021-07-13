@@ -8,6 +8,7 @@ void recorrer_tcb(t_list * );
 void ordenar_segmentos();
 void swap(t_segmento_de_memoria **,t_segmento_de_memoria **);
 bool ordenar_direcciones_de_memoria(void* p1, void* p2);
+uint32_t calcular_memoria_libre(void);
 
 mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 {
@@ -111,20 +112,19 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 		case INICIAR_PATOTA:
 		{
+			log_info(logger_ram_hq, "TEST LOGGER1");
 			pid_con_tareas_y_tripulantes_miriam patota_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+			log_info(logger_ram_hq, "TEST LOGGER2");
+			funcion_test_memoria(1);
 			respuesta_ok_fail resultado = iniciar_patota_segmentacion(patota_con_tareas_y_tripulantes);
+			log_info(logger_ram_hq, "TEST LOGGER3");
 			//rompe porque quiere leer la patota 2 y no esta en memoria
 			funcion_test_memoria(1);
+			log_info(logger_ram_hq, "TEST LOGGER4");
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
+			log_info(logger_ram_hq, "TEST LOGGER5");
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
-			break;
-		}
-		case INICIAR_TRIPULANTE:
-		{
-			nuevo_tripulante nuevo_tripulante = deserializar_nuevo_tripulante(paquete->stream);
-			respuesta_ok_fail resultado = iniciar_tripulante_segmentacion(nuevo_tripulante);
-			void *respuesta = serializar_respuesta_ok_fail(resultado);
-			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
+			log_info(logger_ram_hq, "TEST LOGGER6");
 			break;
 		}
 		case ACTUALIZAR_UBICACION:
@@ -349,128 +349,87 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	}
 	pthread_mutex_unlock(&mutex_patotas);
 	
+	//ver si entra todo, sino devolver fail
+	
+	uint32_t memoria_libre = calcular_memoria_libre();
+	// tiene la longitud de todas las tareas + pid + cantidad de tripulantes * (estado + tid + tarea_actual + posx + posy + patota_direccion_virtual)
+	uint32_t memoria_necesaria = patota_con_tareas_y_tripulantes.longitud_palabra + sizeof(uint32_t) + patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char));
+
+	if(memoria_libre < memoria_necesaria){
+		pthread_mutex_unlock(&mutex_patotas);
+		log_error(logger_ram_hq,"No hay lugar para guardar la patota %i",patota_con_tareas_y_tripulantes.pid);
+		free(patota_con_tareas_y_tripulantes.tareas);
+		while(patota_con_tareas_y_tripulantes.tripulantes->elements_count){
+			list_remove(patota_con_tareas_y_tripulantes.tripulantes,0);
+		}
+		list_destroy(patota_con_tareas_y_tripulantes.tripulantes);
+		return RESPUESTA_FAIL;
+	}
+
+	//inicializo tabla de segmentos para esta patota
 	patota = malloc(sizeof(t_tabla_de_segmento));
 	patota->segmento_pcb = NULL;
 	patota->segmento_tarea = NULL;
 	patota->segmentos_tripulantes = list_create();
 	patota->mutex_segmentos_tripulantes = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_segmentos_tripulantes,NULL);
-	pthread_mutex_lock(&mutex_patotas);
-	list_add(patotas,patota);
-	pthread_mutex_unlock(&mutex_patotas);
-
+	
+	//Busco segmento para el pcb
 	pthread_mutex_lock(&mutex_memoria);
-	//t_list* bakcup_lista_memoria = list_duplicate(segmentos_memoria);
-	t_list* bakcup_lista_memoria = duplicar_lista_memoria(segmentos_memoria);
 	t_segmento_de_memoria* segmento_a_usar_pcb = buscar_segmento_pcb();
 	if(!segmento_a_usar_pcb){
 		//TODO: compactar
-		compactar_memoria();
 		log_info(logger_ram_hq,"No encontre un segmento disponible para el PCB de PID: %i , voy a compactar",patota_con_tareas_y_tripulantes.pid);
+		compactar_memoria();
 		segmento_a_usar_pcb = buscar_segmento_pcb();
+		//no deberia pasar
 		if(!segmento_a_usar_pcb){
 			pthread_mutex_unlock(&mutex_memoria);
-			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el PCB aun luego de compactar, solicitud rechazada");
-			//TODO: Sacar patota de lista de patotas (con indice)
-			//no needed
-			//free(patota_con_tareas_y_tripulantes.tareas);
-			list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
-			free(patota->mutex_segmentos_tripulantes);
-			free(patota);
-			list_remove(patotas,(patotas->elements_count)-1);
-			t_list* auxiliar = segmentos_memoria;
-			list_destroy_and_destroy_elements(auxiliar,free);
-			segmentos_memoria = bakcup_lista_memoria;
+			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar el PCB aun luego de compactar, solicitud rechazada. FAIL");
 			return RESPUESTA_FAIL;
 		}
 	}
 
+	//agrego segmento pcb a mi patota (tabla de segmentos)
 	log_info(logger_ram_hq,"Encontre un segmento para el PCB de PID: %i , empieza en: %i ",patota_con_tareas_y_tripulantes.pid,(int) segmento_a_usar_pcb->inicio_segmento); 
-	//t_segmento* segmento_pcb = malloc(sizeof(t_segmento));
-	//segmento_pcb->base = segmento_a_usar_pcb->inicio_segmento;
-	//segmento_pcb->tamanio = segmento_a_usar_pcb->tamanio_segmento;
-	//segmento_pcb->numero_segmento = numero_segmento_global;
-	//numero_segmento_global++;
-	//segmento_pcb->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-	//pthread_mutex_init(segmento_pcb->mutex_segmento,NULL);
 	patota->segmento_pcb = segmento_a_usar_pcb;
 	
+	//busco segmento para las tareas
 	t_segmento_de_memoria* segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas_y_tripulantes.longitud_palabra); 
 	if(!segmento_a_usar_tareas){
 		log_info(logger_ram_hq,"No encontre un segmento disponible para las tareas, voy a compactar");
-		//TODO: compactar
 		compactar_memoria();
 		segmento_a_usar_tareas = buscar_segmento_tareas(patota_con_tareas_y_tripulantes.longitud_palabra); 
+		//no deberia pasar
 		if(!segmento_a_usar_tareas){
+			//si es necesario rollback esta la rutina casi terminada en el escritorio
+			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada. FAIL");
 			pthread_mutex_unlock(&mutex_memoria);
-			log_error(logger_ram_hq,"No hay espacio en la memoria para almacenar las tareas aun luego de compactar, solicitud rechazada");
-			//TODO: Sacar patota de lista de patotas (con indice)
-			//free(patota_con_tareas_y_tripulantes.tareas);
-			list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
-			//free(segmento_pcb->mutex_segmento);
-			free(patota->segmento_pcb);
-			free(patota->mutex_segmentos_tripulantes);
-			free(patota);
-			list_remove(patotas,(patotas->elements_count)-1);
-			t_list* auxiliar = segmentos_memoria;
-			list_destroy_and_destroy_elements(auxiliar,free);
-			segmentos_memoria = bakcup_lista_memoria;
 			return RESPUESTA_FAIL;
 		}
 	}
 
 	log_info(logger_ram_hq,"Encontre un segmento para las tareas, empieza en: %i ",(int) segmento_a_usar_tareas->inicio_segmento);
-	//t_segmento* segmento_tarea = malloc(sizeof(t_segmento));
-	//segmento_tarea->base = segmento_a_usar_tareas->inicio_segmento;
-	//segmento_tarea->tamanio = segmento_a_usar_tareas->tamanio_segmento;
-	//segmento_tarea->numero_segmento = numero_segmento_global;
-	//numero_segmento_global++;
-	//segmento_tarea->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-	//pthread_mutex_init(segmento_tarea->mutex_segmento,NULL);
+	
+	//agrego segmento tareas a mi patota (tabla de segmentos)
 	patota->segmento_tarea = segmento_a_usar_tareas;
 
 	for(int i=0; i<patota_con_tareas_y_tripulantes.tripulantes->elements_count; i++){
 		t_segmento_de_memoria* segmento_a_usar_tripulante = buscar_segmento_tcb();
 		if(!segmento_a_usar_tripulante){
 			log_info(logger_ram_hq,"No encontre un segmento disponible para el tripulante numero: %i, voy a compactar",i+1);
-			//TODO: compactar
 			compactar_memoria();
 			segmento_a_usar_tripulante = buscar_segmento_tcb();
+			//no deberia pasar
 			if(!segmento_a_usar_tripulante){
-				log_error(logger_ram_hq,"No hay suficiente espacio para almacenar al tripulante numero: %i , solicitud rechazada", i+1);
-				//TODO: Sacar patota de lista de patotas (con indice)
-				
-				while(patota->segmentos_tripulantes->elements_count){
-					t_segmento_de_memoria* aux = list_get(patota->segmentos_tripulantes,0);
-					//free(aux->mutex_segmento);
-					free(aux);
-					list_remove(patota->segmentos_tripulantes,0);
-				}
-				list_destroy(patota->segmentos_tripulantes);
-				free(patota_con_tareas_y_tripulantes.tareas);
-				list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
-				//free(segmento_pcb->mutex_segmento);
-				free(patota->segmento_pcb);
-				//free(segmento_tarea->mutex_segmento);
-				free(patota->segmento_tarea);
-				list_remove(patotas,(patotas->elements_count)-1);
-				free(patota->mutex_segmentos_tripulantes);
-				//TODO: liberar tripulantes de patota
-				free(patota);
-				t_list* auxiliar = segmentos_memoria;
-				list_destroy_and_destroy_elements(auxiliar,free);
-				segmentos_memoria = bakcup_lista_memoria;
+				log_error(logger_ram_hq,"No hay suficiente espacio para almacenar al tripulante numero: %i , solicitud rechazada. FAIL", i+1);
+				pthread_mutex_unlock(&mutex_memoria);
 				return RESPUESTA_FAIL;
 			}
 		}	
 		log_info(logger_ram_hq,"Encontre un segmento para el tripulante numero: %i , empieza en: %i ",i+1,(int) segmento_a_usar_tripulante->inicio_segmento);
-		//t_segmento* segmento_tripulante = malloc(sizeof(t_segmento));
-		//segmento_tripulante->base = segmento_a_usar_tripulante->inicio_segmento;
-		//segmento_tripulante->tamanio = segmento_a_usar_tripulante->tamanio_segmento;
-		//segmento_tripulante->numero_segmento = numero_segmento_global;
-		//numero_segmento_global++;
-		//segmento_tripulante->mutex_segmento = malloc(sizeof(pthread_mutex_t));
-		//pthread_mutex_init(segmento_tripulante->mutex_segmento,NULL);
+		
+		//agrego segmento tripulante a la lista de tripulantes de la patota (tabla de segmentos)
 		list_add(patota->segmentos_tripulantes,segmento_a_usar_tripulante);
 		
 		cargar_tcb_sinPid_en_segmento((nuevo_tripulante_sin_pid*)list_get(patota_con_tareas_y_tripulantes.tripulantes,i),patota->segmento_pcb, segmento_a_usar_tripulante);
@@ -486,8 +445,10 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	//hace falta longitud palabra?
 	cargar_tareas_en_segmento(patota_con_tareas_y_tripulantes.tareas,patota_con_tareas_y_tripulantes.longitud_palabra,patota->segmento_tarea);
 	
+	//agrego patota a mi lista de patotas (agrego mi tabla de segmentos a la tabla de procesos)
+	list_add(patotas,patota);
+	
 	pthread_mutex_unlock(&mutex_memoria);
-	list_destroy_and_destroy_elements(bakcup_lista_memoria,free);
 	return RESPUESTA_OK;
 }
 
@@ -626,9 +587,9 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 			//pthread_mutex_unlock(segmento_tripulante_auxiliar -> mutex_segmento);
 		}
 		pthread_mutex_unlock(auxiliar_patota -> mutex_segmentos_tripulantes);
-		pthread_mutex_unlock(&mutex_patotas);	
-		log_error(logger_ram_hq,"No se encontro el tripulante %d en memoria",tripulante_con_posicion.tid);
 	}
+	log_error(logger_ram_hq,"No se encontro el tripulante %d en memoria",tripulante_con_posicion.tid);
+	pthread_mutex_unlock(&mutex_patotas);	
 
 	return RESPUESTA_FAIL;
 }
@@ -1235,6 +1196,8 @@ t_segmento_de_memoria* buscar_segmento_pcb(){
 				auxiliar->tamanio_segmento = 2*(sizeof(uint32_t)); 
 				auxiliar->libre = false;
 				auxiliar->numero_segmento = numero_segmento_global;
+				auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+				pthread_mutex_init(auxiliar->mutex_segmento,NULL);
 				numero_segmento_global++;
 				list_add(segmentos_memoria,auxiliar);
 				iterador->inicio_segmento += 2*(sizeof(uint32_t));
@@ -1272,6 +1235,8 @@ t_segmento_de_memoria* buscar_segmento_tareas(uint32_t tamanio_tareas){
 				auxiliar->tamanio_segmento = tamanio_tareas; 
 				auxiliar->libre = false;
 				auxiliar->numero_segmento = numero_segmento_global;
+				auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+				pthread_mutex_init(auxiliar->mutex_segmento,NULL);
 				numero_segmento_global++;
 				list_add(segmentos_memoria,auxiliar);
 				iterador->inicio_segmento += tamanio_tareas;
@@ -1310,7 +1275,8 @@ t_segmento_de_memoria* buscar_segmento_tcb(){
 				auxiliar->libre = false;
 				auxiliar->numero_segmento = numero_segmento_global;
 				numero_segmento_global++;
-				//sema?
+				auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+				pthread_mutex_init(auxiliar->mutex_segmento,NULL);
 				list_add(segmentos_memoria,auxiliar);
 				iterador->inicio_segmento += size_tcb;
 				iterador->tamanio_segmento -= size_tcb;
@@ -1447,6 +1413,8 @@ void ordenar_segmentos(){
 
 
 void compactar_memoria(){
+	//usar mutex pa freezar todo
+
 	t_segmento_de_memoria* auxiliar;
 	auxiliar = list_get(segmentos_memoria,0);
 	int i;
@@ -1514,6 +1482,9 @@ void compactar_memoria(){
 	segmento_libre->libre = true;
 	segmento_libre->inicio_segmento = inicio_segmento_libre;
 	segmento_libre->tamanio_segmento = tamanio_segmento_libre;
+	segmento_libre->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(segmento_libre->mutex_segmento,NULL);
+
 	list_add(segmentos_memoria,segmento_libre); // Al final de la ordenada le agrego el segmento libre
 	//segmentos_memoria = lista_de_ocupados; // Actualizamos la lista de segmentos global con la nueva que ya esta ordenada
 	printf("Segmentos luego de compactar\n");
@@ -1597,6 +1568,18 @@ void recorrer_tcb(t_list * tripulantes_list){
 		printf ("Tripulante tid %i, estado %c, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
 	}
 }
+void imprimir_dump_test(t_list* copia_segmentos){
+	//t_segmento_de_memoria
+	
+	printf ("--------------------------------------------------------------------------\n");printf ("--------------------------------------------------------------------------\n");
+	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
+	printf ("Dump copia de memoria: %s \n",time);
+
+	for(int i = 0;i < copia_segmentos->elements_count;i++){
+		t_segmento_de_memoria* segmento = list_get(copia_segmentos,i);
+		printf ("Segmento: %i\t Inicio: %i\t Tam: %i b\n",segmento->numero_segmento,segmento->inicio_segmento,segmento->tamanio_segmento);
+	}
+}
 
 
 void imprimir_dump(void){
@@ -1664,20 +1647,6 @@ Proceso: 1	Segmento: 2	Inicio: 0x0013	Tam: 450b
 Proceso: 2	Segmento: 1	Inicio: 0x01D6	Tam: 20b
 --------------------------------------------------------------------------
 */
-
-t_list* duplicar_lista_memoria(t_list* memoria){
-	t_list *aux = list_create();
-	for(int i=0; i<segmentos_memoria->elements_count; i++){
-		t_segmento_de_memoria* segmento_aux = list_get(segmentos_memoria,i);
-		t_segmento_de_memoria* segmento_copia = malloc(sizeof(t_segmento_de_memoria));
-		segmento_copia->inicio_segmento = segmento_aux->inicio_segmento;
-		segmento_copia->libre = segmento_aux->libre;
-		segmento_copia->tamanio_segmento = segmento_aux->tamanio_segmento;
-		list_add(aux,segmento_copia);
-	}
-	return aux;
-}
-
 char * obtener_proxima_tarea(char * tareas,uint32_t id_tarea,uint32_t size_tareas){
 	int n_tarea = 0;
 	for(int i = 0;i<size_tareas-1;i++){
@@ -1716,4 +1685,90 @@ void actualizarTareaActual(t_tabla_de_segmento* auxiliar_patota,uint32_t tripula
 	pthread_mutex_unlock(auxiliar_patota->mutex_segmentos_tripulantes);
 	
 	return;
+}
+
+void quitar_segmento_de_segmentos_memoria(uint32_t numero_segmento){
+	t_segmento_de_memoria* segmento_aux; 
+	for(int i = 0;i<segmentos_memoria->elements_count;i++){
+		segmento_aux = list_get(segmentos_memoria,i);
+		if(segmento_aux->numero_segmento == numero_segmento){
+			log_info(logger_ram_hq, "Quitando segmento # %i", segmento_aux->numero_segmento);
+			list_remove(segmentos_memoria,i);
+			return;
+		}
+	}
+	log_error(logger_ram_hq, "ERROR QUITANDO SEGMENTO DE LISTA. NO FUE ENCONTRADO # %i",numero_segmento);
+}
+
+void quitar_segmento_de_segmentos_memoria_tripulantes(t_list* tripulantes){
+	t_segmento_de_memoria* segmento_aux; 
+	for(int i = 0;i<tripulantes->elements_count;i++){
+		segmento_aux = list_get(tripulantes,i);
+		quitar_segmento_de_segmentos_memoria(segmento_aux->numero_segmento);		
+	}
+}
+
+void liberar_tripulantes(t_list* tripulantes){
+	t_segmento_de_memoria* segmento_aux; 
+	while(tripulantes->elements_count){
+		segmento_aux = list_get(tripulantes,0);
+		pthread_mutex_destroy(segmento_aux->mutex_segmento);
+		free(segmento_aux->mutex_segmento);
+		free(segmento_aux);
+		free (segmento_aux);
+		list_remove(tripulantes,0);
+	}
+}
+
+void sacar_patota_patotas (uint32_t pid){
+	t_tabla_de_segmento* patota_aux; 
+	uint32_t pid_auxiliar;
+	for(int i = 0;i<patotas->elements_count;i++){
+		patota_aux = list_get(patotas,i);
+		memcpy(&pid_auxiliar,patota_aux->segmento_pcb->inicio_segmento,sizeof(uint32_t));
+		if(pid_auxiliar == pid){
+			log_info(logger_ram_hq, "Quitando patota de lista de patotas");
+			list_remove(patotas,i);
+			return;
+		}
+	}
+}
+
+void leer_backup_memoria(t_list* bakcup_lista_memoria){
+	for(int i=0; i<bakcup_lista_memoria->elements_count; i++){
+		t_segmento_de_memoria* segmento_aux = list_get(segmentos_memoria,i);
+		printf ("Segmento: %i\t Inicio: %i\t Tam: %i Libre: %ib\n",segmento_aux->numero_segmento,segmento_aux->inicio_segmento,segmento_aux->tamanio_segmento,segmento_aux->libre);
+	}
+}
+
+void leer_backup_patotas(t_list* bakcup_lista_patotas){
+	for(int i = 0;i < bakcup_lista_patotas->elements_count;i++){
+		t_tabla_de_segmento* patota = list_get(bakcup_lista_patotas,i);
+		patota->segmento_pcb;
+		patota->segmento_tarea;
+		patota->segmentos_tripulantes;
+		printf ("PCB: %i\t Tarea: %i\t",patota->segmento_pcb,patota->segmento_tarea);
+		for(int i = 0;i < patota->segmentos_tripulantes->elements_count;i++){
+			t_segmento_de_memoria * tripulante = list_get(patota->segmentos_tripulantes,i);
+			printf ("TCB: %i\n",tripulante);
+		}
+		
+	}
+
+	
+}
+
+uint32_t calcular_memoria_libre(){
+	t_segmento_de_memoria* iterador;
+	uint32_t libre = 0;
+	for(int i=0; i<segmentos_memoria->elements_count;i++){
+		iterador = list_get(segmentos_memoria,i);
+		//hacer mutex
+		//rompe si el segmento esta libre pq no tiene el mutex inicializado
+		if(iterador->libre){
+			libre = libre + iterador->tamanio_segmento; 
+		}
+		
+	}
+	return libre;
 }
