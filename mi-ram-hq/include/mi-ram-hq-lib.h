@@ -94,7 +94,7 @@ typedef struct{
 
 typedef struct{
 	t_pagina* pagina;
-	int indice;
+	double indice;
 	int offset;
 }inicio_tcb;
 
@@ -169,7 +169,7 @@ posicion obtener_ubicacion_paginacion(uint32_t);
 t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
 t_list* buscar_cantidad_frames_libres(int);
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t);
-inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,int, int);
+inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
 
 void compactar_memoria();
 //int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
@@ -177,6 +177,7 @@ void compactar_memoria();
 void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*, t_segmento_de_memoria*);
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
 int minimo_entre(int, int);
+void escribir_una_coordenada_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
 
 
 //Funciones del dump

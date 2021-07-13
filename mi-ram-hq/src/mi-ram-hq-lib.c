@@ -635,11 +635,15 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 
 //FALTA SINCRONIZAR
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulante_con_posicion){
-	respuesta_ok_fail respuesta;
 	pthread_mutex_lock(patotas);
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_con_posicion.tid);
 	pthread_mutex_unlock(patotas);
-	int primer_indice = 2*sizeof(uint32_t);
+	if(!patota){
+		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tripulante_con_posicion.tid);
+		return RESPUESTA_FAIL;
+	}
+	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tripulante_con_posicion.tid);
+	double primer_indice = 2*sizeof(uint32_t);
 	int tamanio_tareas = 0;
 	tarea_ram* auxiliar_tarea;
 	for (int i; i<patota->tareas->elements_count; i++){
@@ -648,48 +652,34 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	}
 	primer_indice += tamanio_tareas;
 	double offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA, &primer_indice); // ESTO HAY QUE PASARLO A UN DECIMAL
-	primer_indice -= 1; //Los indices de la tabla de paginas arrancan de 0
-	inicio_tcb* tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,primer_indice,offset);
+	int offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	primer_indice -= 1;
+	inicio_tcb* tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,primer_indice,offset_entero);
 	int nuevo_indice = 0;
 	while(!tcb->pagina){
 		nuevo_indice += primer_indice + 5*sizeof(uint32_t) + sizeof(char);
-		tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,nuevo_indice,offset);
+		tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,nuevo_indice,offset_entero);
 	}
 	t_pagina* auxiliar_pagina;
-	int indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t) + sizeof(char);
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t) + sizeof(char);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
-	auxiliar_pagina = list_get(patota->paginas,indice_de_posicion);
-	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_posicion;
-	int bytes_escritos = 0;
-	int bytes_desplazados_escritura = 0;
-	int offset_lectura = 0;
-	while(bytes_escritos < 4){
-		if(tamanio_disponible_pagina < 4){
-			//memcpy(auxiliar_pagina->inicio_memoria + offset_posicion + bytes_desplazados_escritura,&tripulante_con_posicion.pos_x + offset_lectura,tamanio_disponible_pagina);
-			bytes_escritos += tamanio_disponible_pagina;
-			bytes_desplazados_escritura += tamanio_disponible_pagina;
-			offset_lectura += tamanio_disponible_pagina;
-			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
-			auxiliar_pagina = list_get(patota,indice_de_posicion+1);
-		}
-		else{
-			//memcpy(auxiliar_pagina->inicio_memoria + offset_posicion + bytes_desplazados_escritura,&tripulante_con_posicion.pos_x + offset_lectura, 4 - bytes_escritos);
-			bytes_desplazados_escritura += (4 - bytes_escritos);
+	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	indice_de_posicion -= 1;
 
-		}
-	}
-	//Esto calza para el primer uint32, capaz se puede autoreciclar para el otro
-	bytes_escritos = 0;
-	offset_lectura = 0;
-	offset_posicion += sizeof(uint32_t);
-	tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_posicion;
+	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
+	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
+	offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
+	offset_posicion = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	indice_de_posicion -= 1;
 
-	return respuesta;
+	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
+
+	return RESPUESTA_OK;
 }
 
 
-//PENDIENTE DE REVISION
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 	t_tabla_de_paginas* auxiliar;
 	tarea_ram* tarea_aux;
@@ -697,40 +687,39 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 	for(int i=0; i<patotas->elements_count; i++){
 		auxiliar = list_get(patotas,i);
 		int indice_tripulantes = 2 * sizeof(uint32_t);
-		uint32_t tid_aux;
+		uint32_t tid_aux = 0;
 		for(int j=0; j<auxiliar->tareas->elements_count; j++){
 			tarea_aux = list_get(auxiliar->paginas,j);
 			indice_tripulantes += tarea_aux->tamanio;
 		}
 		double offset_pagina = modf(indice_tripulantes,&indice_tripulantes);
+		int offset_pagina_entero = offset_pagina * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 		for(int k=indice_tripulantes-1; k<auxiliar->paginas->elements_count; k++){
 			pagina_aux = list_get(auxiliar->paginas,k);
+			pthread_mutex_lock(pagina_aux->mutex_pagina);
 			int bytes_a_leer = sizeof(uint32_t);
+			int bytes_escritos = 0;
 			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina;
 			int espacio_leido = 0;
+			/* NO SE SI ES NECESARIO TRAERSE LAS PAGINAS A MEMORIA MIENTRAS BUSCO EN LAS LISTAS, CREO QUE NO HACE FALTA PERO HAY QUE PREGUNTARLO
 			if(!pagina_aux->presente){
 				//TODO: traerme la pagina desde swap
 				//traer_pagina_a_memoria(pagina_aux);
-			}
+			}*/
 			if(bytes_a_leer > espacio_disponible_en_pagina){
-			//	memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina,minimo_entre(espacio_disponible_en_pagina,4));
-				espacio_leido += minimo_entre(espacio_disponible_en_pagina,4);
+				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
+				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+				bytes_escritos = espacio_disponible_en_pagina;
 				offset_pagina = 0;
-				if(espacio_leido >= 4){
-					uint32_t tid_aux_posta;
-					memcpy(&tid_aux_posta,&tid_aux,4);
-					if(tid_aux_posta == tid){
-						return auxiliar;
-					}
-				}
 			}
 			else{
-			//	memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina,sizeof(uint32_t));
+				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
 				if(tid_aux == tid){
 					return auxiliar;
 				}
 			}
+			pthread_mutex_unlock(pagina_aux->mutex_pagina);
 		}
 		
 	}
@@ -739,8 +728,10 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 
 //TODO
 
-inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,int indice, int offset_pagina){
+inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double indice, int offset_pagina){
+	inicio_tcb* retornar;
 	t_pagina* auxiliar;
+	t_pagina* pagina_retorno;
 	uint32_t tid_aux;
 	uint32_t tid_aux_posta;
 	int tamanio_tareas;
@@ -751,36 +742,78 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,int indice
 	}
 	double primer_indice = (2*sizeof(uint32_t) + tamanio_tareas) / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	double offset_primer_pagina = modf(primer_indice,&primer_indice);
+	int offset_primer_pagina_entero = offset_primer_pagina * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	primer_indice -= 1;
 	int espacio_leido = 0;	
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
 	while(espacio_leido < 4){
 		//WARNING PARA NUMEROS NEGATIVOS
-		for(int i=primer_indice-1; i<patota->paginas->elements_count; i++){
+		for(int i=primer_indice; i<patota->paginas->elements_count; i++){
 			auxiliar = list_get(patota->paginas,i);
+			pagina_retorno = list_get(patota->paginas,i);
 			int bytes_a_leer = sizeof(uint32_t);
 			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_primer_pagina;
+			/* NO SE SI ES NECESARIO TRAERSE LAS PAGINAS A MEMORIA MIENTRAS BUSCO EN LAS LISTAS, CREO QUE NO HACE FALTA PERO HAY QUE PREGUNTARLO
 			if(!auxiliar->presente){
 				//TODO: traerme la pagina desde swap
 				//traer_pagina_a_memoria(pagina_aux);
-			}
+			}*/
 			if(bytes_a_leer > espacio_disponible_en_pagina){
-				//memcpy(&tid_aux + espacio_leido, auxiliar->inicio_memoria + offset_primer_pagina, espacio_disponible_en_pagina);
+				memcpy(&tid_aux + espacio_leido, auxiliar->inicio_memoria + offset_primer_pagina_entero, espacio_disponible_en_pagina);
 				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
 				offset_primer_pagina = 0;
+				pagina_retorno = list_get(patota->paginas,minimo_entre(i - 1, 0)); // OJO CON ESTO
 
 			}
 			else {
-				//	memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina,sizeof(uint32_t));
+				memcpy(&tid_aux + espacio_leido,auxiliar->inicio_memoria + offset_primer_pagina_entero,sizeof(uint32_t));
 				memcpy(&tid_aux_posta,&tid_aux,4);
 				if(tid_aux_posta == tid){
+					retornar->indice = i;
+					retornar->offset = offset_primer_pagina_entero;
+					retornar->pagina = pagina_retorno;
+					return retornar;
 
 				}
 			}
-		
-
 		}
 	}
+	retornar->indice = 0;
+	retornar->offset = 0;
+	retornar->pagina = NULL;
+	return retornar;
+}
+
+void escribir_una_coordenada_a_partir_de_indice(double indice, int offset, uint32_t posicion, t_tabla_de_paginas* patota){
+	t_pagina* auxiliar_pagina = list_get(patota->paginas,indice);
+	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
+	int bytes_escritos = 0;
+	int bytes_desplazados_escritura = 0;
+	int offset_lectura = 0;
+	while(bytes_escritos < 4){
+		pthread_mutex_lock(auxiliar_pagina->mutex_pagina);
+		if(!auxiliar_pagina->presente){
+			//TODO: traerme la pagina desde swap
+			//traer_pagina_a_memoria(auxiliar_pagina);
+		}
+		if(tamanio_disponible_pagina < 4){
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&posicion + offset_lectura,tamanio_disponible_pagina);
+			bytes_escritos += tamanio_disponible_pagina;
+			bytes_desplazados_escritura += tamanio_disponible_pagina;
+			offset_lectura += tamanio_disponible_pagina;
+			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			auxiliar_pagina = list_get(patota,indice+1);
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+		}
+		else{
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&posicion + offset_lectura, 4 - bytes_escritos);
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			int escritura = 4 - bytes_escritos;
+			bytes_escritos += escritura;
+		}
+	}
+
 }
 
 char * obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
