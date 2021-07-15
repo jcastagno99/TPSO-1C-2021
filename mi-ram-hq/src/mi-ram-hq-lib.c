@@ -233,7 +233,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
-		case OBTENER_ESTADO:
+		case ACTUALIZAR_ESTADO:
 		{
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
 			estado estado = obtener_estado_paginacion(tripulante_pid);
