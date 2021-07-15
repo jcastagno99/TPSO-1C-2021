@@ -622,7 +622,6 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 		nuevo_indice += primer_indice + 5*sizeof(uint32_t) + sizeof(char);
 		tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,nuevo_indice,offset_entero);
 	}
-	t_pagina* auxiliar_pagina;
 	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t) + sizeof(char);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -778,9 +777,78 @@ void escribir_una_coordenada_a_partir_de_indice(double indice, int offset, uint3
 
 }
 
-char * obtener_proxima_tarea_paginacion(uint32_t tripulante_pid)
+char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 {
-	char * proxima_tarea;
+
+	pthread_mutex_lock(&mutex_patotas);
+	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
+	pthread_mutex_unlock(&mutex_patotas);
+	if(!patota){
+		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tripulante_tid);
+		return RESPUESTA_FAIL;
+	}
+	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tripulante_tid);
+
+	double primer_indice = 2*sizeof(uint32_t);
+	int tamanio_tareas = 0;
+	tarea_ram* auxiliar_tarea;
+	for (int i; i<patota->tareas->elements_count; i++){
+		auxiliar_tarea = list_get(patota->tareas,i);
+		tamanio_tareas += auxiliar_tarea->tamanio;
+	}
+	primer_indice += tamanio_tareas;
+	double offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA, &primer_indice);
+	int offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	primer_indice -= 1;
+	inicio_tcb* tcb = buscar_inicio_tcb(tripulante_tid,patota,primer_indice,offset_entero);
+	int nuevo_indice = 0;
+	while(!tcb->pagina){
+		nuevo_indice += primer_indice + 5*sizeof(uint32_t) + sizeof(char);
+		tcb = buscar_inicio_tcb(tripulante_tid,patota,nuevo_indice,offset_entero);
+	}
+
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + 3 * sizeof(uint32_t) + sizeof(char);
+	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
+	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	indice_de_posicion -= 1;
+
+
+	int espacio_leido = 0;
+	uint32_t indice_proxima_tarea;
+	while(espacio_leido < 4){
+		for(int k=indice_de_posicion; k<patota->paginas->elements_count; k++){
+			t_pagina* auxiliar = list_get(patota->paginas,k);
+			pthread_mutex_lock(auxiliar->mutex_pagina);
+			int bytes_a_leer = sizeof(uint32_t);
+			int bytes_escritos = 0;
+			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_posicion_entero;
+			int offset_pagina_entero = offset_posicion_entero;
+			if(!auxiliar->presente){
+				//TODO: traerme la pagina desde swap
+				//traer_pagina_a_memoria(pagina_aux);
+			}
+			if(bytes_a_leer > espacio_disponible_en_pagina){
+				memcpy(&indice_proxima_tarea + espacio_leido,auxiliar->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
+				espacio_leido += espacio_disponible_en_pagina;
+				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+				bytes_escritos = espacio_disponible_en_pagina;
+				offset_pagina_entero = 0;
+				}
+			else{
+			memcpy(&indice_proxima_tarea + espacio_leido,auxiliar->inicio_memoria + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
+			}
+		}
+ 	}
+	char* proxima_tarea = list_get(patota->tareas,indice_proxima_tarea);
+
+	if(indice_proxima_tarea + 1 > patota->tareas->elements_count){
+		log_info(logger_ram_hq,"El tripulante de tid: %i ya cumplio con todas sus tareas, no se actualizara la direccion logica");
+		return proxima_tarea;
+	}
+
+	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,indice_proxima_tarea + 2,patota);
+	//+2 porque el indice arranca desde 0 y luego hay que incrementarlo una vez mas para la proxima tarea;
+
 	return proxima_tarea;
 }
 
