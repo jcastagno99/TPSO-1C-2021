@@ -174,7 +174,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
 void compactar_memoria();
 //int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
 
-void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*, t_segmento_de_memoria*);
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*,uint32_t);
 t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
 int minimo_entre(int, int);
 void escribir_una_coordenada_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);

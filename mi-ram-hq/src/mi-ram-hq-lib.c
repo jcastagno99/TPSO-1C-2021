@@ -433,7 +433,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 		//agrego segmento tripulante a la lista de tripulantes de la patota (tabla de segmentos)
 		list_add(patota->segmentos_tripulantes,segmento_a_usar_tripulante);
 		
-		cargar_tcb_sinPid_en_segmento((nuevo_tripulante_sin_pid*)list_get(patota_con_tareas_y_tripulantes.tripulantes,i),patota->segmento_pcb, segmento_a_usar_tripulante);
+		cargar_tcb_sinPid_en_segmento((nuevo_tripulante_sin_pid*)list_get(patota_con_tareas_y_tripulantes.tripulantes,i), segmento_a_usar_tripulante,patota_con_tareas_y_tripulantes.pid);
 
 	}
 
@@ -1340,7 +1340,7 @@ void cargar_tcb_en_segmento(uint32_t tid,estado estado_nuevo,uint32_t pos_x,uint
 	
 	//pthread_mutex_unlock(segmento->mutex_segmento);
 }
-void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmento_de_memoria* patota, t_segmento_de_memoria* segmento){
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante, t_segmento_de_memoria* segmento,uint32_t pid){
 	//pthread_mutex_lock(segmento->mutex_segmento);
 	
 	uint32_t cero = 0;
@@ -1357,7 +1357,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid* tripulante,t_segmen
 	offset = offset + sizeof(uint32_t);
 	memcpy(segmento->inicio_segmento + offset, &cero, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
-	memcpy(segmento->inicio_segmento + offset, patota, sizeof(uint32_t));
+	memcpy(segmento->inicio_segmento + offset, &pid, sizeof(uint32_t));
 	offset = offset + sizeof(uint32_t);
 	//pthread_mutex_unlock(segmento->mutex_segmento);
 }
