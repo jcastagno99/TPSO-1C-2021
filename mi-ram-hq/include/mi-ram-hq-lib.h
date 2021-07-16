@@ -45,16 +45,7 @@ typedef struct
 	
 }mi_ram_hq_config;
 
-
-typedef struct
-{
-	void* base;
-	uint32_t tamanio;
-	uint32_t numero_segmento;
-	pthread_mutex_t* mutex_segmento;
-
-}t_segmento;
-
+//t_list * tabla_de_segmentos
 typedef struct
 {
 	bool libre;
@@ -63,16 +54,17 @@ typedef struct
 	uint32_t numero_segmento;
 	pthread_mutex_t* mutex_segmento;
 
-}t_segmento_de_memoria;
+}t_segmento; //segmento
 
+//t_list * patotas 
 typedef struct
 {
-	t_segmento_de_memoria * segmento_pcb;
-	t_segmento_de_memoria* segmento_tarea;
+	t_segmento * segmento_pcb;
+	t_segmento* segmento_tarea;
 	t_list* segmentos_tripulantes;
 	pthread_mutex_t* mutex_segmentos_tripulantes;
 
-}t_tabla_de_segmento;
+}t_segmentos_de_patota; //patota
 
 typedef struct{
 
@@ -118,8 +110,11 @@ void* memoria_principal;
 void* memoria_swap;
 
 t_list* patotas;
-pthread_mutex_t mutex_patotas;
+
 pthread_mutex_t mutex_memoria;
+pthread_mutex_t mutex_tabla_patotas;
+pthread_mutex_t mutex_tabla_de_segmentos;
+pthread_mutex_t mutex_iniciar_patota;
 pthread_mutex_t mutex_swap;
 
 t_list* segmentos_memoria;
@@ -140,62 +135,78 @@ int iniciar_servidor_mi_ram_hq(int);
 void crear_hilo_para_manejar_suscripciones(t_list*,int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
-
-respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miriam);
-respuesta_ok_fail iniciar_tripulante_segmentacion(nuevo_tripulante);
-respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion);
-char* obtener_proxima_tarea_segmentacion(uint32_t);
-respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t);
-estado obtener_estado_segmentacion(uint32_t);
-posicion obtener_ubicacion_segmentacion(uint32_t);
-
-t_tabla_de_segmento* buscar_patota(uint32_t);
-t_segmento_de_memoria* buscar_segmento_tareas(uint32_t);
-t_segmento_de_memoria* buscar_segmento_pcb();
-t_segmento_de_memoria* buscar_segmento_tcb();
-
-void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento_de_memoria*);
-void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento_de_memoria* );
-void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento_de_memoria*);
-
+// Funciones principales del manejo de mensajes
+respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miriam,int);
 respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion);
-respuesta_ok_fail iniciar_tripulante_paginacion(nuevo_tripulante);
+respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion,int);
 respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion);
+char* obtener_proxima_tarea_segmentacion(uint32_t,int);
 char* obtener_proxima_tarea_paginacion(uint32_t);
+respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t,int);
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
+estado obtener_estado_segmentacion(uint32_t);
 estado obtener_estado_paginacion(uint32_t);
+posicion obtener_ubicacion_segmentacion(uint32_t,int);
 posicion obtener_ubicacion_paginacion(uint32_t);
 
+// busqueda de datos en memoria
+t_segmentos_de_patota* buscar_patota(uint32_t);
 t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
-t_list* buscar_cantidad_frames_libres(int);
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t);
-inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
-
-void compactar_memoria();
-//int ordenar_direcciones_de_memoria(t_segmento_de_memoria*, t_segmento_de_memoria*);
-
-void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento_de_memoria*,uint32_t);
-t_tabla_de_segmento* buscar_patota_con_tid(uint32_t );
-int minimo_entre(int, int);
-void escribir_una_coordenada_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
-
-
-//Funciones del dump
-
-void imprimir_dump(void);
-uint32_t obtener_patota_memoria(t_segmento_de_memoria*);
-void recorrer_pcb_dump(t_segmento_de_memoria*);
-void recorrer_tareas_dump(uint32_t,t_segmento_de_memoria*);
-void recorrer_tcb_dump(uint32_t,t_list*);
-t_list* duplicar_lista_memoria(t_list*);
-
-void actualizarTareaActual(t_tabla_de_segmento* ,uint32_t );
+t_segmentos_de_patota* buscar_patota_con_tid(uint32_t ,int);
+uint32_t obtener_patota_memoria(t_segmento*);
 char * obtener_proxima_tarea(char *,uint32_t,uint32_t);
 
-char obtener_char_estado (estado);
-respuesta_ok_fail actualizar_estado_segmentacion(uint32_t ,estado );
+//Buscar segmentos libres en memoria
+t_segmento* buscar_segmento_tareas(uint32_t);
+t_segmento* buscar_segmento_pcb();
+t_segmento* buscar_segmento_tcb();
 
+//Buscar paginas en memoria
+t_list* buscar_cantidad_frames_libres(int);
+inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
+
+//Escribir en memoria un segmento
+void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
+void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento* );
+void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
+void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, uint32_t);
+
+//Actualizar datos en memoria
+void actualizarTareaActual(t_segmentos_de_patota* ,uint32_t,int );
+respuesta_ok_fail actualizar_estado_segmentacion(uint32_t ,estado ,int);
+
+
+//Compactacion
+void compactar_memoria();
+bool ordenar_direcciones_de_memoria(void* p1, void* p2);
+
+//Otros paginacion
+int minimo_entre(int, int);
+void escribir_una_coordenada_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
+void swap(t_segmento **,t_segmento **);
+
+//Otros segmentacion
+uint32_t calcular_memoria_libre(void);
+
+//Otros compartidos
+char obtener_char_estado (estado);
+
+//Funciones del dump
+void imprimir_dump(void);
+void recorrer_pcb_dump(t_segmento*);
+void recorrer_tareas_dump(uint32_t,t_segmento*);
+void recorrer_tcb_dump(uint32_t,t_list*);
 void imprimir_dump_paginacion(void);
+
+
+
+//Funciones armadas para debuggear
+void funcion_test_memoria(uint32_t);
+void recorrer_pcb(t_segmento * );
+void recorrer_tareas(t_segmento * );
+void recorrer_tcb(t_list * );
+
 #endif /* MI_RAM_HQ_LIB_H */
 
 
