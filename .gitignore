@@ -45,6 +45,7 @@ mi-ram-hq/mi-ram-hq
 *.pdb
 *.log
 **/*.log
+**/*.config
 
 # Kernel Module Compile Results
 *.mod*

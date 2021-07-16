@@ -214,7 +214,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_ESTADO, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
-		//Lo usamos?
+		//NO LO USA DISCORDIADOR EN NINGUN MOMENTO
 		case OBTENER_UBICACION:
 		{
 			log_info(logger_ram_hq,"Socket %i, OBTENER_UBICACION: Comenzando deserializacion del mensaje",*socket_hilo);
@@ -239,55 +239,61 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		{
 		case INICIAR_PATOTA:
 		{
+			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Comenzando deserializacion del mensaje",*socket_hilo);
 			pid_con_tareas_y_tripulantes_miriam pid_con_tareas_y_tripulantes = deserializar_pid_con_tareas_y_tripulantes(paquete->stream);
+			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Iniciando proceso de paginacion de datos",*socket_hilo);
 			patota_stream_paginacion patota_con_tareas_y_tripulantes = orginizar_stream_paginacion(pid_con_tareas_y_tripulantes);
 			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas_y_tripulantes);
+			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
 		case ACTUALIZAR_UBICACION:
 		{
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Comenzando deserializacion del mensaje",*socket_hilo);
 			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de ACTUALIZAR_UBICACION
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Iniciando proceso de actualizacion de datos",*socket_hilo);
 			respuesta_ok_fail resultado = actualizar_ubicacion_paginacion(tripulante_y_posicion);
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
 		case OBTENER_PROXIMA_TAREA:
 		{
+			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Comenzando deserializacion del mensaje",*socket_hilo);
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
-			char * proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid); //Aca podemos agregar un control, tal vez si falla enviar respuesta_ok_fail...
-			void *respuesta = serializar_tarea(proxima_tarea,0);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, sizeof(tarea), respuesta);
+			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Iniciando proceso de obtencion de datos",*socket_hilo);
+			char * proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid);
+			uint32_t long_tarea = strlen(proxima_tarea)+1;
+			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Devolviendo tarea obtenida: %s (de longitud %i)",*socket_hilo,proxima_tarea,long_tarea);
+			void *respuesta = serializar_tarea(proxima_tarea,long_tarea);
+			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, long_tarea+sizeof(uint32_t), respuesta);
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
 		{
+			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Comenzando deserializacion del mensaje",*socket_hilo);
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
+			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Iniciando proceso borrado de datos",*socket_hilo);
 			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
 			respuesta_ok_fail resultado = expulsar_tripulante_paginacion(tripulante_pid);
+			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
-		case OBTENER_ESTADO:
+		case ACTUALIZAR_ESTADO:
 		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			estado estado = obtener_estado_paginacion(tripulante_pid);
-			void *respuesta = serializar_estado(estado);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_ESTADO, sizeof(estado), respuesta);
-			break;
-		}
-		case OBTENER_UBICACION:
-		{
-			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_UBICACION
-			posicion posicion = obtener_ubicacion_paginacion(tripulante_pid);
-			void *respuesta = serializar_posicion(posicion);
-			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_UBICACION, sizeof(posicion), respuesta);
+			uint32_t tripulante_tid;
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_ESTADO: Comenzando deserializacion del mensaje",*socket_hilo);
+			estado estado_nuevo = deserializar_estado_tcb (paquete->stream,&tripulante_tid);
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_ESTADO: Iniciando proceso de actualizacion de datos",*socket_hilo);
+			respuesta_ok_fail resultado = actualizar_estado_paginacion(tripulante_tid,estado_nuevo,*socket_hilo);
+			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_ESTADO: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
+			void *respuesta = serializar_respuesta_ok_fail(resultado);
+			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_ESTADO, sizeof(respuesta_ok_fail), respuesta);
 			break;
 		}
 		default:
@@ -624,7 +630,7 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	indice_de_posicion -= 1;
 
-	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
+	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
 	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
 	offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
@@ -632,7 +638,7 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	indice_de_posicion -= 1;
 
-	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
+	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
 	return RESPUESTA_OK;
 }
@@ -743,7 +749,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 	return retornar;
 }
 
-void escribir_una_coordenada_a_partir_de_indice(double indice, int offset, uint32_t posicion, t_tabla_de_paginas* patota){
+void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t dato, t_tabla_de_paginas* patota){
 	t_pagina* auxiliar_pagina = list_get(patota->paginas,indice);
 	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
 	int bytes_escritos = 0;
@@ -756,7 +762,7 @@ void escribir_una_coordenada_a_partir_de_indice(double indice, int offset, uint3
 			//traer_pagina_a_memoria(auxiliar_pagina);
 		}
 		if(tamanio_disponible_pagina < 4){
-			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&posicion + offset_lectura,tamanio_disponible_pagina);
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura,tamanio_disponible_pagina);
 			bytes_escritos += tamanio_disponible_pagina;
 			bytes_desplazados_escritura += tamanio_disponible_pagina;
 			offset_lectura += tamanio_disponible_pagina;
@@ -765,7 +771,7 @@ void escribir_una_coordenada_a_partir_de_indice(double indice, int offset, uint3
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 		}
 		else{
-			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&posicion + offset_lectura, 4 - bytes_escritos);
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura, 4 - bytes_escritos);
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 			int escritura = 4 - bytes_escritos;
 			bytes_escritos += escritura;
@@ -843,7 +849,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 		return proxima_tarea;
 	}
 
-	escribir_una_coordenada_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,indice_proxima_tarea + 2,patota);
+	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,indice_proxima_tarea + 2,patota);
 	//+2 porque el indice arranca desde 0 y luego hay que incrementarlo una vez mas para la proxima tarea;
 
 	return proxima_tarea;
@@ -1000,12 +1006,77 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 	return RESPUESTA_FAIL;
 }
 
+respuesta_ok_fail actualizar_estado_paginacion(uint32_t tid, estado estado,int socket){
 
-estado obtener_estado_paginacion(uint32_t tripulante_tid)
-{
-	estado estado_obtenido;
-	//TODO
-	return estado_obtenido;
+	char char_estado = obtener_char_estado(estado);
+
+	pthread_mutex_lock(&mutex_tabla_patotas);
+	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tid);
+	pthread_mutex_unlock(&mutex_tabla_patotas);
+	if(!patota){
+		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tid);
+		return RESPUESTA_FAIL;
+	}
+	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tid);
+
+	double primer_indice = 2*sizeof(uint32_t);
+	int tamanio_tareas = 0;
+	tarea_ram* auxiliar_tarea;
+	for (int i; i<patota->tareas->elements_count; i++){
+		auxiliar_tarea = list_get(patota->tareas,i);
+		tamanio_tareas += auxiliar_tarea->tamanio;
+	}
+	primer_indice += tamanio_tareas;
+	double offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA, &primer_indice);
+	int offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	primer_indice -= 1;
+	inicio_tcb* tcb = buscar_inicio_tcb(tid,patota,primer_indice,offset_entero);
+	int nuevo_indice = 0;
+	while(!tcb->pagina){
+		nuevo_indice += primer_indice + 5*sizeof(uint32_t) + sizeof(char);
+		tcb = buscar_inicio_tcb(tid,patota,nuevo_indice,offset_entero);
+	}
+
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (tcb->indice * 5*sizeof(uint32_t) + sizeof(char)) + sizeof(uint32_t);
+	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
+	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	indice_de_posicion -= 1;
+
+
+	escribir_un_char_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,char_estado,patota);
+
+	return RESPUESTA_OK;
+}
+
+void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_tabla_de_paginas* patota){
+	t_pagina* auxiliar_pagina = list_get(patota->paginas,indice);
+	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
+	int bytes_escritos = 0;
+	int bytes_desplazados_escritura = 0;
+	int offset_lectura = 0;
+	while(bytes_escritos < 1){
+		pthread_mutex_lock(auxiliar_pagina->mutex_pagina);
+		if(!auxiliar_pagina->presente){
+			//TODO: traerme la pagina desde swap
+			//traer_pagina_a_memoria(auxiliar_pagina);
+		}
+		if(tamanio_disponible_pagina < 1){
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura,tamanio_disponible_pagina);
+			bytes_escritos += tamanio_disponible_pagina;
+			bytes_desplazados_escritura += tamanio_disponible_pagina;
+			offset_lectura += tamanio_disponible_pagina;
+			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			auxiliar_pagina = list_get(patotas,indice+1);
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+		}
+		else{
+			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura, 1 - bytes_escritos);
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			int escritura = 1 - bytes_escritos;
+			bytes_escritos += escritura;
+		}
+	}
+
 }
 
 respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int socket)

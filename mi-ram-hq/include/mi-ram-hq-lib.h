@@ -149,7 +149,7 @@ estado obtener_estado_paginacion(uint32_t);
 posicion obtener_ubicacion_segmentacion(uint32_t,int);
 posicion obtener_ubicacion_paginacion(uint32_t);
 
-// busqueda de datos en memoria
+//Busqueda de datos en memoria
 t_segmentos_de_patota* buscar_patota(uint32_t);
 t_tabla_de_paginas* buscar_patota_paginacion(uint32_t);
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t);
@@ -172,22 +172,30 @@ void cargar_tareas_en_segmento(char* ,uint32_t, t_segmento* );
 void cargar_tcb_en_segmento(uint32_t,estado,uint32_t,uint32_t,uint32_t,uint32_t,t_segmento*);
 void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, uint32_t);
 
+//Escribir datos en paginacion
+void escribir_un_uint32_a_partir_de_un_indice(double,int,uint32_t,t_tabla_de_paginas*);
+void escribir_un_char_a_partir_de_un_indice(double,int,char,t_tabla_de_paginas*);
+
 //Actualizar datos en memoria
 void actualizarTareaActual(t_segmentos_de_patota* ,uint32_t,int );
 respuesta_ok_fail actualizar_estado_segmentacion(uint32_t ,estado ,int);
+respuesta_ok_fail actualizar_estado_paginacion(uint32_t, estado, int);
 
 
 //Compactacion
 void compactar_memoria();
 bool ordenar_direcciones_de_memoria(void* p1, void* p2);
 
+//Swap
+void inicializar_swap();
+
 //Otros paginacion
 int minimo_entre(int, int);
-void escribir_una_coordenada_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
-void swap(t_segmento **,t_segmento **);
+void escribir_un_uint32_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
 
 //Otros segmentacion
 uint32_t calcular_memoria_libre(void);
+void swap(t_segmento **,t_segmento **);
 
 //Otros compartidos
 char obtener_char_estado (estado);
