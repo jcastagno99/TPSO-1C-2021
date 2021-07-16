@@ -526,6 +526,12 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_ram_hq,"La estructuras administrativas fueron creadas correctamente");
+
+	t_tabla_de_paginas* aux = list_get(patotas,0);
+	t_pagina* a = list_get(aux->paginas,1);
+	uint32_t t;
+	memcpy(&t,a->inicio_memoria + 59,4);
+
 	return RESPUESTA_OK;
 }
 
@@ -644,26 +650,29 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 }
 
 
+//PENDIENTE EL -1 QUE COMENTO ABAJO
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 	t_tabla_de_paginas* auxiliar;
 	tarea_ram* tarea_aux;
 	t_pagina* pagina_aux;
 	for(int i=0; i<patotas->elements_count; i++){
 		auxiliar = list_get(patotas,i);
-		int indice_tripulantes = 2 * sizeof(uint32_t);
+		double indice_tripulantes = 2 * sizeof(uint32_t);
 		uint32_t tid_aux = 0;
 		for(int j=0; j<auxiliar->tareas->elements_count; j++){
-			tarea_aux = list_get(auxiliar->paginas,j);
+			tarea_aux = list_get(auxiliar->tareas,j);
 			indice_tripulantes += tarea_aux->tamanio;
 		}
-		double offset_pagina = modf((double)indice_tripulantes,(double*)&indice_tripulantes);
+		indice_tripulantes -= 1; //No se porque se suma uno de mas a cuando lo cargo en INICIAR_PATOTA, tengo que trackear esto
+		double indice_a_primer_posicion = indice_tripulantes / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		double offset_pagina = modf(indice_a_primer_posicion,&indice_tripulantes);
 		int offset_pagina_entero = offset_pagina * mi_ram_hq_configuracion->TAMANIO_PAGINA;
-		for(int k=indice_tripulantes-1; k<auxiliar->paginas->elements_count; k++){
+		for(int k=indice_tripulantes; k<auxiliar->paginas->elements_count; k++){
 			pagina_aux = list_get(auxiliar->paginas,k);
 			pthread_mutex_lock(pagina_aux->mutex_pagina);
 			int bytes_a_leer = sizeof(uint32_t);
 			int bytes_escritos = 0;
-			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina;
+			int espacio_disponible_en_pagina = (mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina_entero);
 			int espacio_leido = 0;
 			/* NO SE SI ES NECESARIO TRAERSE LAS PAGINAS A MEMORIA MIENTRAS BUSCO EN LAS LISTAS, CREO QUE NO HACE FALTA PERO HAY QUE PREGUNTARLO
 			if(!pagina_aux->presente){
@@ -698,16 +707,16 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 	t_pagina* pagina_retorno;
 	uint32_t tid_aux;
 	uint32_t tid_aux_posta;
-	int tamanio_tareas;
+	double tamanio_tareas = 0;
 	tarea_ram* auxiliar_tarea;
 	for(int i =0; i<patota->tareas->elements_count; i++){
 		auxiliar_tarea = list_get(patota->tareas,i);
 		tamanio_tareas += auxiliar_tarea->tamanio;
 	}
+	tamanio_tareas -= 1;
 	double primer_indice = (2*sizeof(uint32_t) + tamanio_tareas) / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	double offset_primer_pagina = modf(primer_indice,&primer_indice);
 	int offset_primer_pagina_entero = offset_primer_pagina * mi_ram_hq_configuracion->TAMANIO_PAGINA;
-	primer_indice -= 1;
 	int espacio_leido = 0;	
 	pthread_mutex_lock(patota->mutex_tabla_paginas);
 	while(espacio_leido < 4){
@@ -716,7 +725,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 			auxiliar = list_get(patota->paginas,i);
 			pagina_retorno = list_get(patota->paginas,i);
 			int bytes_a_leer = sizeof(uint32_t);
-			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_primer_pagina;
+			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_primer_pagina_entero;
 			/* NO SE SI ES NECESARIO TRAERSE LAS PAGINAS A MEMORIA MIENTRAS BUSCO EN LAS LISTAS, CREO QUE NO HACE FALTA PERO HAY QUE PREGUNTARLO
 			if(!auxiliar->presente){
 				//TODO: traerme la pagina desde swap
@@ -727,14 +736,14 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
 				offset_primer_pagina = 0;
-				pagina_retorno = list_get(patota->paginas,minimo_entre(i - 1, 0)); // OJO CON ESTO
+				pagina_retorno = list_get(patota->paginas,i);
 
 			}
 			else {
 				memcpy(&tid_aux + espacio_leido,auxiliar->inicio_memoria + offset_primer_pagina_entero,sizeof(uint32_t));
 				memcpy(&tid_aux_posta,&tid_aux,4);
 				if(tid_aux_posta == tid){
-					retornar->indice = i;
+					retornar->indice = i; //SEG FAULT ACA????????????
 					retornar->offset = offset_primer_pagina_entero;
 					retornar->pagina = pagina_retorno;
 					return retornar;
@@ -1026,10 +1035,9 @@ respuesta_ok_fail actualizar_estado_paginacion(uint32_t tid, estado estado,int s
 		auxiliar_tarea = list_get(patota->tareas,i);
 		tamanio_tareas += auxiliar_tarea->tamanio;
 	}
-	primer_indice += tamanio_tareas;
+	primer_indice += tamanio_tareas - 1; // -1 POR EL ERROR EN EL TAMANIO DE LAS TAREAS
 	double offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA, &primer_indice);
 	int offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
-	primer_indice -= 1;
 	inicio_tcb* tcb = buscar_inicio_tcb(tid,patota,primer_indice,offset_entero);
 	int nuevo_indice = 0;
 	while(!tcb->pagina){

@@ -86,7 +86,7 @@ typedef struct{
 
 typedef struct{
 	t_pagina* pagina;
-	double indice;
+	int indice;
 	int offset;
 }inicio_tcb;
 
