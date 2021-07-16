@@ -84,7 +84,7 @@ void *esperar_conexion(int puerto)
 	int socket_mi_ram_hq;
 	log_info(logger_ram_hq, "SERVIDOR LEVANTADO! ESCUCHANDO EN %i", puerto);
 	struct sockaddr cliente;
-	socklen_t len = sizeof(cliente);
+	socklen_t len = sizeof(cliente); //creo que aca esta el problema!!
 	do
 	{
 		socket_mi_ram_hq = accept(socket_escucha, &cliente, &len);
@@ -139,8 +139,10 @@ void crear_hilo_para_manejar_suscripciones(t_list *lista_hilos, int socket)
 	*socket_hilo = socket;
 	pthread_t hilo_conectado;
 	pthread_create(&hilo_conectado, NULL, (void *)manejar_suscripciones_mi_ram_hq, socket_hilo);
-	list_add(lista_hilos, &hilo_conectado);
-
+	//list_add(lista_hilos, &hilo_conectado);
+	pthread_join(hilo_conectado, NULL);
+	close(socket);
+	free(socket_hilo);
 }
 
 void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
@@ -303,8 +305,6 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
 	liberar_paquete(paquete);
-	close(*socket_hilo);
-	free(socket_hilo);
 	return;
 }
 
