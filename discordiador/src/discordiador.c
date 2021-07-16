@@ -356,9 +356,10 @@ void *planificador_a_largo_plazo()
 {
 	while (1)
 	{
-		chequear_planificacion_pausada(&sem_planificador_a_largo_plazo, -1);
 		//si hay tripulantes enviados a NEW y la planificación está, actuará.
 		sem_wait(&sem_contador_cola_de_new);
+		chequear_planificacion_pausada(&sem_planificador_a_largo_plazo, -1); 
+		
 		loggear_estado_de_cola(cola_de_new, "Planificador a largo plazo", "New antes del ciclo");
 		dis_tripulante *tripulante = (dis_tripulante *)quitar_primer_elemento_de_cola(cola_de_new, &mutex_cola_de_new);
 		tripulante->estado = READY;
@@ -657,9 +658,9 @@ void actualizar_estado_miriam(int tid,estado est){
     void *info = serializar_estado_tcb(est,tid); 
     uint32_t size_paquete = sizeof(uint32_t)+sizeof(estado);
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
-    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-    printf("Recibi respuesta %i\n",respuesta);
+    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    //respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+    //printf("Recibi respuesta %i\n",respuesta);
     close(conexion_mi_ram_hq);
     // Que debemos hace en caso no funcione
 	// Creo que este siempre y si no pasa se debe pausar algo ??

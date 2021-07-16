@@ -115,13 +115,14 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
 
         sem_init(&(tripulante->procesador), 0, 0); // Semaforo de fin de ciclo de ejecucion.
         sem_init(&(tripulante->sem_tri), 0, 0);    // Semaforo para que el tripulante pueda comenzar a ejecutar.
-        pthread_t hilo_tripulante;
-        pthread_create(&hilo_tripulante, NULL, (void *)ejecucion_tripulante, (int *)tripulante->id);
-
-        tripulante->threadid = hilo_tripulante;
 
         agregar_elemento_a_cola(cola_de_new, &mutex_cola_de_new, tripulante);
         list_add(list_total_tripulantes, tripulante); // [TODO] esto lo pondre en el for de confirmacion [PENDIENTE]
+        
+        pthread_t hilo_tripulante;
+        pthread_create(&hilo_tripulante, NULL, (void *)ejecucion_tripulante, (int *)tripulante->id);
+        tripulante->threadid = hilo_tripulante;
+
         sem_post(&sem_contador_cola_de_new);
     }
 
@@ -139,12 +140,12 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
 void ejecucion_tripulante(int indice)
 {
     dis_tripulante *trip = list_get(list_total_tripulantes, indice - 1);
-    int indice_tarea = 0;
+
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
 
     dis_tarea *tarea = pedir_tarea_miriam((uint32_t)trip->id);
-    printf("[Tripulante %d] pidio una tarea y recibio  %s\n",trip->id,tarea->nombre_tarea);
-    // ESTOY EN EXEC voy a ejecuta2r la tarea que tengo
+    log_info(logger,"[ Tripulante %d ] pidio una tarea a MI-RAM-HQ y recibio %s\n",trip->id,tarea->nombre_tarea);
+    // ESTOY EN EXEC voy a ejecutar la tarea que tengo
 
     while (tarea != NULL){
         tarea->estado_tarea = EN_CURSO;// ME parece que no sirve porque cuando creo una tarea la seteo con 'EN_CURSO'
@@ -172,12 +173,10 @@ void ejecucion_tripulante(int indice)
         }
         else
         {
-            indice_tarea++; 
+            printf("\033[1;34mTRIP %d : pidiendo prox TAREA\033[0m\n",trip->id);
             tarea = pedir_tarea_miriam((uint32_t)trip->id);
-            if (tarea)
-                printf("[Tripulante %d] pidio una tarea y recibio  %s\n",trip->id,tarea->nombre_tarea);
-            
-            
+            if (tarea!=NULL)
+                log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, trip->tarea_actual->nombre_tarea);
         }
     }
     // EL TRIPULANTE YA NO TIENE MAS TAREAS POR REALIZAR
@@ -205,10 +204,10 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
             actualizar_estado_miriam(trip->id,trip->estado);
             break;
         }
+        // Terminna el swicht y chau
         int status = pthread_kill(trip->threadid, 0);
         if (status < 0)
             perror("pthread_kill failed");
-        return;
     }
 
     if (tarea->pos_x != trip->pos_x || tarea->pos_y != trip->pos_y)
@@ -315,7 +314,7 @@ void chequear_tripulante_finalizado(dis_tripulante *tripulante)
     if (tripulante->tareas_realizadas == patota->cantidad_de_tareas)
     {
         tripulante->estado = EXIT;
-        actualizar_estado_miriam(tripulante->id,tripulante->estado);
+        actualizar_estado_miriam(tripulante->id,tripulante->estado); 
     }
 }
 
@@ -369,6 +368,22 @@ void expulsar_tripulante_local(int id)
             perror("pthread_kill failed");
     }
     
+    if (trip->estado==READY && planificacion_pausada==true){ // Si no esta pausado corre el protocolo que acordamos
+        trip->estado=EXPULSADO;
+        actualizar_estado_miriam(trip->id,trip->estado);
+        sem_wait(&sem_contador_cola_de_ready); // De lo contrario el procesador pedira 1 trip mas cuando este vacia la lista de READY
+
+        int indice = get_indice(cola_de_ready,trip->id);
+
+        pthread_mutex_lock(&mutex_cola_de_ready);
+	    list_remove(cola_de_ready, indice);
+	    pthread_mutex_unlock(&mutex_cola_de_ready);
+
+        int status = pthread_kill(trip->threadid, 0);
+        if (status < 0)
+            perror("pthread_kill failed");
+    }
+    
 
 }
 
@@ -379,14 +394,19 @@ void expulsar_tripulante_local(int id)
 dis_tarea* pedir_tarea_miriam(uint32_t tid)
 {
     // PEDIR A MI-RAM-HQ -----------------------------------------
+    printf("\033[1;33mLinea 380 | %d * \033[0m\n",tid);
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     void *info = pserializar_tid(tid); 
     uint32_t size_paquete = sizeof(uint32_t);
-    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info); 
+    printf("\033[1;33mLinea 380 | %d Pidiendo tarea \033[0m\n",tid);
+    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info);
+    printf("\033[1;33mLinea 380 | %d Tarea pedida! Recibiendo tarea ... \033[0m\n",tid);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    printf("\033[1;33mLinea 380 | %d Paquete recibido!! \033[0m\n",tid);
     char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
+    printf("\033[1;33mLinea 380 | %d Tarea deserializada! \033[0m\n",tid);
     //Recibi tarea IRSE_A_DORMIR;9;9;1 del tripulante 1 PODEMOS LOGUEARLO
-    printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
+    //printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
 
     if(strlen(tarea_recibida)==0){
         printf("Ya no hay mas proxima tarea\n");
