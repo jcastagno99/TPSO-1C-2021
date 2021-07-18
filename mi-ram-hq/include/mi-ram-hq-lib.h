@@ -174,7 +174,7 @@ void cargar_tcb_sinPid_en_segmento(nuevo_tripulante_sin_pid*,t_segmento*, uint32
 
 //Escribir datos en paginacion
 void escribir_un_uint32_a_partir_de_un_indice(double,int,uint32_t,t_tabla_de_paginas*);
-void escribir_un_char_a_partir_de_un_indice(double,int,char,t_tabla_de_paginas*);
+void escribir_un_char_a_partir_de_indice(double,int,char,t_tabla_de_paginas*);
 
 //Actualizar datos en memoria
 void actualizarTareaActual(t_segmentos_de_patota* ,uint32_t,int );
