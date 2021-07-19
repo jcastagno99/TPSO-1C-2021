@@ -489,6 +489,7 @@ tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream){
 	return tct;
 }
 
+
 pid_con_tareas deserializar_pid_con_tareas(void* stream){
 	pid_con_tareas pct;
 	pct.tareas = list_create();
