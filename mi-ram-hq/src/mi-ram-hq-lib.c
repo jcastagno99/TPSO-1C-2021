@@ -306,11 +306,10 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		}
 	}
-	 if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
 		imprimir_dump_paginacion();
 	}
-	//else 
-	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
+	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
 		imprimir_dump();
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
@@ -356,7 +355,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	//ver si entra todo, sino devolver fail
 	uint32_t memoria_libre = calcular_memoria_libre();
 	// tiene la longitud de todas las tareas + pid + cantidad de tripulantes * (estado + tid + tarea_actual + posx + posy + patota_direccion_virtual)
-	uint32_t memoria_necesaria = patota_con_tareas_y_tripulantes.longitud_palabra + sizeof(uint32_t) + patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char));
+	uint32_t memoria_necesaria = patota_con_tareas_y_tripulantes.longitud_palabra + 2*(sizeof(uint32_t)) + patota_con_tareas_y_tripulantes.tripulantes->elements_count * (sizeof(uint32_t)*5 + sizeof(char));
 
 	if(memoria_libre < memoria_necesaria){
 		log_error(logger_ram_hq,"Socket %i, INICIAR_PATOTA: No hay lugar para guardar la patota %i",socket,patota_con_tareas_y_tripulantes.pid);
@@ -1490,23 +1489,25 @@ t_segmento* buscar_segmento_pcb(){
 		} 
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
-		t_segmento* vencedor;
-		int vencedor_valido = 0;
-		vencedor = list_get(segmentos_memoria,0);
+		t_segmento* vencedor = NULL;
 		//vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
-				vencedor = iterador;
-				vencedor_valido = 1;
+			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->libre)){
+				if(!vencedor){
+					vencedor = iterador;
+				}
+				else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
+					vencedor = iterador;
+				}
 			}
 			
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
 
-		if(vencedor_valido){
+		if(vencedor){
 			pthread_mutex_lock(vencedor->mutex_segmento);
 		
 			auxiliar->inicio_segmento = vencedor->inicio_segmento;
@@ -1559,20 +1560,22 @@ t_segmento* buscar_segmento_tareas(uint32_t tamanio_tareas){
 		}
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){
-		t_segmento* vencedor;
-		int vencedor_valido = 0;
-		vencedor = list_get(segmentos_memoria,0);
+		t_segmento* vencedor = NULL;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((iterador->tamanio_segmento >= tamanio_tareas) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
-				vencedor = iterador;
-				vencedor_valido = 1;
+			if((iterador->tamanio_segmento >= tamanio_tareas) && (iterador->libre)){
+				if(!vencedor){
+					vencedor = iterador;
+				}
+				else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
+					vencedor = iterador;
+				}
 			}
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
 		
-		if(vencedor_valido){
+		if(vencedor){
 
 			pthread_mutex_lock(vencedor->mutex_segmento);
 			
@@ -1627,20 +1630,23 @@ t_segmento* buscar_segmento_tcb(){
 		}
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
-		t_segmento* vencedor;
-		int vencedor_valido = 0;
-		vencedor = list_get(segmentos_memoria,0);
+		t_segmento* vencedor = NULL;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((iterador->tamanio_segmento >= size_tcb) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
-				vencedor = iterador;
-				vencedor_valido = 1;
+			if((iterador->tamanio_segmento >= size_tcb) && (iterador->libre)){
+				if(!vencedor){
+					vencedor = iterador;
+				}
+				else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
+					vencedor = iterador;
+				}
+				
 			}
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
 
-		if(vencedor_valido){
+		if(vencedor){
 
 			pthread_mutex_lock(vencedor->mutex_segmento);	
 			
@@ -2052,7 +2058,6 @@ uint32_t calcular_memoria_libre(){
 	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	return libre;
 }
-
 //--------------------------------------------------Algoritmos de SWAP---------------------------------------------
 
 /* 
@@ -2067,14 +2072,12 @@ uint32_t calcular_memoria_libre(){
 	free(pagina_a_quitar_con_su_frame);
 	return a_retornar;
 }
-
 //actualizar con los inicios
 void actualizar_pagina(t_pagina* pagina){
 	pthread_mutex_lock(&mutex_swap);
 	memcpy(pagina->inicio_swap,pagina->inicio_memoria,32);
 	pthread_mutex_unlock(&mutex_swap);
 }
-
 t_frame_en_memoria* sustituir_CLOCK() {
 	log_info(logger_ram_hq,"inicio algoritmo de sustitucion Clock Modificado");
 	t_frame_en_memoria* frame_libre = iterar_clock_sobre_frames(0);
@@ -2089,7 +2092,6 @@ t_frame_en_memoria* sustituir_CLOCK() {
 	frame_libre = iterar_clock_sobre_frames(1);
 	return frame_libre;
 }
-
 t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
 	t_pagina_y_frame* una_pagina_con_su_frame = malloc(sizeof(t_pagina_y_frame));
 	t_pagina_y_frame* pagina_con_frame_quitadas = malloc(sizeof(t_pagina_y_frame));
@@ -2105,7 +2107,6 @@ t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
 			indice = valor_original_puntero + i;
 		una_pagina_con_su_frame->frame = list_get(frames, indice);
 		una_pagina_con_su_frame->pagina = una_pagina_con_su_frame->frame->pagina_a_la_que_pertenece;
-
 			//chequear por caso (0,0) que esta escribiendo igualmente en swap
 		if (!una_pagina_con_su_frame->pagina->uso && una_pagina_con_su_frame->pagina->fue_modificada == paso) {
 			actualizar_pagina(una_pagina_con_su_frame->pagina);
