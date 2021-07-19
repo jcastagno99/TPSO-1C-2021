@@ -309,7 +309,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	/* if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
 		imprimir_dump_paginacion();
 	}*/
-	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
+	//else 
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
 		imprimir_dump();
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
@@ -464,7 +465,7 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
 	patota->paginas = list_create();
 	patota->tareas = patota_con_tareas_y_tripulantes.tareas;
-	patota->cantidad_tripulantes = patota_con_tareas_y_tripulantes.cantidad_tripulantes;
+	//patota->cantidad_tripulantes = patota_con_tareas_y_tripulantes.cantidad_tripulantes;
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
@@ -1459,24 +1460,44 @@ t_segmento* buscar_segmento_pcb(){
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
 		t_segmento* vencedor;
-		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
+		int vencedor_valido = 0;
+		vencedor = list_get(segmentos_memoria,0);
+		//vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
-			pthread_mutex_lock(&mutex_tabla_de_segmentos);
 			iterador = list_get(segmentos_memoria,i);
-			pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+			
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento < vencedor->tamanio_segmento) && iterador->libre){
-				//hay que armar bien esto, para todas las best fil
-				iterador->libre = false;
+			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
 				vencedor = iterador;
+				vencedor_valido = 1;
 			}
+			
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
-		pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-		return vencedor;
+
+		if(vencedor_valido){
+			pthread_mutex_lock(vencedor->mutex_segmento);
+		
+			auxiliar->inicio_segmento = vencedor->inicio_segmento;
+			auxiliar->tamanio_segmento = 2*(sizeof(uint32_t)); 
+			auxiliar->libre = false;
+			auxiliar->numero_segmento = numero_segmento_global;
+			auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+			pthread_mutex_init(auxiliar->mutex_segmento,NULL);
+			numero_segmento_global++;
+			list_add(segmentos_memoria,auxiliar);
+			
+			vencedor->inicio_segmento += 2*(sizeof(uint32_t));
+			vencedor->tamanio_segmento -= 2*(sizeof(uint32_t));
+			pthread_mutex_unlock(vencedor->mutex_segmento);
+			pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+			
+			return auxiliar;
+		}
+		
 	}
-	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	free(auxiliar);
+	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	return NULL;
 };
 
@@ -1508,17 +1529,39 @@ t_segmento* buscar_segmento_tareas(uint32_t tamanio_tareas){
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){
 		t_segmento* vencedor;
-		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
+		int vencedor_valido = 0;
+		vencedor = list_get(segmentos_memoria,0);
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
-			auxiliar = list_get(segmentos_memoria,i);
-			if((auxiliar->tamanio_segmento >= tamanio_tareas) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
-				//fix
-				auxiliar->libre = false;
-				vencedor = auxiliar;
+			iterador = list_get(segmentos_memoria,i);
+			pthread_mutex_lock(iterador->mutex_segmento);
+			if((iterador->tamanio_segmento >= tamanio_tareas) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
+				vencedor = iterador;
+				vencedor_valido = 1;
 			}
+			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
-		pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-		return vencedor;
+		
+		if(vencedor_valido){
+
+			pthread_mutex_lock(vencedor->mutex_segmento);
+			
+			auxiliar->inicio_segmento = vencedor->inicio_segmento;
+			auxiliar->tamanio_segmento = tamanio_tareas; 
+			auxiliar->libre = false;
+			auxiliar->numero_segmento = numero_segmento_global;
+			auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+			pthread_mutex_init(auxiliar->mutex_segmento,NULL);
+			numero_segmento_global++;
+			list_add(segmentos_memoria,auxiliar);
+			vencedor->inicio_segmento += tamanio_tareas;
+			vencedor->tamanio_segmento -= tamanio_tareas;
+			
+			pthread_mutex_unlock(vencedor->mutex_segmento);
+			pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+			
+			return auxiliar;
+		
+		}
 	}
 	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	free(auxiliar);
@@ -1554,19 +1597,39 @@ t_segmento* buscar_segmento_tcb(){
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
 		t_segmento* vencedor;
-		vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
+		int vencedor_valido = 0;
+		vencedor = list_get(segmentos_memoria,0);
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
-			auxiliar = list_get(segmentos_memoria,i);
+			iterador = list_get(segmentos_memoria,i);
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((auxiliar->tamanio_segmento >= size_tcb) && (auxiliar->tamanio_segmento < vencedor->tamanio_segmento) && auxiliar->libre){
-				auxiliar->libre = false;
-				vencedor = auxiliar;
+			if((iterador->tamanio_segmento >= size_tcb) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
+				vencedor = iterador;
+				vencedor_valido = 1;
 			}
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
-		pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-		return vencedor;
+
+		if(vencedor_valido){
+
+			pthread_mutex_lock(vencedor->mutex_segmento);	
+			
+			auxiliar->inicio_segmento = vencedor->inicio_segmento;
+			auxiliar->tamanio_segmento = size_tcb; 
+			auxiliar->libre = false;
+			auxiliar->numero_segmento = numero_segmento_global;
+			numero_segmento_global++;
+			auxiliar->mutex_segmento = malloc(sizeof(pthread_mutex_t));
+			pthread_mutex_init(auxiliar->mutex_segmento,NULL);
+			list_add(segmentos_memoria,auxiliar);
+			vencedor->inicio_segmento += size_tcb;
+			vencedor->tamanio_segmento -= size_tcb;
+			
+			pthread_mutex_unlock(vencedor->mutex_segmento);
+			pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+			return auxiliar;
+		}
 	}
+
 	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	free(auxiliar);
 	return NULL;
