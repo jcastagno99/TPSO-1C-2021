@@ -133,6 +133,7 @@ typedef struct{
 	uint32_t tamanio_tareas;
 	float tamanio_patota;
 	t_list* tareas;
+	int cantidad_tripulantes;
 }patota_stream_paginacion;
 
 //---------------------------------------------------------------------------------------------------------------------

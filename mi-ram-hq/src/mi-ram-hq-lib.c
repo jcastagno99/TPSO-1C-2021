@@ -306,9 +306,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 		}
 	}
-	/* if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
+	 if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
 		imprimir_dump_paginacion();
-	}*/
+	}
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
 		imprimir_dump();
 	}
@@ -936,11 +936,42 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 	return tareas;
 }
 
-respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_pid)
+respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 {
-	respuesta_ok_fail respuesta;
-	//TODO
-	return respuesta;
+	pthread_mutex_lock(&mutex_tabla_patotas);
+	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
+	pthread_mutex_unlock(&mutex_tabla_patotas);
+	if(!patota){
+		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tripulante_tid);
+		return RESPUESTA_FAIL;
+	}
+	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tripulante_tid);
+
+	double primer_indice = 2*sizeof(uint32_t);
+	int tamanio_tareas = 0;
+	tarea_ram* auxiliar_tarea;
+	for (int i=0; i<patota->tareas->elements_count; i++){
+		auxiliar_tarea = list_get(patota->tareas,i);
+		tamanio_tareas += auxiliar_tarea->tamanio;
+	}
+	tamanio_tareas -= 1;
+	primer_indice += tamanio_tareas;
+	double indice_auxiliar = 0;
+	double offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_auxiliar);
+	int offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	inicio_tcb* tcb = buscar_inicio_tcb(tripulante_tid,patota,indice_auxiliar,offset_entero);
+	double nuevo_indice = 0;
+	int i = 0;
+	while(!tcb->pagina && i<patota->cantidad_tripulantes){
+		primer_indice += 5*sizeof(uint32_t) + sizeof(char);
+		offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA,&nuevo_indice);
+		offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		tcb = buscar_inicio_tcb(tripulante_tid,patota,nuevo_indice,offset_entero);
+		i++;
+	}
+
+	//FALTA EXPULSARLO COMO TAL: ESPERAR A QUE RESPONDA EL ISSUE
+	return RESPUESTA_OK;
 }
 
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
@@ -1958,3 +1989,86 @@ uint32_t calcular_memoria_libre(){
 	pthread_mutex_unlock(&mutex_tabla_de_segmentos);
 	return libre;
 }
+
+//--------------------------------------------------Algoritmos de SWAP---------------------------------------------
+
+/* 
+ t_frame_en_memoria* sustituir_LRU(){
+	log_info(logger_ram_hq,"inicio algoritmo de sustitucion LRU");
+	t_pagina_y_frame* pagina_a_quitar_con_su_frame = list_remove(historial_uso_paginas,0); //basicamente el que fue usado hace mas tiempo
+	actualizar_pagina(pagina_a_quitar_con_su_frame->pagina);
+	pagina_a_quitar_con_su_frame->pagina->presente = 0;
+	log_info(logger_ram_hq, "se ha elegido como victima a la pagina %s", pagina_a_quitar_con_su_frame->pagina->id_pagina);
+	t_frame_en_memoria* a_retornar;
+	a_retornar = pagina_a_quitar_con_su_frame->frame;
+	free(pagina_a_quitar_con_su_frame);
+	return a_retornar;
+}
+
+//actualizar con los inicios
+void actualizar_pagina(t_pagina* pagina){
+	pthread_mutex_lock(&mutex_swap);
+	memcpy(pagina->inicio_swap,pagina->inicio_memoria,32);
+	pthread_mutex_unlock(&mutex_swap);
+}
+
+t_frame_en_memoria* sustituir_CLOCK() {
+	log_info(logger_ram_hq,"inicio algoritmo de sustitucion Clock Modificado");
+	t_frame_en_memoria* frame_libre = iterar_clock_sobre_frames(0);
+	if(frame_libre)
+		return frame_libre;
+	frame_libre = iterar_clock_sobre_frames(1);
+	if(frame_libre)
+		return frame_libre;
+	frame_libre = iterar_clock_sobre_frames(0);
+	if(frame_libre)
+	return frame_libre;
+	frame_libre = iterar_clock_sobre_frames(1);
+	return frame_libre;
+}
+
+t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
+	t_pagina_y_frame* una_pagina_con_su_frame = malloc(sizeof(t_pagina_y_frame));
+	t_pagina_y_frame* pagina_con_frame_quitadas = malloc(sizeof(t_pagina_y_frame));
+	pagina_con_frame_quitadas->pagina = NULL;
+	t_frame_en_memoria* a_retornar;
+	int indice = 0;
+	int valor_original_puntero = puntero_lista_frames_clock;
+	for (int i = 0;	i < frames->elements_count && pagina_con_frame_quitadas->pagina == NULL; i++) {
+		indice = i;
+		if(valor_original_puntero + i >= frames->elements_count)
+			indice = i + valor_original_puntero - frames->elements_count;
+		else
+			indice = valor_original_puntero + i;
+		una_pagina_con_su_frame->frame = list_get(frames, indice);
+		una_pagina_con_su_frame->pagina = una_pagina_con_su_frame->frame->pagina_a_la_que_pertenece;
+
+			//chequear por caso (0,0) que esta escribiendo igualmente en swap
+		if (!una_pagina_con_su_frame->pagina->uso && una_pagina_con_su_frame->pagina->fue_modificada == paso) {
+			actualizar_pagina(una_pagina_con_su_frame->pagina);
+			pagina_con_frame_quitadas->frame = una_pagina_con_su_frame->frame;
+			pagina_con_frame_quitadas->pagina = pagina_con_frame_quitadas->frame->pagina_a_la_que_pertenece;
+			log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %s", pagina_con_frame_quitadas->pagina->id_pagina);
+			if(indice + 1 == frames->elements_count)
+				puntero_lista_frames_clock = 0;
+			else
+				puntero_lista_frames_clock = indice + 1;
+		}else{
+			if(paso == 1)
+			una_pagina_con_su_frame->pagina->uso = 0;
+		}
+	}
+	if (pagina_con_frame_quitadas->pagina != NULL) {
+		pagina_con_frame_quitadas->pagina->presente = 0;
+		pagina_con_frame_quitadas->pagina->fue_modificada = 0;
+		a_retornar = pagina_con_frame_quitadas->frame;
+		free(pagina_con_frame_quitadas);
+		free(una_pagina_con_su_frame);
+		return a_retornar;
+	}
+	else{
+		free(pagina_con_frame_quitadas);
+		free(una_pagina_con_su_frame);
+		return NULL;
+	}
+}*/

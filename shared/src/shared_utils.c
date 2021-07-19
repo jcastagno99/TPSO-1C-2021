@@ -558,8 +558,9 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 
 	}
 
-	patota.tamanio_patota = 2 * sizeof(uint32_t) + pct.longitud_palabra - 1 + (pct.tripulantes->elements_count * 5 * sizeof(uint32_t) + sizeof(char));
+	patota.tamanio_patota = 2 * sizeof(uint32_t) + pct.longitud_palabra - 1 + (pct.tripulantes->elements_count * (5 * sizeof(uint32_t) + sizeof(char)));
 	patota.tamanio_tareas = pct.longitud_palabra - 1;
+	patota.cantidad_tripulantes = pct.tripulantes->elements_count;
 	void* stream = malloc(patota.tamanio_patota);
 
 	int offset = 0;
@@ -591,6 +592,13 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 		offset += sizeof(uint32_t);
 	}
 	patota.stream = stream;
+
+	uint32_t tida;
+	memcpy(&tida,patota.stream + 156,4);
+
+	int aaaaa;
+	int jjj;
+
 	return patota;
 }
 
