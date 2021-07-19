@@ -136,6 +136,8 @@ typedef struct{
 	int cantidad_tripulantes;
 }patota_stream_paginacion;
 
+
+
 //---------------------------------------------------------------------------------------------------------------------
 
 typedef struct

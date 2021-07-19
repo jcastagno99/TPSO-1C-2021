@@ -72,6 +72,8 @@ typedef struct{
 	void* inicio_swap;
 	uint32_t id_pagina;
 	uint8_t presente;
+	uint8_t fue_modificada;
+	uint8_t uso;
 	pthread_mutex_t* mutex_pagina;
 
 }t_pagina;
@@ -89,6 +91,7 @@ typedef struct{
 	t_pagina* pagina;
 	int indice;
 	int offset;
+
 }inicio_tcb;
 
 typedef struct{
@@ -101,6 +104,12 @@ typedef struct{
 	uint32_t indice_pagina; 
 
 }t_frame_en_memoria;
+
+typedef struct{
+	t_pagina* pagina;
+	t_frame_en_memoria* frame;
+
+}t_pagina_y_frame;
 
 //------------Variables Globales------------
 
@@ -117,6 +126,9 @@ pthread_mutex_t mutex_tabla_patotas;
 pthread_mutex_t mutex_tabla_de_segmentos;
 pthread_mutex_t mutex_iniciar_patota;
 pthread_mutex_t mutex_swap;
+
+t_list* historial_uso_paginas;
+int puntero_lista_frames_clock;
 
 t_list* segmentos_memoria;
 
@@ -145,10 +157,6 @@ char* obtener_proxima_tarea_segmentacion(uint32_t,int);
 char* obtener_proxima_tarea_paginacion(uint32_t);
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t,int);
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t);
-estado obtener_estado_segmentacion(uint32_t);
-estado obtener_estado_paginacion(uint32_t);
-posicion obtener_ubicacion_segmentacion(uint32_t,int);
-posicion obtener_ubicacion_paginacion(uint32_t);
 
 //Busqueda de datos en memoria
 t_segmentos_de_patota* buscar_patota(uint32_t);
@@ -166,6 +174,11 @@ t_segmento* buscar_segmento_tcb();
 //Buscar paginas en memoria
 t_list* buscar_cantidad_frames_libres(int);
 inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
+
+//Buscar frames
+t_frame_en_memoria* buscar_frame_libre();
+t_list* buscar_cantidad_frames_libres(int);
+
 
 //Escribir en memoria un segmento
 void cargar_pcb_en_segmento(uint32_t,uint32_t,t_segmento*);
@@ -189,6 +202,11 @@ bool ordenar_direcciones_de_memoria(void* p1, void* p2);
 
 //Swap
 void inicializar_swap();
+t_frame_en_memoria* sustituir_LRU();
+t_frame_en_memoria* sustituir_CLOCK();
+void actualizar_pagina(t_pagina*);
+t_frame_en_memoria* iterar_clock_sobre_frames(int);
+
 
 //Otros paginacion
 int minimo_entre(int, int);
