@@ -83,6 +83,7 @@ typedef struct{
 	t_list* paginas;
 	t_list* tareas;
 	int cantidad_tripulantes;
+	int id_patota;
 	pthread_mutex_t* mutex_tabla_paginas;
 
 }t_tabla_de_paginas;
@@ -178,6 +179,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
 //Buscar frames
 t_frame_en_memoria* buscar_frame_libre();
 t_list* buscar_cantidad_frames_libres(int);
+int buscar_frame_y_pagina_con_tid_y_pid(int,int);
 
 
 //Escribir en memoria un segmento
