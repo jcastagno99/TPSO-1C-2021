@@ -11,7 +11,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
-	
+	signal(SIGUSR2, sighandlerImpresionPatotas);  //12
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -24,6 +24,7 @@ void crear_estructuras_administrativas()
 		pthread_mutex_init(segmento->mutex_segmento,NULL);
 		log_info(logger_ram_hq,"Se reservaron %i bytes de memoria que comienzan en %i",mi_ram_hq_configuracion->TAMANIO_MEMORIA,memoria_principal);
 		list_add(segmentos_memoria,segmento);
+		signal(SIGUSR1, sighandlerCompactacion); //10
 		
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
@@ -1569,23 +1570,25 @@ t_segmento* buscar_segmento_pcb(){
 		} 
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){ 
-		t_segmento* vencedor;
-		int vencedor_valido = 0;
-		vencedor = list_get(segmentos_memoria,0);
+		t_segmento* vencedor = NULL;
 		//vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			
 			pthread_mutex_lock(iterador->mutex_segmento);
-			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->tamanio_segmento <= vencedor->tamanio_segmento) && (iterador->libre)){
-				vencedor = iterador;
-				vencedor_valido = 1;
+			if((iterador->tamanio_segmento >= 2*(sizeof(uint32_t))) && (iterador->libre)){
+				if(!vencedor){
+					vencedor = iterador;
+				}
+				else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
+					vencedor = iterador;
+				}
 			}
 			
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
 
-		if(vencedor_valido){
+		if(vencedor){
 			pthread_mutex_lock(vencedor->mutex_segmento);
 		
 			auxiliar->inicio_segmento = vencedor->inicio_segmento;
@@ -1639,7 +1642,6 @@ t_segmento* buscar_segmento_tareas(uint32_t tamanio_tareas){
 	}
 	else if(!strcmp(mi_ram_hq_configuracion->CRITERIO_SELECCION,"BF")){
 		t_segmento* vencedor = NULL;
-		//vencedor->tamanio_segmento = mi_ram_hq_configuracion->TAMANIO_MEMORIA;
 		for(int i=0;i<segmentos_memoria->elements_count;i++){
 			iterador = list_get(segmentos_memoria,i);
 			pthread_mutex_lock(iterador->mutex_segmento);
@@ -1714,10 +1716,13 @@ t_segmento* buscar_segmento_tcb(){
 			iterador = list_get(segmentos_memoria,i);
 			pthread_mutex_lock(iterador->mutex_segmento);
 			if((iterador->tamanio_segmento >= size_tcb) && (iterador->libre)){
-				vencedor = iterador;
-			}
-			else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
-				vencedor = iterador;
+				if(!vencedor){
+					vencedor = iterador;
+				}
+				else if(iterador->tamanio_segmento < vencedor->tamanio_segmento){
+					vencedor = iterador;
+				}
+				
 			}
 			pthread_mutex_unlock(iterador->mutex_segmento);
 		}
@@ -1927,30 +1932,18 @@ bool ordenar_direcciones_de_memoria(void* p1, void* p2){
 	return ((int)segmento1->inicio_segmento) < ((int)segmento2->inicio_segmento);
 }
 
-void funcion_test_memoria( uint32_t tid){
-	//patotas
-//	t_list* aux = patotas
-	printf ("Iniciando rastillaje de memoria guardada\n");
-	for(int i = 0;i < patotas->elements_count;i++){
-		t_segmentos_de_patota* patota = list_get(patotas,i);
-		recorrer_pcb(patota->segmento_pcb);
-		recorrer_tareas(patota->segmento_tarea);
-		recorrer_tcb(patota->segmentos_tripulantes);
-	}
-}
 void recorrer_pcb(t_segmento * pcb){
 	uint32_t pid;
-	//pthread_mutex_lock(pcb->mutex_segmento);
+	pthread_mutex_lock(pcb ->mutex_segmento);
 	memcpy(&pid, pcb->inicio_segmento, sizeof(uint32_t));
-	//pthread_mutex_unlock(pcb->mutex_segmento);
 	printf ("Patota pid = %i\n",pid);
+	pthread_mutex_unlock(pcb ->mutex_segmento);
 }
 void recorrer_tareas(t_segmento * tareas){
-	//pthread_mutex_lock(tareas->mutex_segmento);
+	pthread_mutex_lock(tareas ->mutex_segmento);
+	
 	char* auxiliar = malloc (tareas->tamanio_segmento);
 	memcpy(auxiliar, tareas->inicio_segmento, tareas->tamanio_segmento);
-	//pthread_mutex_unlock(tareas->mutex_segmento);
-	//quiza hay que recorrer distinto pq frena en el primer /0
 	
 	printf ("Lista de tareas: \n");
 	printf ("%s\n",auxiliar);
@@ -1963,36 +1956,33 @@ void recorrer_tareas(t_segmento * tareas){
 		}
 
 	}
+	
+	pthread_mutex_unlock(tareas ->mutex_segmento);
 }
-void recorrer_tcb(t_list * tripulantes_list){
-	for(int i = 0;i < tripulantes_list->elements_count;i++){
-		t_segmento * tripulante = list_get(tripulantes_list,i);
-		//pthread_mutex_lock(tripulante->mutex_segmento);
-		
-		uint32_t tid = 0;
-		char estado_actual;
-		uint32_t posX = 0;
-		uint32_t posY = 0;
-		uint32_t tareaActual = 0;
-		uint32_t patotaActual = 0;
+void recorrer_tripulante(t_segmento * tripulante){
+	uint32_t tid = 0;
+	char estado_actual;
+	uint32_t posX = 0;
+	uint32_t posY = 0;
+	uint32_t tareaActual = 0;
+	uint32_t patotaActual = 0;
 
-		int offset = 0;
-		memcpy(&tid, tripulante->inicio_segmento + offset, sizeof(uint32_t));
-		offset = offset + sizeof(uint32_t);
-		memcpy(&estado_actual, tripulante->inicio_segmento + offset, sizeof(char));
-		offset = offset + sizeof(char);
-		memcpy(&posX, tripulante->inicio_segmento + offset, sizeof(uint32_t));
-		offset = offset + sizeof(uint32_t);
-		memcpy(&posY, tripulante->inicio_segmento + offset, sizeof(uint32_t));
-		offset = offset + sizeof(uint32_t);
-		memcpy(&tareaActual, tripulante->inicio_segmento + offset, sizeof(uint32_t));
-		offset = offset + sizeof(uint32_t);
-		memcpy(&patotaActual, tripulante->inicio_segmento + offset, sizeof(uint32_t));
-		offset = offset + sizeof(uint32_t);
-		
-		//pthread_mutex_unlock(tripulante->mutex_segmento);
-		printf ("Tripulante tid %i, estado %c, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
-	}
+	pthread_mutex_lock(tripulante ->mutex_segmento);
+	int offset = 0;
+	memcpy(&tid, tripulante->inicio_segmento + offset, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(&estado_actual, tripulante->inicio_segmento + offset, sizeof(char));
+	offset = offset + sizeof(char);
+	memcpy(&posX, tripulante->inicio_segmento + offset, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(&posY, tripulante->inicio_segmento + offset, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(&tareaActual, tripulante->inicio_segmento + offset, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(&patotaActual, tripulante->inicio_segmento + offset, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	printf ("Tripulante tid %i, estado %c, posicion %d;%d, tarea %i, patota %i\n",tid,estado_actual,posX,posY,tareaActual,patotaActual);
+	pthread_mutex_unlock(tripulante ->mutex_segmento);
 }
 
 
@@ -2239,4 +2229,41 @@ int buscar_frame_y_pagina_con_tid_pid(int id_pagina,int id_patota){
 		}
 	}
 	log_error(logger_ram_hq,"Un frame marcado como presente no tiene asignado ningun frame");
+}
+
+// Funciones de manejo de señales
+void sighandlerCompactacion(int signum) {
+	log_info(logger_ram_hq,"Llego señal de compactacion, procedo a compactar");
+	pthread_mutex_lock(&mutex_iniciar_patota);
+	compactar_memoria();
+	pthread_mutex_unlock(&mutex_iniciar_patota);
+	signal(SIGUSR1, sighandlerCompactacion);
+}
+
+void sighandlerImpresionPatotas(int signum) {
+	log_info(logger_ram_hq,"Llego señal de impresion de patotas");
+	funcion_test_memoria_completa();
+	signal(SIGUSR2, sighandlerImpresionPatotas); 
+}
+
+void funcion_test_memoria_completa (void){
+	
+	pthread_mutex_lock(&mutex_memoria);
+	pthread_mutex_lock(&mutex_tabla_patotas);
+	int i;
+	for(i = 0;i< patotas->elements_count;i++){
+		t_segmentos_de_patota* patota = list_get(patotas,i);
+		recorrer_pcb(patota->segmento_pcb);
+		recorrer_tareas(patota->segmento_tarea);
+		pthread_mutex_lock(patota->mutex_segmentos_tripulantes);
+		int j;
+		for(j = 0;j< patota->segmentos_tripulantes->elements_count;j++){
+			t_segmento* tripulante = list_get(patota->segmentos_tripulantes,j);
+			recorrer_tripulante(tripulante);
+		}
+		pthread_mutex_unlock(patota->mutex_segmentos_tripulantes);
+	}
+	pthread_mutex_unlock(&mutex_tabla_patotas);
+	pthread_mutex_unlock(&mutex_memoria);
+	
 }

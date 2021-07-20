@@ -25,7 +25,7 @@
 #include <shared_utils.h>
 #include <nivel-gui/nivel-gui.h>
 #include <nivel-gui/tad_nivel.h>
-
+#include <signal.h>
 
 #define MAX_CLIENTS 128
 
@@ -231,10 +231,15 @@ void imprimir_dump_paginacion(void);
 
 
 //Funciones armadas para debuggear
-void funcion_test_memoria(uint32_t);
+void funcion_test_memoria_completa(void);
 void recorrer_pcb(t_segmento * );
 void recorrer_tareas(t_segmento * );
-void recorrer_tcb(t_list * );
+void recorrer_tripulante(t_segmento * );
+
+
+//Funciones para los signal
+void sighandlerImpresionPatotas(int);
+void sighandlerCompactacion (int);
 
 #endif /* MI_RAM_HQ_LIB_H */
 
