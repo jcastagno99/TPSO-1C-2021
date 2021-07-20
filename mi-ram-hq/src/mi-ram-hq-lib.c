@@ -537,6 +537,17 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		log_info(logger_ram_hq,"La informacion se guardo satisfactoriamente en el almacenamiento secundario");	
 	}
 
+	if(patota->id_patota == 3){
+		uint32_t tida = 0;
+		char j = 'a';
+		t_pagina* auxx = list_get(patota->paginas,3);
+		memcpy(&tida,auxx->inicio_swap+1,4);
+		memcpy(&j,auxx->inicio_swap+5,1);
+		int qq = 3+3+3+3;
+		int banana;
+	}
+
+
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas correctamente");
@@ -638,13 +649,13 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 		i++;
 	}
 	
-	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + ((tcb->indice - 1) * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char);
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
-	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + ((tcb->indice - 1) * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
+	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
 	offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
@@ -898,7 +909,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 		i++;
 	}
 
-	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + ((tcb->indice - 1) * (5*sizeof(uint32_t) + sizeof(char))) + 3 * sizeof(uint32_t) + sizeof(char);
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + 3 * sizeof(uint32_t) + sizeof(char);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
@@ -1200,7 +1211,7 @@ respuesta_ok_fail actualizar_estado_paginacion(uint32_t tid, estado estado,int s
 		i++;
 	}
 
-	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + ((tcb->indice - 1) * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t);
+	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 

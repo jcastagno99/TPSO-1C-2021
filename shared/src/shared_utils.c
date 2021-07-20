@@ -593,13 +593,6 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 		offset += sizeof(uint32_t);
 	}
 	patota.stream = stream;
-
-	uint32_t tida;
-	memcpy(&tida,patota.stream + 156,4);
-
-	int aaaaa;
-	int jjj;
-
 	return patota;
 }
 
