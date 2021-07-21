@@ -604,12 +604,12 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 						direc = ARRIBA;
 				}
 				else{
-					//posicion nueva es mayor a la vieja en x -> DERECHA
-					if(tripulante_con_posicion.pos_x < pos_x)
-						direc = DERECHA;
 					//posicion nueva es menor a la vieja en x -> IZQUIERDA
-					else
+					if(tripulante_con_posicion.pos_x < pos_x)
 						direc = IZQUIERDA;
+					//posicion nueva es mayor a la vieja en x -> DERECHA
+					else
+						direc = DERECHA;
 				}
 	
 				mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
