@@ -131,6 +131,7 @@ pthread_mutex_t mutex_swap;
 
 t_list* historial_uso_paginas;
 int puntero_lista_frames_clock;
+t_config* config_aux;
 
 t_list* segmentos_memoria;
 

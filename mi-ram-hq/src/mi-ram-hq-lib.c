@@ -12,7 +12,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
 	signal(SIGUSR2, sighandlerImpresionPatotas);  //12
-	crear_mapa ();
+	//crear_mapa ();
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -51,7 +51,7 @@ void crear_estructuras_administrativas()
 		inicializar_swap();
 		puntero_lista_frames_clock = 0;
 		historial_uso_paginas = list_create();
-		//signal(SIGINT,sighandlerLiberarPaginacion);
+		signal(SIGINT,sighandlerLiberarPaginacion);
 	}
 	else
 	{
@@ -62,7 +62,7 @@ void crear_estructuras_administrativas()
 
 mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 {
-	t_config* config_aux = config_create(path);
+	config_aux = config_create(path);
 	mi_ram_hq_config *config_mi_ram_hq_aux = malloc(sizeof(mi_ram_hq_config));
 
 	config_mi_ram_hq_aux->TAMANIO_MEMORIA = config_get_int_value(config_aux, "TAMANIO_MEMORIA");
@@ -82,7 +82,7 @@ t_log *iniciar_logger_mi_ram_hq(char *path)
 
 	//t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -2408,15 +2408,12 @@ void funcion_test_memoria_completa (void){
 
 void sighandlerLiberarPaginacion(int signum){
 	log_info(logger_ram_hq,"Llego la señal para evacuar el modulo");
-	//explotar_la_nave();
-	signal(SIGINT,sighandlerLiberarPaginacion);
+	explotar_la_nave();
 }
 
 
-//ESTA FUNCION ES ALGO MALO, ALGOOOO MAAAAAALO (NO USAR) / Salvo que se quiera que valgrind putee
-/*
 void explotar_la_nave(){
-	log_info(logger_ram_hq,"¡Los reactores de la nave se sobrecalentaron y estan a punto de explotar! \n Liberando todos los recursos..");
+	/* log_info(logger_ram_hq,"¡Los reactores de la nave se sobrecalentaron y estan a punto de explotar! \n Liberando todos los recursos..");
 	for(int i=0; i<patotas->elements_count; i++){
 		t_tabla_de_paginas* auxiliar_patota = list_get(patotas,i);
 		for(int j=0; j<auxiliar_patota->paginas->elements_count; i++){
@@ -2438,9 +2435,10 @@ void explotar_la_nave(){
 	pthread_mutex_destroy(&mutex_memoria);
 	pthread_mutex_destroy(&mutex_swap);
 	list_destroy_and_destroy_elements(historial_uso_paginas,free);
-	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");
-	config_destroy()....
-}*/
+	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");*/
+	config_destroy(config_aux);
+	exit(0);
+}
 
 
 void crear_mapa (){
