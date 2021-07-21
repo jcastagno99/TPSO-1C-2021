@@ -40,6 +40,7 @@ void crear_estructuras_administrativas()
 			un_frame->pagina_a_la_que_pertenece = NULL;
 			un_frame->pid_duenio = 0;
 			un_frame->indice_pagina = 0;
+			un_frame->espacio_ocupado = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			un_frame->mutex = malloc(sizeof(pthread_mutex_t));
 			pthread_mutex_init(un_frame->mutex,NULL);
 			offset += mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -653,6 +654,8 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
+	traerme_todo_el_tcb_a_memoria(tcb,patota);
+
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
 	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
@@ -1091,6 +1094,41 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		i++;
 	}
 
+	//BORRAR AL TRIPULANTE DEL MAPA
+
+	//Esto asi funciona si el tripulante ocupa 2 o menos paginas, no mas, no se que tanto rebuscarmela, para que pase
+	//la pagina tendria que ser de 16 bytes o menos (son en potencia de 2)
+	t_pagina* auxiliar_pagina = list_get(patota->paginas,tcb->indice);
+	int contador = 0;
+	int indice = tcb->indice;
+	int offset = tcb->offset;
+	while(contador < 21){
+		if(auxiliar_pagina->presente){
+			int lo_que_ocupa = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
+			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+			t_frame_en_memoria* frame = list_get(frames,indice);
+			if(frame->espacio_ocupado - lo_que_ocupa > 0){
+				log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero ningun frame resulto herido\n",auxiliar_pagina->id_pagina,patota->id_patota);
+				frame->espacio_ocupado -= lo_que_ocupa;
+				log_info(logger_ram_hq,"El frame %i sigue vivo por %i bytes",indice,frame->espacio_ocupado);
+				contador += lo_que_ocupa;
+				auxiliar_pagina = list_get(patota->paginas,indice +1);
+				offset = 0;
+				indice ++;
+			}
+			else{
+				log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
+				frame->libre = 1;
+				frame->espacio_ocupado = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+				contador += 21;
+				//achurarlo en la estructura administrativa
+			}
+		}
+		else{
+			log_info(logger_ram_hq,logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero como no estaba en memoria, murio solo y en silencio\n",auxiliar_pagina->id_pagina,patota->id_patota);
+			//achurarlo en la estructura administrativa
+		}	
+	}
 	//FALTA EXPULSARLO COMO TAL: ESPERAR A QUE RESPONDA EL ISSUE
 	return RESPUESTA_OK;
 }
@@ -1211,14 +1249,75 @@ respuesta_ok_fail actualizar_estado_paginacion(uint32_t tid, estado estado,int s
 		i++;
 	}
 
+
 	double indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t);
 	double offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
+	//lockear_memoria();
+	traerme_todo_el_tcb_a_memoria(tcb,patota);
 	escribir_un_char_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,char_estado,patota);
+	//deslockear_memoria();
 
 	free(tcb);
 	return RESPUESTA_OK;
+}
+
+void traerme_todo_el_tcb_a_memoria(inicio_tcb* tcb, t_tabla_de_paginas* patota){
+
+	t_pagina* auxiliar_pagina = list_get(patota->paginas,tcb->indice);
+	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - tcb->offset;
+	int contador = 0;
+	int indice = tcb->indice;
+
+	t_frame_en_memoria* frame;
+
+	while(contador < 21){
+		pthread_mutex_lock(auxiliar_pagina->mutex_pagina);
+		if(!auxiliar_pagina->presente){
+			frame = buscar_frame_libre();
+			if(!frame){
+				if(!strcmp(mi_ram_hq_configuracion->ALGORITMO_REEMPLAZO,"LRU")){
+					frame = sustituir_LRU();
+				}
+				if(!strcmp(mi_ram_hq_configuracion->ALGORITMO_REEMPLAZO,"CLOCK")){
+					frame = sustituir_CLOCK();
+				}
+			}
+			pthread_mutex_lock(frame->mutex);
+			auxiliar_pagina->presente = 1;
+			auxiliar_pagina->inicio_memoria = frame->inicio;
+			auxiliar_pagina ->uso = 1;
+			frame->pagina_a_la_que_pertenece = auxiliar_pagina;
+			frame->indice_pagina = auxiliar_pagina->id_pagina;
+			frame->pid_duenio = patota->id_patota;
+			memcpy(frame->inicio,auxiliar_pagina->inicio_swap,mi_ram_hq_configuracion->TAMANIO_PAGINA);
+			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
+			frame_y_pagina->frame = frame;
+			frame_y_pagina->pagina = auxiliar_pagina;
+			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(frame->mutex);
+		}
+		else if(auxiliar_pagina->presente){
+			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+			t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+			frame = frame_y_pagina->frame;
+			pthread_mutex_lock(frame->mutex);
+			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(frame->mutex);
+		}
+		if(tamanio_disponible_pagina < 21){
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			contador += (21-tamanio_disponible_pagina);
+			auxiliar_pagina = list_get(patota->paginas,indice + 1);
+			indice ++;
+			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		}
+		else if(tamanio_disponible_pagina >= 21){
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			contador += 21;
+		}
+	}
 }
 
 void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_tabla_de_paginas* patota){
@@ -2170,8 +2269,8 @@ void actualizar_pagina(t_pagina* pagina){
 
 
 t_frame_en_memoria* sustituir_CLOCK() {
-	log_info(logger_ram_hq,"inicio algoritmo de sustitucion Clock Modificado");
-	t_frame_en_memoria* frame_libre = iterar_clock_sobre_frames(0);
+	log_info(logger_ram_hq,"inicio algoritmo de sustitucion Clock");
+	t_frame_en_memoria* frame_libre = iterar_clock_sobre_frames();
 	if(frame_libre)
 		return frame_libre;
 	frame_libre = iterar_clock_sobre_frames(1);
@@ -2184,7 +2283,7 @@ t_frame_en_memoria* sustituir_CLOCK() {
 	return frame_libre;
 }
 
-t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
+t_frame_en_memoria* iterar_clock_sobre_frames(){
 	t_pagina_y_frame* una_pagina_con_su_frame = malloc(sizeof(t_pagina_y_frame));
 	t_pagina_y_frame* pagina_con_frame_quitadas = malloc(sizeof(t_pagina_y_frame));
 	pagina_con_frame_quitadas->pagina = NULL;
@@ -2202,7 +2301,7 @@ t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
 		una_pagina_con_su_frame->pagina = una_pagina_con_su_frame->frame->pagina_a_la_que_pertenece;
 
 			//chequear por caso (0,0) que esta escribiendo igualmente en swap
-		if (!una_pagina_con_su_frame->pagina->uso && una_pagina_con_su_frame->pagina->fue_modificada == paso) {
+		if (!una_pagina_con_su_frame->pagina->uso) {
 			actualizar_pagina(una_pagina_con_su_frame->pagina);
 			pagina_con_frame_quitadas->frame = una_pagina_con_su_frame->frame;
 			pagina_con_frame_quitadas->pagina = pagina_con_frame_quitadas->frame->pagina_a_la_que_pertenece;
@@ -2212,7 +2311,6 @@ t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
 			else
 				puntero_lista_frames_clock = indice + 1;
 		}else{
-			if(paso == 1)
 			una_pagina_con_su_frame->pagina->uso = 0;
 		}
 	}
@@ -2225,9 +2323,18 @@ t_frame_en_memoria* iterar_clock_sobre_frames(int paso){
 		return a_retornar;
 	}
 	else{
+		a_retornar = list_get(frames,valor_original_puntero);
+		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %s", a_retornar->pagina_a_la_que_pertenece->id_pagina);
+		actualizar_pagina(a_retornar->pagina_a_la_que_pertenece);
+		a_retornar->pagina_a_la_que_pertenece->presente = 0;
+		if(puntero_lista_frames_clock + 1 == frames->elements_count){
+			puntero_lista_frames_clock = 0;
+		}
+		else 
+			puntero_lista_frames_clock ++;
 		free(pagina_con_frame_quitadas);
 		free(una_pagina_con_su_frame);
-		return NULL;
+		return a_retornar;
 	}
 }
 

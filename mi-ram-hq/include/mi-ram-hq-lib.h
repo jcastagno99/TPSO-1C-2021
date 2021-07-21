@@ -102,7 +102,8 @@ typedef struct{
 	pthread_mutex_t* mutex;
 	bool libre;
 	uint32_t pid_duenio;
-	uint32_t indice_pagina; 
+	uint32_t indice_pagina;
+	double espacio_ocupado;
 
 }t_frame_en_memoria;
 
@@ -179,7 +180,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
 //Buscar frames
 t_frame_en_memoria* buscar_frame_libre();
 t_list* buscar_cantidad_frames_libres(int);
-int buscar_frame_y_pagina_con_tid_y_pid(int,int);
+int buscar_frame_y_pagina_con_tid_pid(int,int);
 
 
 //Escribir en memoria un segmento
@@ -207,7 +208,8 @@ void inicializar_swap();
 t_frame_en_memoria* sustituir_LRU();
 t_frame_en_memoria* sustituir_CLOCK();
 void actualizar_pagina(t_pagina*);
-t_frame_en_memoria* iterar_clock_sobre_frames(int);
+t_frame_en_memoria* iterar_clock_sobre_frames();
+void traerme_todo_el_tcb_a_memoria(inicio_tcb*, t_tabla_de_paginas*);
 
 
 //Otros paginacion
