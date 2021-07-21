@@ -241,7 +241,9 @@ void recorrer_tripulante(t_segmento * );
 
 //Funciones para los signal
 void sighandlerImpresionPatotas(int);
-void sighandlerCompactacion (int);
+void sighandlerCompactacion(int);
+void sighandlerLiberarPaginacion(int);
+void explotar_la_nave();
 
 #endif /* MI_RAM_HQ_LIB_H */
 

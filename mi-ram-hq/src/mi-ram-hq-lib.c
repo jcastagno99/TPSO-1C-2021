@@ -50,6 +50,7 @@ void crear_estructuras_administrativas()
 		inicializar_swap();
 		puntero_lista_frames_clock = 0;
 		historial_uso_paginas = list_create();
+		//signal(SIGINT,sighandlerLiberarPaginacion);
 	}
 	else
 	{
@@ -59,7 +60,7 @@ void crear_estructuras_administrativas()
 
 mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 {
-	t_config *config_aux = config_create(path);
+	t_config* config_aux = config_create(path);
 	mi_ram_hq_config *config_mi_ram_hq_aux = malloc(sizeof(mi_ram_hq_config));
 
 	config_mi_ram_hq_aux->TAMANIO_MEMORIA = config_get_int_value(config_aux, "TAMANIO_MEMORIA");
@@ -538,22 +539,12 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 		log_info(logger_ram_hq,"La informacion se guardo satisfactoriamente en el almacenamiento secundario");	
 	}
 
-	if(patota->id_patota == 3){
-		uint32_t tida = 0;
-		char j = 'a';
-		t_pagina* auxx = list_get(patota->paginas,3);
-		memcpy(&tida,auxx->inicio_swap+1,4);
-		memcpy(&j,auxx->inicio_swap+5,1);
-		int qq = 3+3+3+3;
-		int banana;
-	}
-
-
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas correctamente");
 
 	list_destroy(frames_patota);
+	free(patota_con_tareas_y_tripulantes.stream);
 	return RESPUESTA_OK;
 }
 
@@ -1100,11 +1091,11 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 	//la pagina tendria que ser de 16 bytes o menos (son en potencia de 2)
 	t_pagina* auxiliar_pagina = list_get(patota->paginas,tcb->indice);
 	int contador = 0;
-	int indice = tcb->indice;
-	int offset = tcb->offset;
+	int indice_pagina = tcb->indice;
+	int offset_tcb = tcb->offset;
 	while(contador < 21){
 		if(auxiliar_pagina->presente){
-			int lo_que_ocupa = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
+			int lo_que_ocupa = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_tcb;
 			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
 			t_frame_en_memoria* frame = list_get(frames,indice);
 			if(frame->espacio_ocupado - lo_que_ocupa > 0){
@@ -1112,9 +1103,9 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 				frame->espacio_ocupado -= lo_que_ocupa;
 				log_info(logger_ram_hq,"El frame %i sigue vivo por %i bytes",indice,frame->espacio_ocupado);
 				contador += lo_que_ocupa;
-				auxiliar_pagina = list_get(patota->paginas,indice +1);
-				offset = 0;
-				indice ++;
+				auxiliar_pagina = list_get(patota->paginas,indice_pagina +1);
+				offset_tcb = 0;
+				indice_pagina ++;
 			}
 			else{
 				log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
@@ -1125,7 +1116,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 			}
 		}
 		else{
-			log_info(logger_ram_hq,logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero como no estaba en memoria, murio solo y en silencio\n",auxiliar_pagina->id_pagina,patota->id_patota);
+			log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero como no estaba en memoria, murio solo y en silencio\n",auxiliar_pagina->id_pagina,patota->id_patota);
 			//achurarlo en la estructura administrativa
 		}	
 	}
@@ -1369,7 +1360,7 @@ void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_ta
 			offset_lectura += tamanio_disponible_pagina;
 			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			auxiliar_pagina->fue_modificada = 1;
-			auxiliar_pagina->uso;
+			auxiliar_pagina->uso = 1;
 			auxiliar_pagina = list_get(patotas,indice+1);
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 		}
@@ -2151,6 +2142,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes){
 		t_frame_en_memoria* frame = list_get(frames,i);
 		printf("Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
 	}
+	free(time);
 }
 
 /*
@@ -2271,15 +2263,6 @@ void actualizar_pagina(t_pagina* pagina){
 t_frame_en_memoria* sustituir_CLOCK() {
 	log_info(logger_ram_hq,"inicio algoritmo de sustitucion Clock");
 	t_frame_en_memoria* frame_libre = iterar_clock_sobre_frames();
-	if(frame_libre)
-		return frame_libre;
-	frame_libre = iterar_clock_sobre_frames(1);
-	if(frame_libre)
-		return frame_libre;
-	frame_libre = iterar_clock_sobre_frames(0);
-	if(frame_libre)
-	return frame_libre;
-	frame_libre = iterar_clock_sobre_frames(1);
 	return frame_libre;
 }
 
@@ -2324,7 +2307,7 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 	}
 	else{
 		a_retornar = list_get(frames,valor_original_puntero);
-		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %s", a_retornar->pagina_a_la_que_pertenece->id_pagina);
+		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %i", a_retornar->pagina_a_la_que_pertenece->id_pagina);
 		actualizar_pagina(a_retornar->pagina_a_la_que_pertenece);
 		a_retornar->pagina_a_la_que_pertenece->presente = 0;
 		if(puntero_lista_frames_clock + 1 == frames->elements_count){
@@ -2385,3 +2368,41 @@ void funcion_test_memoria_completa (void){
 	pthread_mutex_unlock(&mutex_memoria);
 	
 }
+
+void sighandlerLiberarPaginacion(int signum){
+	log_info(logger_ram_hq,"Llego la señal para evacuar el modulo");
+	//explotar_la_nave();
+	signal(SIGINT,sighandlerLiberarPaginacion);
+}
+
+
+//ESTA FUNCION ES ALGO MALO, ALGOOOO MAAAAAALO (NO USAR) / Salvo que se quiera que valgrind putee
+/*
+void explotar_la_nave(){
+	log_info(logger_ram_hq,"¡Los reactores de la nave se sobrecalentaron y estan a punto de explotar! \n Liberando todos los recursos..");
+	for(int i=0; i<patotas->elements_count; i++){
+		t_tabla_de_paginas* auxiliar_patota = list_get(patotas,i);
+		for(int j=0; j<auxiliar_patota->paginas->elements_count; i++){
+			t_pagina* auxiliar_pagina = list_get(auxiliar_patota->paginas,j);
+			pthread_mutex_destroy(auxiliar_pagina->mutex_pagina);
+			free(auxiliar_pagina->mutex_pagina);
+		}
+		for(int k=0; k<auxiliar_patota->tareas->elements_count; k++){
+			tarea_ram* tarea_aux = list_get(auxiliar_patota->tareas,k);
+			free(tarea_aux);
+		}
+		list_destroy_and_destroy_elements(auxiliar_patota->paginas,free);
+		list_destroy_and_destroy_elements(auxiliar_patota->tareas,free);
+		pthread_mutex_destroy(auxiliar_patota->mutex_tabla_paginas);
+	}
+	list_destroy_and_destroy_elements(patotas,free);
+	free(memoria_principal);
+	free(memoria_swap);
+	pthread_mutex_destroy(&mutex_memoria);
+	pthread_mutex_destroy(&mutex_swap);
+	list_destroy_and_destroy_elements(historial_uso_paginas,free);
+	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");
+	config_destroy()....
+}*/
+
+
