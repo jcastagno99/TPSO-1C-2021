@@ -700,7 +700,7 @@ int crear_conexion(char *ip, char* puerto)
 t_paquete* recibir_paquete(int socket){
 	t_paquete * paquete = malloc(sizeof(t_paquete));
 	int res = recv(socket,&paquete->codigo_operacion,sizeof(op_code),0);
-	printf("el codigo de operacion es: %i \n", paquete->codigo_operacion);
+	//printf("el codigo de operacion es: %i \n", paquete->codigo_operacion);
 	if (res <= 0 ){
 		close(socket);
 		free(paquete);
@@ -709,7 +709,7 @@ t_paquete* recibir_paquete(int socket){
 	
 
 	res = recv(socket,&paquete->size,sizeof(uint32_t),0);
-	printf("el size del paquete es: %i \n",paquete->size);
+	//printf("el size del paquete es: %i \n",paquete->size);
 	if(res <= 0){
 		close(socket);
 		free(paquete);

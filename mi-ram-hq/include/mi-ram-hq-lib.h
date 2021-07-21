@@ -245,6 +245,32 @@ void sighandlerCompactacion(int);
 void sighandlerLiberarPaginacion(int);
 void explotar_la_nave();
 
+//Mapa
+typedef enum
+{
+	ARRIBA,
+	ABAJO,
+	IZQUIERDA,
+	DERECHA
+} direccion;
+
+#define ASSERT_CREATE(nivel, id, err)                                                   \
+    if(err) {                                                                           \
+        nivel_destruir(nivel);                                                          \
+        nivel_gui_terminar();                                                           \
+        fprintf(stderr, "Error al crear '%c': %s\n", id, nivel_gui_string_error(err));  \
+        return EXIT_FAILURE;                                                            \
+    }
+
+NIVEL* nivel;
+int cols, rows;
+
+void crear_mapa ();
+char obtener_caracter_mapa (uint32_t);
+void crear_tripulante_mapa (nuevo_tripulante_sin_pid *);
+char obtener_caracter_mapa (uint32_t);
+void mover_tripulante_mapa (char,direccion);
+
 #endif /* MI_RAM_HQ_LIB_H */
 
 
