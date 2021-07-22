@@ -305,7 +305,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		imprimir_dump_paginacion();
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
-		imprimir_dump();
+		//imprimir_dump();
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
 	liberar_paquete(paquete);
@@ -2230,19 +2230,27 @@ void recorrer_tripulante(t_segmento * tripulante){
 
 
 void imprimir_dump(void){
-	log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
-	log_info(logger_ram_hq,"Dump: %s \n",time);
+	
+	char * time =  temporal_get_string_time("%d-%m-%y_%H:%M:%S");
+	char * path_dump = malloc (100);
+	strcpy(path_dump,"cfg/DMP_");
+	strcat(path_dump,time);
+	strcat(path_dump,".dmp");
+
+	t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
+	
+	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"Dump: %s \n",time);
 	free(time);
 	for(int i = 0;i < patotas->elements_count;i++){
 		t_segmentos_de_patota* patota = list_get(patotas,i);
 		uint32_t pid = obtener_patota_memoria(patota->segmento_pcb);
 		//recorrer_pcb_dump(pid,patota->segmento_pcb);
-		log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_pcb->numero_segmento,patota->segmento_pcb->inicio_segmento,patota->segmento_pcb->tamanio_segmento);
+		log_info(log_dump,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_pcb->numero_segmento,patota->segmento_pcb->inicio_segmento,patota->segmento_pcb->tamanio_segmento);
 		//recorrer_tareas_dump(pid,patota->segmento_tarea);
-		log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_tarea->numero_segmento,patota->segmento_tarea->inicio_segmento,patota->segmento_tarea->tamanio_segmento);
+		log_info(log_dump,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_tarea->numero_segmento,patota->segmento_tarea->inicio_segmento,patota->segmento_tarea->tamanio_segmento);
 		pthread_mutex_lock(patota->mutex_segmentos_tripulantes);
-		recorrer_tcb_dump(pid,patota->segmentos_tripulantes);
+		recorrer_tcb_dump(pid,patota->segmentos_tripulantes,log_dump);
 		pthread_mutex_unlock(patota->mutex_segmentos_tripulantes);
 	}
 }
@@ -2266,10 +2274,10 @@ void recorrer_pcb_dump(t_segmento* pcb){
 void recorrer_tareas_dump(uint32_t pid,t_segmento* tareas){
 	log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,tareas->numero_segmento,tareas->inicio_segmento,tareas->tamanio_segmento);
 }
-void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes){
+void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 	for(int i = 0;i < tripulantes->elements_count;i++){
 		t_segmento * tripulante = list_get(tripulantes,i);
-		log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,tripulante->numero_segmento,tripulante->inicio_segmento,tripulante->tamanio_segmento);
+		log_info(log_dump,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,tripulante->numero_segmento,tripulante->inicio_segmento,tripulante->tamanio_segmento);
 	}
 }
 
@@ -2490,14 +2498,15 @@ void sighandlerCompactacion(int signum) {
 	log_info(logger_ram_hq,"Llego señal de compactacion, procedo a compactar");
 	pthread_mutex_lock(&mutex_iniciar_patota);
 	compactar_memoria();
-	imprimir_dump();
+	//imprimir_dump();
 	pthread_mutex_unlock(&mutex_iniciar_patota);
 	signal(SIGUSR1, sighandlerCompactacion);
 }
 
 void sighandlerImpresionPatotas(int signum) {
 	log_info(logger_ram_hq,"Llego señal de impresion de patotas");
-	funcion_test_memoria_completa();
+	//funcion_test_memoria_completa();
+	imprimir_dump();
 	signal(SIGUSR2, sighandlerImpresionPatotas); 
 }
 

@@ -228,7 +228,7 @@ char obtener_char_estado (estado);
 void imprimir_dump(void);
 void recorrer_pcb_dump(t_segmento*);
 void recorrer_tareas_dump(uint32_t,t_segmento*);
-void recorrer_tcb_dump(uint32_t,t_list*);
+void recorrer_tcb_dump(uint32_t,t_list*,t_log*);
 void imprimir_dump_paginacion(void);
 
 
