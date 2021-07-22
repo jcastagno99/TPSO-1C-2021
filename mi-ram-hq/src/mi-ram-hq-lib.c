@@ -12,7 +12,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
 	signal(SIGUSR2, sighandlerImpresionPatotas);  //12
-	//crear_mapa ();
+	crear_mapa ();
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -80,9 +80,8 @@ mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 t_log *iniciar_logger_mi_ram_hq(char *path)
 {
 
-	//t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -594,24 +593,7 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 				memcpy(&pos_y,segmento_tripulante_auxiliar -> inicio_segmento + offset_y,sizeof(uint32_t)); 
 				pthread_mutex_unlock(&mutex_memoria);	
 				
-				direccion direc;
-				if(pos_x == tripulante_con_posicion.pos_x){
-					//posicion nueva es menor a la vieja en y -> ABAJO
-					if(tripulante_con_posicion.pos_y < pos_y)
-						direc = ABAJO;
-					//posicion nueva es mayor a la vieja en y -> ARRIBA
-					else
-						direc = ARRIBA;
-				}
-				else{
-					//posicion nueva es menor a la vieja en x -> IZQUIERDA
-					if(tripulante_con_posicion.pos_x < pos_x)
-						direc = IZQUIERDA;
-					//posicion nueva es mayor a la vieja en x -> DERECHA
-					else
-						direc = DERECHA;
-				}
-	
+				direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);	
 				mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
 				
 				//obtengo pid para informar
@@ -1202,6 +1184,10 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 					segmento_aux = list_get(segmentos_memoria,k);
 					pthread_mutex_lock(segmento_aux->mutex_segmento);
 					if((int)(segmento_aux->inicio_segmento) == (int)(tripulante_aux->inicio_segmento)){
+						
+
+						item_borrar(nivel,obtener_caracter_mapa(tid));
+						nivel_gui_dibujar(nivel);
 						
 						//obtengo su pid para informarlo
 						uint32_t pid;
@@ -2489,4 +2475,26 @@ void crear_tripulante_mapa (nuevo_tripulante_sin_pid * tripulante){
 char obtener_caracter_mapa (uint32_t tid){
 	char ret = ('a'+tid-1);
 	return ret;
+}
+
+direccion obtener_direccion_movimiento_mapa(uint32_t pos_nueva_x,uint32_t pos_nueva_y,uint32_t pos_vieja_x,uint32_t pos_vieja_y){
+
+	direccion direc;
+	if(pos_vieja_x == pos_nueva_x){
+		//posicion nueva es menor a la vieja en y -> ABAJO
+		if(pos_nueva_y < pos_vieja_y)
+			direc = ABAJO;
+		//posicion nueva es mayor a la vieja en y -> ARRIBA
+		else
+			direc = ARRIBA;
+	}
+	else{
+		//posicion nueva es menor a la vieja en x -> IZQUIERDA
+		if(pos_nueva_x < pos_vieja_x)
+			direc = IZQUIERDA;
+		//posicion nueva es mayor a la vieja en x -> DERECHA
+		else
+			direc = DERECHA;
+	}
+	return direc;
 }
