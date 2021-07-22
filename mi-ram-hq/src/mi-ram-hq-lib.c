@@ -440,7 +440,8 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	return RESPUESTA_OK;
 }
 
-respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
+respuesta_ok_fail 
+iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
 {
 	uint32_t pid;
 	memcpy(&pid,patota_con_tareas_y_tripulantes.stream,sizeof(uint32_t));
@@ -1442,7 +1443,7 @@ void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_ta
 			pthread_mutex_lock(frame->mutex);
 			auxiliar_pagina->presente = 1;
 			auxiliar_pagina->inicio_memoria = frame->inicio;
-			auxiliar_pagina ->uso = 1;
+			auxiliar_pagina->uso = 1;
 			frame->pagina_a_la_que_pertenece = auxiliar_pagina;
 			frame->indice_pagina = auxiliar_pagina->id_pagina;
 			frame->pid_duenio = patota->id_patota;
