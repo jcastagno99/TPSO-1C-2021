@@ -11,19 +11,19 @@ INICIAR_PATOTA 1 oxigeno.txt 5|5
 LISTAR_TRIPULANTES
 INICIAR_PLANIFICACION
 PAUSAR_PLANIFICACION
-LISTAR_TRIPULANTES
+EXPULSAR_TRIPULANTE 3
 ````
 
 #### Ejecución del  mi-ram-hq e i-mongo-store
 
-Pide parámetros por consola usar `./exec` en estos módulos para ejecutar o:
+Usar `./exec` para ejecutar y compilar. Solo `make` para compilar. `make clean` para borrar los ejecutables. Para usar valgrind `./vexec` 
 
+
+#### Ver logs filtrados
+Ubicarse en el /cfg antes de ejecutar el comando
 ````powershell
-./mi-ram-hq cfg/mi-ram-hq.config cfg/mi-ram-hq.log
-./i-mongo-store cfg/i-mongo-store.config cfg/i-mongo-store.log
+cat discordiador.log | grep "Tripulante 1"
 ````
-
-
 
 
 ## Integrantes
@@ -40,15 +40,24 @@ Pide parámetros por consola usar `./exec` en estos módulos para ejecutar o:
 ## Manejo de señales
 
 La forma de enviar señales a un proceso es con el comando:
+````powershell
 kill -SIGNAL <pid>
+````
 
 Para mandar una señal a mi-ram-hq debemos saber el pid que posee
 Uso pgrep <nombrePrograma>
--> pgrep mi-ram-hq
+````powershell
+pgrep mi-ram-hq
+````
+
 
 Con ese pid tiro cualquiera de las 2 señales configuradas, SIGUSR1 y SIGUSR2 .
--> kill -SIGUSR1 <pid> o kill -SIGUSR2
+````powershell
+kill -SIGUSR1 <pid> o kill -SIGUSR2
+````
+
 
 SIGUSR1 va a generar la compactacion
-SIGUSR2 va a loggear toda la informacion en memoria actualmente. Esta no fue pedida pero la desarrollamos pensando en su utilidad para saber que esta pasando en cierto momento en memoria. 
+SIGUSR2 va a loggear toda la informacion en memoria actualmente. 
 
+Esta no fue pedida pero la desarrollamos pensando en su utilidad para saber que esta pasando en cierto momento en memoria. 

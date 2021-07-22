@@ -11,6 +11,7 @@ typedef enum
     INIT_PLANIFICATION,
     PAUSE_PLANIFICATION,
     GET_BINNACLE,
+    QUIT,
     NO_VALIDO
 } Comando_Discordiador;
 

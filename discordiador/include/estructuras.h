@@ -21,8 +21,8 @@ typedef struct
     int parametro;
     int pos_x;
     int pos_y;
-    int tiempo;
-    bool es_de_sabotaje;
+    int tiempo_restante;
+    int tiempo_total;
 } dis_tarea;
 
 typedef struct
@@ -45,7 +45,6 @@ typedef struct
 typedef struct
 {
     int id_patota;
-    //t_list *list_tareas; YA NO SE USA y tampoco lo debemos tener
     int cantidad_de_tareas;
 } dis_patota;
 

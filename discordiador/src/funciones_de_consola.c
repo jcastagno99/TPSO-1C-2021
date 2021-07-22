@@ -90,7 +90,9 @@ void iniciar_patota(char **str_split)
         //destroy_pid_con_tareas_y_tripulantes(patota_full); //YA NO ME SIRVE
         log_error(logger, "[ MI-RAM-HQ ]  No se pudo crear la patota");
     }
-        
+    // LIBERANDO MEMORIA
+    free(paquete_recibido->stream); // recibir_paquete usa un malloc 
+    free(paquete_recibido);
 }
 
 // Carga las estrucuras localmente
@@ -120,7 +122,10 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
         list_add(list_total_tripulantes, tripulante); // [TODO] esto lo pondre en el for de confirmacion [PENDIENTE]
         
         pthread_t hilo_tripulante;
-        pthread_create(&hilo_tripulante, NULL, (void *)ejecucion_tripulante, (int *)tripulante->id);
+        pthread_attr_t atributo_hilo;
+        pthread_attr_init(&atributo_hilo);
+        pthread_attr_setdetachstate(&atributo_hilo, PTHREAD_CREATE_DETACHED);
+        pthread_create(&hilo_tripulante, &atributo_hilo, (void *)ejecucion_tripulante, (int *)tripulante->id);
         tripulante->threadid = hilo_tripulante;
 
         sem_post(&sem_contador_cola_de_new);
@@ -133,18 +138,15 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
     new_patota->cantidad_de_tareas = patota_full->tareas->elements_count;
     list_add(lista_de_patotas, new_patota);
 
-    //destroy_pid_con_tareas_y_tripulantes(patota_full); //CUIDADO CON ESTO HACIA SEGMENT FAULT QUISA CON ALGUNA ACTUALIZACION DE LAS ESTRUCTURAS
+    destroy_pid_con_tareas_y_tripulantes(patota_full); //CUIDADO CON ESTO HACIA SEGMENT FAULT QUISA CON ALGUNA ACTUALIZACION DE LAS ESTRUCTURAS
 }
 
 //  FUNCION DEL HILO: TRIPULANTE ----------------------------
 void ejecucion_tripulante(int indice)
 {
     dis_tripulante *trip = list_get(list_total_tripulantes, indice - 1);
-
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
-
     dis_tarea *tarea = pedir_tarea_miriam((uint32_t)trip->id);
-    log_info(logger,"[ Tripulante %d ] pidio una tarea a MI-RAM-HQ y recibio %s\n",trip->id,tarea->nombre_tarea);
     // ESTOY EN EXEC voy a ejecutar la tarea que tengo
 
     while (tarea != NULL){
@@ -152,17 +154,13 @@ void ejecucion_tripulante(int indice)
         trip->tarea_actual = tarea;
         while (trip->tarea_actual->estado_tarea == EN_CURSO)
         {
-            // CUANDO la tarea sea de sabotaje va a poder ejecutarse por si solo sin signals que mande el plani corto plazo (éste, en sabotaje, debe estar pausado [ALTAS ESFERAS])
-            //if (!(trip->tarea_actual->es_de_sabotaje))
             sem_wait(&(trip->sem_tri));
             realizar_operacion(trip->tarea_actual, trip);
-            // NO pord dios ese log de la linea 180
-            //log_info(logger, "[ Tripulante %i ] Tarea %s en estado %i. El estado TERMINADO es %i", trip->id, tarea->nombre_tarea, trip->tarea_actual->estado_tarea, TERMINADA);
         }
         log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, trip->tarea_actual->nombre_tarea);
         // Sale porque la funcion cambia realizar_operacion() : tarea->estado_tarea = TERMINADA;
         /*  1. NOTIFICAR A IMONGO que la tarea finalizo ? Para la BITACORA
-            2. LIBERAR RECURSO de la tarea (free_tarea(*tarea))
+            2. LIBERAR RECURSO de la tarea (free_tarea(*tarea)) // >CUIDADO liberarla si no es sabotaje justo antes de pedir una nueva tarea
         */
 
         // Solo el trip que tenga una tarea con nombre SABOTAJE podra entrar en el IF
@@ -171,45 +169,28 @@ void ejecucion_tripulante(int indice)
             sem_wait(&sem_sabotaje);
             sem_post(&sem_sabotaje_fin);
         }
-        else
-        {
-            printf("\033[1;34mTRIP %d : pidiendo prox TAREA\033[0m\n",trip->id);
-            tarea = pedir_tarea_miriam((uint32_t)trip->id);
-            if (tarea!=NULL)
-                log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, trip->tarea_actual->nombre_tarea);
+        else{
+            // ME asegura que no pida una nueva TAREA si ya fue EXPULSADO (pasaba si se mandaba el mensaje de EXPULSAR justo cuando termina una TAREA)
+            if (trip->expulsado != true){
+                
+                // LIBERAR MEMORIA DE LA TAREA ANTERIOR
+                free_distarea(tarea);
+                tarea = pedir_tarea_miriam((uint32_t)trip->id);
+            }
+            else 
+                break;
         }
     }
-    // EL TRIPULANTE YA NO TIENE MAS TAREAS POR REALIZAR
-    log_info(logger, "[ Tripulante %i ] Lista de tareas TERMINADA. Estado %i. El de EXIT es %i. Saliendo de la nave...", trip->id, trip->estado, EXIT);
+    
+    if (trip->expulsado != true){
+        // EL TRIPULANTE YA NO TIENE MAS TAREAS POR REALIZAR
+        log_info(logger, "[ Tripulante %i ] Lista de tareas TERMINADA. Estado %i. El de EXIT es %i. Saliendo de la nave...", trip->id, trip->estado, EXIT);
+    }
+
 }
 
 void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
 {
-    if (chequear_tripulante_expulsado(trip))
-    {
-        switch (trip->estado)
-        {
-        case EXEC:
-            trip->estado = EXPULSADO;
-            actualizar_estado_miriam(trip->id,trip->estado);
-            sem_post(&(trip->procesador));
-            break;
-        case BLOCKED_E_S:
-            trip->estado = EXPULSADO;
-            actualizar_estado_miriam(trip->id,trip->estado);
-            sem_post(&operacion_entrada_salida_finalizada);
-            break;
-        default:
-            trip->estado = EXPULSADO;
-            actualizar_estado_miriam(trip->id,trip->estado);
-            break;
-        }
-        // Terminna el swicht y chau
-        int status = pthread_kill(trip->threadid, 0);
-        if (status < 0)
-            perror("pthread_kill failed");
-    }
-
     if (tarea->pos_x != trip->pos_x || tarea->pos_y != trip->pos_y)
     {
         int pos_vieja_x = trip->pos_x;
@@ -217,6 +198,7 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         mover_tri_hacia_tarea(tarea, trip);
         notificar_movimiento_a_miram(trip);
         log_info(logger, "[ Tripulante %i ] (%d,%d) => (%d,%d) | TAREA: %s - UBICACION: (%d,%d)", trip->id, pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
+        //guardar_movimiento_en_imongo(trip, tarea, pos_vieja_x, pos_vieja_y); [TODO]
         sleep(tiempo_retardo_ciclo_cpu);
         sem_post(&(trip->procesador));
     }
@@ -224,33 +206,35 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
     {
         // [TRIPULANTE] Estoy parado en la posicion de la tarea  --------------------------------
         // [TIPO TAREA] ESTE ES de la E/S el de caminar es el de arriba
+        // [TODO] enviar mensaje de tarea comenzada a imongo
+        if(tarea->tiempo_total == tarea->tiempo_restante){
+            printf("mandando msj a imongo\n");
+            //notificar_inicio_tarea_imongo(trip->id, tarea);
+        }
         if (tarea_es_de_entrada_salida(tarea))
         {
             // [VERIFICAMOS] Si ya realico el ciclo inicial de CPU de la tarea e/s
             if (trip->hice_ciclo_inicial_tarea_es)
             {
-                // Mandamos a mi-ram-hq
-                // send(operacion_con_recurso);
-                // recv(resultado_operacion_con_recurso);
-                // Lo dormimos todo el tiempo y seteamos el tiempo----------------
-                log_info(logger, "[ Tripulante %i ] Comenzando Tarea bloqueante %s. Duracion: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
+                log_info(logger, "[ Tripulante %i ] Comenzando Tarea bloqueante %s. Duracion: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
                 sleep(tiempo_retardo_ciclo_cpu);
-                tarea->tiempo--;
+                tarea->tiempo_restante--;
 
-                if (tarea->tiempo == 0)
+                if (tarea->tiempo_restante == 0)
                 {
+                    //notificar_fin_tarea_imongo(trip->id, tarea->nombre_tarea); [TODO]
                     log_info(logger, "[ Tripulante %i ] Tarea bloqueante %s TERMINADA", trip->id, tarea->nombre_tarea);
                     trip->estado = READY;
                     trip->hice_ciclo_inicial_tarea_es = false;
-                    trip->tareas_realizadas++; // TODO hay un error por aca. por alguna razon no se incrementa y no me pasa a exit al tripulante, por lo que los procesadores se bloquean
+                    trip->tareas_realizadas++;
                     tarea->estado_tarea = TERMINADA;
-
-                    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1); //TODO borrar estas 2 lineas
+                    // [TODO] mensaje a i-mongo de tarea terminada
+                    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
                     log_info(logger, "[ Tripulante %i ] Realizadas %i - Totales %i\n", trip->id, trip->tareas_realizadas, patota->cantidad_de_tareas);
                 }
                 else
                 {
-                    log_info(logger, "[ Tripulante %i ] Tarea bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
+                    log_info(logger, "[ Tripulante %i ] Tarea bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
                 }
 
                 sem_post(&operacion_entrada_salida_finalizada);
@@ -269,10 +253,9 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         {
             // [NO ES TAREA DE RECURSO E/S] ----------------------------------------
             //  POR LO QUE SOLO CONSUMIMOS DE A 1 EL TIEMPO
-            log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
+            log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
             sleep(tiempo_retardo_ciclo_cpu);
-            tarea->tiempo = tarea->tiempo - 1;
-            //log_info(logger, "[ Tripulante %i ] Ciclo de Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo);
+            tarea->tiempo_restante = tarea->tiempo_restante - 1;
             // ACTUALIZAMOS EL ESTADO DE LA TAREA
             chequear_tarea_terminada(tarea, trip);
             chequear_tripulante_finalizado(trip);
@@ -292,11 +275,10 @@ bool chequear_tripulante_expulsado(dis_tripulante *tripulante)
 
 void chequear_tarea_terminada(dis_tarea *tarea, dis_tripulante *tripulante)
 {
-    //log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo);
-    // log_info(logger, "[ Tripulante %i ] Tiempo %i", tripulante->id, tarea->tiempo);
-    if (tarea->tiempo == 0)
+    if (tarea->tiempo_restante == 0)
     {
-        log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo);
+        //notificar_fin_tarea_imongo(tripulante->id, tarea->nombre_tarea); [TODO]
+        log_info(logger, "[ Tripulante %i ] Tarea no bloqueante %s TERMINADA. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo_restante);
         tarea->estado_tarea = TERMINADA;
         
         if (strcmp(tarea->nombre_tarea, "SABOTAJE") != 0)
@@ -329,91 +311,42 @@ void listar_tripulantes()
     free(tiempo);
 }
 
-int get_indice(t_list* l,int id_trip){
-    for (int i = 0; i < l->elements_count; i++)
-    {
-        dis_tripulante* t = list_get(l,i);
-        if ( t->id == id_trip )
-            return i;   
-    }
-    return 666;
-} 
-
-//  CONSOLA: EXPULSAR_TRIPULANTE-----------------------------
-void expulsar_tripulante_local(int id)
-{
-    dis_tripulante *trip = list_get(list_total_tripulantes, id - 1);
-    // [MUTEX] Para asegurar que se eliminen de auno
-    pthread_mutex_lock(&(trip->mutex_expulsado));
-    trip->expulsado = true;
-    pthread_mutex_unlock(&(trip->mutex_expulsado));
-    
-    // [PARCHE] SI ESTA EN NEW, no deberia pedir tarea ni seguir estando en new
-    // [ISSUE] esto funciona, supongo que cuando este en READY cuando pase a exec se dara cuenta
-    if (trip->estado==NEW)
-    {
-        trip->estado=EXPULSADO;
-        actualizar_estado_miriam(trip->id,trip->estado);
-        sem_wait(&sem_contador_cola_de_new); // esto es para quitarle 1 push
-
-        //tengo que sacarlo de NEW porque se quedaria en esa cola/ listar trip usa la lista global
-        int indice = get_indice(cola_de_new,trip->id); // se podria fucionar con el list_remove con get_indice
-
-        pthread_mutex_lock(&mutex_cola_de_new);
-	    list_remove(cola_de_new, indice);
-	    pthread_mutex_unlock(&mutex_cola_de_new);
-
-        int status = pthread_kill(trip->threadid, 0);
-        if (status < 0)
-            perror("pthread_kill failed");
-    }
-    
-    if (trip->estado==READY && planificacion_pausada==true){ // Si no esta pausado corre el protocolo que acordamos
-        trip->estado=EXPULSADO;
-        actualizar_estado_miriam(trip->id,trip->estado);
-        sem_wait(&sem_contador_cola_de_ready); // De lo contrario el procesador pedira 1 trip mas cuando este vacia la lista de READY
-
-        int indice = get_indice(cola_de_ready,trip->id);
-
-        pthread_mutex_lock(&mutex_cola_de_ready);
-	    list_remove(cola_de_ready, indice);
-	    pthread_mutex_unlock(&mutex_cola_de_ready);
-
-        int status = pthread_kill(trip->threadid, 0);
-        if (status < 0)
-            perror("pthread_kill failed");
-    }
-    
-
-}
-
 /*******************************************************
 ***                   𝗠𝗜-𝗥𝗔𝗠 𝗛𝗤                   ***
 *******************************************************/
 
 dis_tarea* pedir_tarea_miriam(uint32_t tid)
 {
-    // PEDIR A MI-RAM-HQ -----------------------------------------
-    printf("\033[1;33mLinea 380 | %d * \033[0m\n",tid);
-    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-    void *info = pserializar_tid(tid); 
-    uint32_t size_paquete = sizeof(uint32_t);
-    printf("\033[1;33mLinea 380 | %d Pidiendo tarea \033[0m\n",tid);
-    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info);
-    printf("\033[1;33mLinea 380 | %d Tarea pedida! Recibiendo tarea ... \033[0m\n",tid);
-    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    printf("\033[1;33mLinea 380 | %d Paquete recibido!! \033[0m\n",tid);
-    char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
-    printf("\033[1;33mLinea 380 | %d Tarea deserializada! \033[0m\n",tid);
-    //Recibi tarea IRSE_A_DORMIR;9;9;1 del tripulante 1 PODEMOS LOGUEARLO
-    //printf("Recibi tarea %s del tripulante %d\n",tarea_recibida,tid);
-
-    if(strlen(tarea_recibida)==0){
-        printf("Ya no hay mas proxima tarea\n");
+    dis_tripulante *trip = list_get(list_total_tripulantes,tid - 1);
+    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
+    
+    if (trip->tareas_realizadas == patota->cantidad_de_tareas){
+        printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
         return NULL;
     }
     
+    printf("\033[1;34mTRIP %d : pidiendo prox TAREA\033[0m\n",tid);
+
+    // PEDIR A MI-RAM-HQ -----------------------------------------
+    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    void *info = pserializar_tid(tid); 
+    uint32_t size_paquete = sizeof(uint32_t);
+    enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
     close(conexion_mi_ram_hq);
+
+    free(paquete_recibido->stream); // recibir_paquete usa un malloc 
+    free(paquete_recibido); // no mover despues del return se pierde la ultima
+
+    // if(strlen(tarea_recibida)==0){
+    //     printf("Ya no hay mas proxima tarea\n");
+    //     free(tarea_recibida); // en el caso de la ultima
+    //     return NULL;
+    // }
+    log_info(logger,"[ Tripulante %d ] Pidio una tarea a MI-RAM-HQ y recibio %s\n",tid,tarea_recibida);
+
+
     
     // SPLITEAR TAREA RECIBIDA -------------------------------------------
     char **str_spl = string_split(tarea_recibida, ";");
@@ -433,11 +366,11 @@ dis_tarea* pedir_tarea_miriam(uint32_t tid)
 
     nueva_tarea->pos_x = atoi(str_spl[1]);
     nueva_tarea->pos_y = atoi(str_spl[2]);
-    nueva_tarea->tiempo = atoi(str_spl[3]);
-    nueva_tarea->es_de_sabotaje = false;// NUNCA LO USAMOS para identificar usamos que el nombre de la tarea sea "SABOTAJE"
-
+    nueva_tarea->tiempo_restante = atoi(str_spl[3]);
+    nueva_tarea->tiempo_total = atoi(str_spl[3]);
     liberar_lista_string(str_spl);
     liberar_lista_string(tarea_p);
+    free(tarea_recibida); // deserializar_tarea usa un malloc
     return nueva_tarea;
 }
 
@@ -505,9 +438,7 @@ int longitud_lista_string(char **lista)
 }
 
 // LIBERAR - DESTRUIR ------------------------------------
-void tarea_destroy(tarea *t)
-{
-    // USA tarea NO dis_tarea | Si quieres hacer con el otro cambialo
+void free_distarea(dis_tarea*t){
     free(t->nombre_tarea);
     free(t);
 }
@@ -522,11 +453,12 @@ void destroy_pid_con_tareas_y_tripulantes(pid_con_tareas_y_tripulantes *patota_f
 // ITERADORES - USO DE LAS COMMOS PARA LISTAS --------------
 void iterator(dis_tarea *t)
 { // [ITERAR USANDO COMMONS]
-    printf("%-18s | %3d | %3d | %3d | %3d\n", t->nombre_tarea, t->parametro, t->pos_x, t->pos_y, t->tiempo);
+    printf("%-18s | %3d | %3d | %3d | %3d\n", t->nombre_tarea, t->parametro, t->pos_x, t->pos_y, t->tiempo_restante);
 }
 
-t_list * armar_tareas_para_enviar(char *path)
+t_list * armar_tareas_para_enviar(char *nombre_archivo)
 {
+    char* path = string_from_format("finales/%s", nombre_archivo);
     FILE *archivo = fopen(path, "r");
     char caracteres[100];
     t_list *lista_tareas = list_create();
@@ -535,6 +467,7 @@ t_list * armar_tareas_para_enviar(char *path)
     {
         fgets(caracteres, 99, archivo);
         char * aux = malloc(strlen(caracteres));
+        //[SANTI] al aux le faltaria el +1 para almacenar el /0. En algunas ocasiones muy random me tira error. Gian fue testigo de ese error random. Revisar archivo de log de Valgrind
         if(caracteres[strlen(caracteres)-1] == '\n')
             caracteres[strlen(caracteres)-1] = '\0';
         //else
@@ -544,6 +477,7 @@ t_list * armar_tareas_para_enviar(char *path)
 
     }
     fclose(archivo);
+    free(path); // la commons genera un malloc
     return lista_tareas;
 }
 
@@ -559,10 +493,10 @@ void iterador_listar_tripulantes(dis_tripulante *t)
         status = "READY";
         break;
     case 2:
-        status = "EXEC";
+        status = "\033[1;32mEJECUTANDO\033[0m";
         break;
     case 3:
-        status = "BLOCK I/O";
+        status = "\033[1;34mBLOCK I/O\033[0m";
         break;
     case 4:
         status = "BLOCK SABOTAJE";
@@ -571,7 +505,7 @@ void iterador_listar_tripulantes(dis_tripulante *t)
         status = "EXIT";
         break;
     case 6:
-        status = "EXPULSADO";
+        status = "\033[1;31mEXPULSADO\033[0m";
         break;
     default:
         break;
@@ -623,4 +557,67 @@ bool tarea_es_de_entrada_salida(dis_tarea *tarea)
         return true;
 
     return false;
+}
+
+// MENSAJE PARA IMONGO
+
+void guardar_movimiento_en_imongo(dis_tripulante *trip, dis_tarea *tarea, int pos_vieja_x, int pos_vieja_y){
+    // int id_trip , char* log_desplazamiento
+    /*      id_trip : id del Tripulante
+            log_desplazamiento : "[ Tripulante 1 ] (2,1) => (3,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)"
+    */
+    char *msg = string_new();
+    string_from_format("(%d,%d) => (%d,%d) | TAREA: %s  - UBICACION: (%d,%d)", pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
+    int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+    void * info = serializar_trip_con_char(trip->id, msg);
+    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(msg) + 1;
+    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+    //[TODO] recibir el ok
+    close(conexion_i_mongo_store);
+    free(msg);
+}
+
+void *serializar_trip_con_char(uint32_t tid,char* palabra){
+    /*    [  tid  | longitud_tarea |  palabra  ]
+          uint32_t     uint32_t       uint32_t
+    */
+    int offset = 0;
+    uint32_t longitud_nombre = strlen(palabra) + 1;
+	void* stream = malloc(2*sizeof(uint32_t)+longitud_nombre);
+    memcpy(stream+offset,&tid,sizeof(uint32_t));
+    offset+= sizeof(uint32_t);
+	memcpy(stream+offset,&longitud_nombre,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	memcpy(stream+offset,palabra,longitud_nombre);
+    return stream;
+}
+
+void notificar_inicio_tarea_imongo(int id_trip , dis_tarea *tarea){
+    /*      id_trip : id del Tripulante
+            tarea : "GENERAR_OXIGENO 10;4;4;15"  la nesecita para saber cuanto de oxigeno va a generar
+    */
+    char *tarea_imongo = string_new();
+    string_append(&tarea_imongo, tarea->nombre_tarea);
+    string_append(&tarea_imongo, ";");
+    string_append(&tarea_imongo, string_itoa(tarea->parametro));
+    
+    int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+    void * info = serializar_trip_con_char(id_trip,tarea_imongo);
+    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea_imongo) + 1;
+    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+    //[TODO] recibir el ok
+    close(conexion_i_mongo_store);
+    free(tarea_imongo);
+}
+
+void notificar_fin_tarea_imongo(int id_trip , char* tarea){// char* nombre_tarea
+    /*      id_trip : id del Tripulante
+            tarea : "GENERAR_OXIGENO 10;4;4;15" / o "Fin de Trea GENERAR_OXIGENO" tarea->nombre
+    */
+    int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+    void * info = serializar_trip_con_char(id_trip,tarea);
+    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea) + 1;
+    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+    //[TODO] recibir el ok
+    close(conexion_i_mongo_store);
 }

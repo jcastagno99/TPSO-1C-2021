@@ -14,6 +14,8 @@ Comando_Discordiador obtener_comando(char *comando)
         return PAUSE_PLANIFICATION;
     if (strcmp(comando, "OBTENER_BITACORA") == 0)
         return GET_BINNACLE;
+    if (strcmp(comando, "q") == 0)
+        return QUIT;
     return NO_VALIDO; //Para el warning
 }
 
@@ -84,9 +86,11 @@ void validacion_sintactica(char *text)
         {
             printf("LISTAR_TRIPULANTES : OK\n");
             listar_tripulantes();
+
         }
         else
             log_warning(logger, "LISTAR_TRIPULANTES : no contiene parametros\n");
+        liberar_lista_string(str_split);    
         break;
 
     case EJECT_CREW:
@@ -104,6 +108,7 @@ void validacion_sintactica(char *text)
         }
         else
             printf("Parametros incorrectos/faltantes\n");
+        liberar_lista_string(str_split);
         break;
 
     case INIT_PLANIFICATION:
@@ -115,6 +120,7 @@ void validacion_sintactica(char *text)
         }
         else
             printf("INICIAR_PLANIFICACION : no contiene parametros\n");
+        liberar_lista_string(str_split);
         break;
 
     case PAUSE_PLANIFICATION:
@@ -125,6 +131,7 @@ void validacion_sintactica(char *text)
         }
         else
             printf("PAUSAR_PLANIFICACION : no contiene parametros\n");
+        liberar_lista_string(str_split);
         break;
 
     case GET_BINNACLE:
@@ -134,21 +141,22 @@ void validacion_sintactica(char *text)
             if (atoi(str_split[1]) != 0)
             {
                 printf("OBTENER_BITACORA : OK\n");
-                // [TODO]
+                // [TODO] Solo nesecito el id = atoi(str_split[1])
             }
             else
                 printf("OBTENER_BITACORA : id tripulante no es un [int]\n");
         }
         else
             printf("Parametros incorrectos/faltantes\n");
+        liberar_lista_string(str_split);
         break;
-
+    case QUIT:
+        terminar_programa();
     default:
         log_warning(logger, "COMANDO NO VALIDO");
         liberar_lista_string(str_split);
         break;
     }
-    // Para liberar una ves se termino el case. pero como lo gestiona un hilo [TODO]
     //liberar_lista_string(str_split);// Creo que cada uno lo debe gestionar si no ROMPE por que se pierde
 }
 
@@ -157,27 +165,10 @@ void validacion_sintactica(char *text)
 // FUNCION CON CONEXION
 void expulsar_tripulante (int tid){
 
-    int size_paquete = sizeof(uint32_t);
-    void *info = pserializar_tid(tid); 
+    dis_tripulante *tripulante = list_get(list_total_tripulantes, tid - 1);
+    
+    pthread_mutex_lock(&(tripulante->mutex_expulsado));
+    tripulante->expulsado = true;
+    pthread_mutex_unlock(&(tripulante->mutex_expulsado));
 
-    int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
-    enviar_paquete(conexion_mi_ram_hq, EXPULSAR_TRIPULANTE, size_paquete, info);
-    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    close(conexion_mi_ram_hq);
-    if (paquete_recibido->codigo_operacion == RESPUESTA_EXPULSAR_TRIPULANTE){
-        printf("Recibi opcode de respuesta okfail\n");
-        respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-
-        if (respuesta == RESPUESTA_OK){
-            printf("EXPULSAR_TRIPULANTE : OK\n");
-            expulsar_tripulante_local(tid);
-        }
-        else if (respuesta == RESPUESTA_FAIL){
-            printf("Recibi respuesta FAIL\n");
-        }
-        else
-            printf("Recibi respuesta INVALIDA\n");
-    }
-    else
-        printf("Recibi opcode de respuesta INVALIDO\n");
 }

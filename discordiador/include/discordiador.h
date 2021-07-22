@@ -82,7 +82,7 @@ void paquete(int);
 void terminar_programa();
 void *esperar_conexiones();
 int iniciar_servidor_discordiador(int);
-void crear_hilo_para_manejar_suscripciones(t_list *, int);
+void crear_hilo_para_manejar_suscripciones(int);
 void manejar_suscripciones_discordiador(int *);
 void catch_sigint_signal();
 void inicializar_discordiador();
@@ -98,7 +98,7 @@ void *procesar_tripulante_fifo(void *);
 void *procesar_tripulante_rr();
 void *ejecutar_tripulantes_bloqueados();
 void chequear_planificacion_pausada(sem_t *, int);
-void manejar_sabotaje();
+void manejar_sabotaje(int, int, int);
 int calcular_distancia(int, int, int, int);
 dis_tripulante *minimum(dis_tripulante *, dis_tripulante *);
 
@@ -110,9 +110,16 @@ void enviar_a_ready(dis_tripulante *);
 void vaciar_lista(t_list *);
 dis_tripulante *seleccionar_tripulante_a_ejecutar();
 void atender_interrupciones(sem_t *, int, dis_tripulante *);
+bool fue_expulsado(dis_tripulante *);
+void tripulante_expulsado(dis_tripulante *);
+int chequear_expulsion_de_tripulante(t_list *, pthread_mutex_t *);
 
+// MENSAJES PARA IMONGO
+void notificar_atencion_sabotaje_imongo(int, char *);
+void notificar_fin_sabotaje_imongo(int, char *);
 
 // Funciones de serializacion
 void actualizar_estado_miriam(int,estado);
+void liberar_listas();
 
 #endif /* DISCORDIADOR_H */
