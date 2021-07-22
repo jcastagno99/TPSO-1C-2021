@@ -267,9 +267,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Devolviendo tarea obtenida: %s (de longitud %i)",*socket_hilo,proxima_tarea,long_tarea);
 			void *respuesta = serializar_tarea(proxima_tarea,long_tarea);
 			enviar_paquete(*socket_hilo, RESPUESTA_OBTENER_PROXIMA_TAREA, long_tarea+sizeof(uint32_t), respuesta);
-			if(long_tarea == 1){
-				free(proxima_tarea);
-			}
+			free(proxima_tarea);
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
@@ -550,6 +548,10 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas correctamente");
+
+	char* tarea = malloc(27);
+	t_pagina* aux = list_get(patota->paginas,0);
+	memcpy(tarea,aux->inicio_memoria + 8, 27);
 
 	list_destroy(frames_patota);
 	free(patota_con_tareas_y_tripulantes.stream);
@@ -912,8 +914,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 	if(!patota){
 		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tripulante_tid);
-		//Como maneja discordiador el error de obtener_proxima_tarea?
-		return RESPUESTA_FAIL;
+		return "RESPUESTA_FAIL";
 	}
 	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tripulante_tid);
 
@@ -945,11 +946,11 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	int offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
 
-
 	int espacio_leido = 0;
 	uint32_t indice_proxima_tarea;
 	t_frame_en_memoria* frame;
 
+	//Esto lee el indice del TCB de la proxima tarea, pero no trae todo el tripulante, no si es la idea..
 	while(espacio_leido < 4){
 		for(int k=indice_de_posicion; k<patota->paginas->elements_count; k++){
 			t_pagina* auxiliar = list_get(patota->paginas,k);
@@ -1003,7 +1004,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 			auxiliar->uso = 1;
 			pthread_mutex_unlock(auxiliar->mutex_pagina);
 			}
-		 pthread_mutex_unlock(frame->mutex);
+		pthread_mutex_unlock(frame->mutex);
 		}
  	}
 
@@ -1016,10 +1017,91 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	return proxima_tarea;
 	}
 
-	tarea_ram* aux  = list_get(patota->tareas,indice_proxima_tarea);
-	proxima_tarea = aux->tarea;
+
+//---------------------------------LEE LA TAREA DESDE MEMORIA A PARTIR DEL INDICE Y TRAE A MEMORIA TODAS LAS PAGINAS QUE LA CONTENGAN--------------------
+	
+	tarea_ram* tarea_contador;
+	tarea_ram* tarea_especifica = list_get(patota->tareas,indice_proxima_tarea);
+	proxima_tarea = malloc(tarea_especifica->tamanio);
+	t_pagina* auxiliar_pagina;
+	double tamanio_hasta_tarea = 2*(sizeof(uint32_t));
+	for(int i=0; i<indice_proxima_tarea; i++){
+		tarea_contador = list_get(patota->tareas,i);
+		tamanio_hasta_tarea += tarea_contador->tamanio;
+	}
+	double indice_de_tarea = tamanio_hasta_tarea / mi_ram_hq_configuracion->TAMANIO_PAGINA;
+	double offset_hasta_tarea = modf(indice_de_tarea,&indice_de_tarea);
+	int offset_hasta_tarea_entero = offset_hasta_tarea * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+
+	int bytes_de_tarea = tarea_especifica->tamanio;
+	int bytes_leidos_tarea = 0;
+	int indice_auxiliar_tarea = indice_de_tarea;
+	while(bytes_leidos_tarea < bytes_de_tarea){
+		auxiliar_pagina = list_get(patota->paginas,indice_de_tarea);
+		pthread_mutex_lock(auxiliar_pagina->mutex_pagina);
+		int bytes_escritos = 0;
+		int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_hasta_tarea_entero;
+		int offset_pagina_entero = offset_hasta_tarea_entero;
+		if(!auxiliar_pagina->presente){
+			frame = buscar_frame_libre();
+			if(!frame){
+				if(!strcmp(mi_ram_hq_configuracion->ALGORITMO_REEMPLAZO,"LRU")){
+					frame = sustituir_LRU();
+				}
+				if(!strcmp(mi_ram_hq_configuracion->ALGORITMO_REEMPLAZO,"CLOCK")){
+					frame = sustituir_CLOCK();
+				}
+			}
+			pthread_mutex_lock(frame->mutex);
+			auxiliar_pagina->presente = 1;
+			auxiliar_pagina->inicio_memoria = frame->inicio;
+			auxiliar_pagina->uso = 1;
+			frame->pagina_a_la_que_pertenece = auxiliar_pagina;
+			frame->indice_pagina = auxiliar_pagina->id_pagina;
+			frame->pid_duenio = patota->id_patota;
+			memcpy(frame->inicio,auxiliar_pagina->inicio_swap,mi_ram_hq_configuracion->TAMANIO_PAGINA);
+			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
+			frame_y_pagina->frame = frame;
+			frame_y_pagina->pagina = auxiliar_pagina;
+			list_add(historial_uso_paginas,frame_y_pagina);
+		}
+		else if(auxiliar_pagina->presente){
+			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+			t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+			frame = frame_y_pagina->frame;
+			pthread_mutex_lock(frame->mutex);
+			list_add(historial_uso_paginas,frame_y_pagina);
+		}
+		if(bytes_de_tarea > espacio_disponible_en_pagina){
+			memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
+			bytes_leidos_tarea += espacio_disponible_en_pagina;
+			espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			bytes_escritos = espacio_disponible_en_pagina;
+			offset_pagina_entero = 0;
+			auxiliar_pagina->uso = 1;
+			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			indice_auxiliar_tarea++;
+		}
+		else{
+		memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,bytes_de_tarea - bytes_escritos);
+		bytes_leidos_tarea += bytes_de_tarea - bytes_escritos;
+		auxiliar_pagina->uso = 1;
+		pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+		}
+	pthread_mutex_unlock(frame->mutex);	
+	} 
+	
+
+	
+//-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+	//tarea_ram* aux  = list_get(patota->tareas,indice_proxima_tarea);
+	//proxima_tarea = aux->tarea;
 
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,indice_proxima_tarea + 1,patota);
+
+
+
 
 	free(tcb);
 	return proxima_tarea;
@@ -1090,7 +1172,7 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 {
-	pthread_mutex_lock(&mutex_tabla_patotas);
+	/*pthread_mutex_lock(&mutex_tabla_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 	if(!patota){
@@ -1157,7 +1239,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 			//achurarlo en la estructura administrativa
 		}	
 	}
-	//FALTA EXPULSARLO COMO TAL: ESPERAR A QUE RESPONDA EL ISSUE
+	//FALTA EXPULSARLO COMO TAL: ESPERAR A QUE RESPONDA EL ISSUE*/
 	return RESPUESTA_OK;
 }
 
@@ -2435,7 +2517,10 @@ void explotar_la_nave(){
 	pthread_mutex_destroy(&mutex_memoria);
 	pthread_mutex_destroy(&mutex_swap);
 	list_destroy_and_destroy_elements(historial_uso_paginas,free);
-	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");*/
+	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");
+	free(pct.tareas);
+	list_destroy_and_destroy_elements(pct.tripulantes, free);
+	*/
 	config_destroy(config_aux);
 	exit(0);
 }
