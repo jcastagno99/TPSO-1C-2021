@@ -340,8 +340,6 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	if(patota){
 		pthread_mutex_unlock(&mutex_tabla_patotas);
 		log_error(logger_ram_hq,"Socket %i, INICIAR_PATOTA: La patota de pid %i ya existe, solicitud rechazada",socket,patota_con_tareas_y_tripulantes.pid);
-		free(patota_con_tareas_y_tripulantes.tareas);
-		list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 		return RESPUESTA_FAIL;
 	}
 	
@@ -352,11 +350,6 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 
 	if(memoria_libre < memoria_necesaria){
 		log_error(logger_ram_hq,"Socket %i, INICIAR_PATOTA: No hay lugar para guardar la patota %i",socket,patota_con_tareas_y_tripulantes.pid);
-		free(patota_con_tareas_y_tripulantes.tareas);
-		while(patota_con_tareas_y_tripulantes.tripulantes->elements_count){
-			list_remove(patota_con_tareas_y_tripulantes.tripulantes,0);
-		}
-		list_destroy(patota_con_tareas_y_tripulantes.tripulantes);
 		return RESPUESTA_FAIL;
 	}
 
@@ -1285,6 +1278,7 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 							free(patota_aux->mutex_segmentos_tripulantes);
 							patota_aux->segmento_pcb->libre = true;
 							patota_aux->segmento_tarea->libre = true;
+							free(patota_aux);
 							list_remove(patotas,i);
 							
 						};
@@ -1531,6 +1525,7 @@ respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int soc
 
 				if(est == EXIT){
 					//Borro tripulante de la lista de tripulantes de la patota
+					tripulante_aux->libre = true;
 					list_remove(patota_aux->segmentos_tripulantes,j);
 
 					//item_borrar(nivel,obtener_caracter_mapa(tid));
@@ -1544,6 +1539,7 @@ respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int soc
 						free(patota_aux->mutex_segmentos_tripulantes);
 						patota_aux->segmento_pcb->libre = true;
 						patota_aux->segmento_tarea->libre = true;
+						free(patota_aux);
 						list_remove(patotas,i);
 						pthread_mutex_unlock(&mutex_tabla_patotas);
 						return RESPUESTA_OK;
