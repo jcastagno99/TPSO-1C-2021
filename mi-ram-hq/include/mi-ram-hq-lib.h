@@ -148,7 +148,7 @@ void crear_estructuras_administrativas();
 
 void* esperar_conexion(int);
 int iniciar_servidor_mi_ram_hq(int);
-void crear_hilo_para_manejar_suscripciones(t_list*,int);
+void crear_hilo_para_manejar_suscripciones(int);
 void* manejar_suscripciones_mi_ram_hq(int*);
 
 // Funciones principales del manejo de mensajes

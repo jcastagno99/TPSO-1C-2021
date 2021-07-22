@@ -528,9 +528,7 @@ pid_con_tareas_y_tripulantes_miriam deserializar_pid_con_tareas_y_tripulantes(vo
 		offset += 3*sizeof(uint32_t);
 		memcpy(&tid,stream+offset,sizeof(uint32_t));
 	}
-
 	return pct;
-
 }
 
 // TODO HAY UNA LECTURA INVALIDA DE 1 BYTE
