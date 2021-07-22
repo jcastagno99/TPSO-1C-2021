@@ -12,7 +12,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
 	signal(SIGUSR2, sighandlerImpresionPatotas);  //12
-	//crear_mapa ();
+	crear_mapa ();
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -79,9 +79,9 @@ mi_ram_hq_config *leer_config_mi_ram_hq(char *path)
 
 t_log *iniciar_logger_mi_ram_hq(char *path)
 {
-
+	system("rm cfg/mi-ram-hq.log");
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -416,7 +416,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 		
 		nuevo_tripulante_sin_pid* tripulante = list_get(patota_con_tareas_y_tripulantes.tripulantes,i);
 		
-		//crear_tripulante_mapa(tripulante);
+		crear_tripulante_mapa(tripulante);
 		
 		cargar_tcb_sinPid_en_segmento(tripulante, segmento_a_usar_tripulante,patota_con_tareas_y_tripulantes.pid);
 	}
@@ -587,7 +587,7 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 				pthread_mutex_unlock(&mutex_memoria);	
 				
 				direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);	
-				//mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
+				mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
 				
 				//obtengo pid para informar
 				uint32_t pid;
@@ -1242,61 +1242,48 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 
 				//encontre al tripulante, lo borro de memoria
 				//bloque memoria
-				
-				log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Encontre al tripulante %d en memoria, se procede a expulsarlo, motivo: SUS",socket, tid);
 				pthread_mutex_lock(&mutex_memoria);
 				pthread_mutex_lock(&mutex_tabla_de_segmentos);
-				for(int k=0; k<segmentos_memoria->elements_count; k++){
-					// recorro segmentos de memoria
-					segmento_aux = list_get(segmentos_memoria,k);
-					pthread_mutex_lock(segmento_aux->mutex_segmento);
-					if((int)(segmento_aux->inicio_segmento) == (int)(tripulante_aux->inicio_segmento)){
-						
+				
+				pthread_mutex_lock(tripulante_aux->mutex_segmento);
+				tripulante_aux->libre = true;
+				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
 
-						//item_borrar(nivel,obtener_caracter_mapa(tid));
-						//nivel_gui_dibujar(nivel);
-						
-						//obtengo su pid para informarlo
-						uint32_t pid;
-						pthread_mutex_lock(patota_aux->segmento_pcb->mutex_segmento);
-						
-						memcpy(&pid,patota_aux->segmento_pcb->inicio_segmento,sizeof(uint32_t));
-						
-						pthread_mutex_unlock(patota_aux->segmento_pcb->mutex_segmento);
-						
-						log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Encontre el segmento #%i perteneciente al tripulante en %d de la patota #%i, procedo a liberarlo",socket,segmento_aux->numero_segmento, tid_aux,pid);
-						segmento_aux->libre = true;
-						pthread_mutex_unlock(segmento_aux->mutex_segmento);
-						
-						//Borro tripulante de la lista de tripulantes de la patota
-						list_remove(patota_aux->segmentos_tripulantes,j);
-						
-						if(! patota_aux->segmentos_tripulantes->elements_count){
-							// si la patota esta vacia la elimino
-							list_destroy(patota_aux->segmentos_tripulantes);
-							pthread_mutex_destroy(patota_aux->mutex_segmentos_tripulantes);
-							free(patota_aux->mutex_segmentos_tripulantes);
-							patota_aux->segmento_pcb->libre = true;
-							patota_aux->segmento_tarea->libre = true;
-							free(patota_aux);
-							list_remove(patotas,i);
-							
-						};
-						
-						pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-						pthread_mutex_unlock(&mutex_memoria);
-						pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
-						pthread_mutex_unlock(&mutex_tabla_patotas);
-						
-						
-						return RESPUESTA_OK;
-					}
-					pthread_mutex_unlock(segmento_aux->mutex_segmento);
-				}
+				item_borrar(nivel,obtener_caracter_mapa(tid));
+				nivel_gui_dibujar(nivel);
+				
+				//obtengo su pid para informarlo
+				uint32_t pid;
+				pthread_mutex_lock(patota_aux->segmento_pcb->mutex_segmento);
+				memcpy(&pid,patota_aux->segmento_pcb->inicio_segmento,sizeof(uint32_t));
+				pthread_mutex_unlock(patota_aux->segmento_pcb->mutex_segmento);
+				
+				log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Encontre el segmento #%i perteneciente al tripulante en %d de la patota #%i, procedo a liberarlo",socket,tripulante_aux->numero_segmento, tid_aux,pid);
+				
+				//Borro tripulante de la lista de tripulantes de la patota
+				list_remove(patota_aux->segmentos_tripulantes,j);
 				
 				
-			}
-			
+				if(! patota_aux->segmentos_tripulantes->elements_count){
+					// si la patota esta vacia la elimino
+					list_destroy(patota_aux->segmentos_tripulantes);
+					pthread_mutex_destroy(patota_aux->mutex_segmentos_tripulantes);
+					free(patota_aux->mutex_segmentos_tripulantes);
+					patota_aux->segmento_pcb->libre = true;
+					patota_aux->segmento_tarea->libre = true;
+					free(patota_aux);
+					list_remove(patotas,i);
+					
+				};
+				
+				pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+				pthread_mutex_unlock(&mutex_memoria);
+				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+				pthread_mutex_unlock(&mutex_tabla_patotas);
+				
+				
+				return RESPUESTA_OK;
+			}			
 		}
 		pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
 	}
@@ -1528,8 +1515,8 @@ respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int soc
 					tripulante_aux->libre = true;
 					list_remove(patota_aux->segmentos_tripulantes,j);
 
-					//item_borrar(nivel,obtener_caracter_mapa(tid));
-					//nivel_gui_dibujar(nivel);
+					item_borrar(nivel,obtener_caracter_mapa(tid));
+					nivel_gui_dibujar(nivel);
 						
 
 					if(! patota_aux->segmentos_tripulantes->elements_count){
@@ -2432,6 +2419,7 @@ void sighandlerCompactacion(int signum) {
 	log_info(logger_ram_hq,"Llego señal de compactacion, procedo a compactar");
 	pthread_mutex_lock(&mutex_iniciar_patota);
 	compactar_memoria();
+	imprimir_dump();
 	pthread_mutex_unlock(&mutex_iniciar_patota);
 	signal(SIGUSR1, sighandlerCompactacion);
 }
@@ -2613,6 +2601,9 @@ void explotar_la_nave_segmentada(){
 	free(mi_ram_hq_configuracion);
 	log_destroy(logger_ram_hq);
 	//config mallockeada en leer_config_mi_ram_hq --> config_mi_ram_hq_aux
+
+
+	//seguro tengo que liberar cosas del mapa
 
 	exit(0);
 }
