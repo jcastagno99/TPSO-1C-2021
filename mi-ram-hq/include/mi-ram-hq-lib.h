@@ -271,6 +271,8 @@ char obtener_caracter_mapa (uint32_t);
 void crear_tripulante_mapa (nuevo_tripulante_sin_pid *);
 char obtener_caracter_mapa (uint32_t);
 void mover_tripulante_mapa (char,direccion);
+direccion obtener_direccion_movimiento_mapa(uint32_t,uint32_t,uint32_t,uint32_t);
+
 
 #endif /* MI_RAM_HQ_LIB_H */
 
