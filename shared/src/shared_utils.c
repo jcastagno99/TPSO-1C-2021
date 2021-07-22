@@ -593,6 +593,8 @@ patota_stream_paginacion orginizar_stream_paginacion(pid_con_tareas_y_tripulante
 		offset += sizeof(uint32_t);
 	}
 	patota.stream = stream;
+	free(pct.tareas);
+	list_destroy_and_destroy_elements(pct.tripulantes,free);
 	return patota;
 }
 

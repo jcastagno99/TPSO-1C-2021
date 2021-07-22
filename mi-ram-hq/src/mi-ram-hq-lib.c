@@ -12,7 +12,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
 	signal(SIGUSR2, sighandlerImpresionPatotas);  //12
-	crear_mapa ();
+	//crear_mapa ();
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -81,7 +81,7 @@ t_log *iniciar_logger_mi_ram_hq(char *path)
 {
 
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -92,7 +92,7 @@ void *esperar_conexion(int puerto)
 	int socket_mi_ram_hq;
 	log_info(logger_ram_hq, "SERVIDOR LEVANTADO! ESCUCHANDO EN %i", puerto);
 	struct sockaddr cliente;
-	socklen_t len = sizeof(cliente); //creo que aca esta el problema!!
+	socklen_t len = sizeof(cliente);
 	do
 	{
 		socket_mi_ram_hq = accept(socket_escucha, &cliente, &len);
@@ -547,10 +547,6 @@ respuesta_ok_fail iniciar_patota_paginacion(patota_stream_paginacion patota_con_
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
 	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas correctamente");
-
-	char* tarea = malloc(27);
-	t_pagina* aux = list_get(patota->paginas,0);
-	memcpy(tarea,aux->inicio_memoria + 8, 27);
 
 	list_destroy(frames_patota);
 	free(patota_con_tareas_y_tripulantes.stream);
@@ -1011,6 +1007,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 		tarea_contador = list_get(patota->tareas,i);
 		tamanio_hasta_tarea += tarea_contador->tamanio;
 	}
+
 	double indice_de_tarea = tamanio_hasta_tarea / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	double offset_hasta_tarea = modf(indice_de_tarea,&indice_de_tarea);
 	int offset_hasta_tarea_entero = offset_hasta_tarea * mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -1018,12 +1015,12 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	int bytes_de_tarea = tarea_especifica->tamanio;
 	int bytes_leidos_tarea = 0;
 	int indice_auxiliar_tarea = indice_de_tarea;
+	int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_hasta_tarea_entero;
+	int offset_pagina_entero = offset_hasta_tarea_entero;
+
 	while(bytes_leidos_tarea < bytes_de_tarea){
-		auxiliar_pagina = list_get(patota->paginas,indice_de_tarea);
+		auxiliar_pagina = list_get(patota->paginas,indice_auxiliar_tarea);
 		pthread_mutex_lock(auxiliar_pagina->mutex_pagina);
-		int bytes_escritos = 0;
-		int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_hasta_tarea_entero;
-		int offset_pagina_entero = offset_hasta_tarea_entero;
 		if(!auxiliar_pagina->presente){
 			frame = buscar_frame_libre();
 			if(!frame){
@@ -1054,36 +1051,27 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 			pthread_mutex_lock(frame->mutex);
 			list_add(historial_uso_paginas,frame_y_pagina);
 		}
-		if(bytes_de_tarea > espacio_disponible_en_pagina){
+		if((bytes_de_tarea - bytes_leidos_tarea) > espacio_disponible_en_pagina){
 			memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
 			bytes_leidos_tarea += espacio_disponible_en_pagina;
 			espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
-			bytes_escritos = espacio_disponible_en_pagina;
 			offset_pagina_entero = 0;
 			auxiliar_pagina->uso = 1;
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 			indice_auxiliar_tarea++;
 		}
 		else{
-		memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,bytes_de_tarea - bytes_escritos);
-		bytes_leidos_tarea += bytes_de_tarea - bytes_escritos;
+		memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,bytes_de_tarea - bytes_leidos_tarea);
+		bytes_leidos_tarea = bytes_de_tarea;
 		auxiliar_pagina->uso = 1;
 		pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 		}
 	pthread_mutex_unlock(frame->mutex);	
 	} 
 	
-
-	
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-	//tarea_ram* aux  = list_get(patota->tareas,indice_proxima_tarea);
-	//proxima_tarea = aux->tarea;
-
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,indice_proxima_tarea + 1,patota);
-
-
-
 
 	free(tcb);
 	return proxima_tarea;
