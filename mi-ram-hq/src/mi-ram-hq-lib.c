@@ -172,6 +172,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
+			free(patota_con_tareas_y_tripulantes.tareas);
+			list_destroy_and_destroy_elements(patota_con_tareas_y_tripulantes.tripulantes,free);
 			break;
 		}
 		case ACTUALIZAR_UBICACION:
