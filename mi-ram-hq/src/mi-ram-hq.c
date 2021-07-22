@@ -8,7 +8,6 @@ int main(int argc, char*argv[])
 	logger_ram_hq = iniciar_logger_mi_ram_hq(argv[2]);
 	memoria_principal = malloc(mi_ram_hq_configuracion->TAMANIO_MEMORIA);
 
-	//printf("asd");
 	crear_estructuras_administrativas();
 	
 	esperar_conexion(mi_ram_hq_configuracion->PUERTO);
