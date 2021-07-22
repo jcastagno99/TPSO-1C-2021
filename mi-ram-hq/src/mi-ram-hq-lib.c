@@ -1282,22 +1282,33 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 						log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Encontre el segmento #%i perteneciente al tripulante en %d de la patota #%i, procedo a liberarlo",socket,segmento_aux->numero_segmento, tid_aux,pid);
 						segmento_aux->libre = true;
 						pthread_mutex_unlock(segmento_aux->mutex_segmento);
+						
 						//To do
 						// si la patota esta vacia la elimino
-						break;
+						list_remove(patota_aux->segmentos_tripulantes,j);
+						
+						if(! patota_aux->segmentos_tripulantes->elements_count){
+							list_destroy(patota_aux->segmentos_tripulantes);
+							pthread_mutex_destroy(patota_aux->mutex_segmentos_tripulantes);
+							free(patota_aux->mutex_segmentos_tripulantes);
+							patota_aux->segmento_pcb->libre = true;
+							patota_aux->segmento_tarea->libre = true;
+							list_remove(patotas,i);
+							
+						};
+						
+						pthread_mutex_unlock(&mutex_tabla_de_segmentos);
+						pthread_mutex_unlock(&mutex_memoria);
+						pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
+						pthread_mutex_unlock(&mutex_tabla_patotas);
+						
+						
+						return RESPUESTA_OK;
 					}
 					pthread_mutex_unlock(segmento_aux->mutex_segmento);
 				}
 				
-				pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-				pthread_mutex_unlock(&mutex_memoria);
-				list_remove(patota_aux->segmentos_tripulantes,j);
-				pthread_mutex_unlock(patota_aux->mutex_segmentos_tripulantes);
-				pthread_mutex_unlock(&mutex_tabla_patotas);
 				
-				//TO DO: Borrar al tripulante del mapa
-
-				return RESPUESTA_OK;
 			}
 			
 		}
