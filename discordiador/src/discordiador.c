@@ -472,7 +472,7 @@ void *procesar_tripulante_fifo(void *temp)
 		// SI justo termina su rafago y recien se cambia el estado del sabotaje(un caso muy borde) agrregarle un && !planificacion_pausada
 		if (!sabotaje)
 		{
-			log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado. %i tareas hechas", id, tripulante->id, tripulante->tareas_realizadas);
+			log_info(logger, "[ Procesador %i ] \033[1;34mRafaga finalizada.\033[0m Tripulante %i ejecutado. %i tareas hechas", id, tripulante->id, tripulante->tareas_realizadas);
 
 			pthread_mutex_lock(&mutex_cola_de_exec);
 			list_remove_by_condition(cola_de_exec, (void *)tripulante_procesado);
@@ -548,7 +548,7 @@ void *procesar_tripulante_rr(void *temp)
 
 		if (!sabotaje)
 		{
-			log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado. %i tareas hechas. Quantum actual: %i", id, tripulante->id, tripulante->tareas_realizadas, quantum_actual);
+			log_info(logger, "[ Procesador %i ] \033[1;34mRafaga finalizada.\033[0m Tripulante %i ejecutado. %i tareas hechas. Quantum actual: %i", id, tripulante->id, tripulante->tareas_realizadas, quantum_actual);
 			printf("[ Procesador %i ] Estado %i. El de Exit es %i\n", id, tripulante->estado, EXIT);
 
 			pthread_mutex_lock(&mutex_cola_de_exec);
