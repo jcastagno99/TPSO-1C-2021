@@ -10,7 +10,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
-	//crear_mapa ();
+	crear_mapa ();
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -79,7 +79,7 @@ t_log *iniciar_logger_mi_ram_hq(char *path)
 {
 	system("rm cfg/mi-ram-hq.log");
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -311,6 +311,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	return NULL;
 }
 
+
 void inicializar_swap(){
 	int  fd;
 	fd = open(mi_ram_hq_configuracion->PATH_SWAP, O_RDWR | O_CREAT, (mode_t) 0777);
@@ -493,7 +494,19 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	list_add(patotas,patota);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 
-	//pthread_mutex_lock(&mutex_memoria);
+	for(int i=0; i<patota->cantidad_tripulantes; i++){
+		uint32_t tid;
+		uint32_t pos_x;
+		uint32_t pos_y;
+		int offset = 8 + patota_con_tareas_y_tripulantes.tamanio_tareas + (i * 21);
+		memcpy(&tid,patota_con_tareas_y_tripulantes.stream + offset,4);
+		offset += 5;
+		memcpy(&pos_x,patota_con_tareas_y_tripulantes.stream + offset, 4);
+		offset += 4;
+		memcpy(&pos_y,patota_con_tareas_y_tripulantes.stream + offset, 4);
+		crear_tripulante_mapa(tid,pos_x,pos_y);
+	}
+
 	t_frame_en_memoria* frame;
 	int bytes_ya_escritos = 0;
 	int bytes_que_faltan = patota_con_tareas_y_tripulantes.tamanio_patota;
@@ -666,16 +679,48 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 
 	traerme_todo_el_tcb_a_memoria(tcb,patota);
 
+	uint32_t pos_x = leer_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,patota);
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
 	indice_de_posicion = 2*sizeof(uint32_t) + tamanio_tareas + (i * (5*sizeof(uint32_t) + sizeof(char))) + sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t);
 	offset_posicion = modf(indice_de_posicion / mi_ram_hq_configuracion->TAMANIO_PAGINA, &indice_de_posicion);
 	offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
+	uint32_t pos_y = leer_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,patota);
 	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
 
+
+	direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);
+	mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
+	
 	free(tcb);
 	return RESPUESTA_OK;
+}
+
+uint32_t leer_un_uint32_a_partir_de_indice(double indice, int offset, t_tabla_de_paginas* patota){
+	uint32_t dato;
+	t_pagina* auxiliar_pagina = list_get(patota->paginas,indice);
+	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
+	int bytes_escritos = 0;
+	int bytes_desplazados_escritura = 0;
+	int offset_lectura = 0;
+	while(bytes_escritos < 4){
+		if(tamanio_disponible_pagina < 4){
+			memcpy(&dato + offset_lectura,auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,tamanio_disponible_pagina);
+			bytes_escritos += tamanio_disponible_pagina;
+			bytes_desplazados_escritura += tamanio_disponible_pagina;
+			offset_lectura += tamanio_disponible_pagina;
+			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			auxiliar_pagina = list_get(patota->paginas, indice + 1);
+			offset = 0;
+		}
+		else{
+			memcpy(&dato + offset_lectura, auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura, 4 - bytes_escritos);
+			bytes_escritos = 4;
+		}
+	}
+
+	return dato;
 }
 
 
@@ -857,6 +902,7 @@ void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t d
 			auxiliar_pagina->fue_modificada = 1;
 			auxiliar_pagina->uso = 1;
 			auxiliar_pagina = list_get(patotas,indice+1);
+			offset = 0;
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
 		}
 		else{
@@ -1257,6 +1303,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		}
 			
 	}
+	item_borrar(nivel,obtener_caracter_mapa(tripulante_tid));
 	free(tcb);
 	patota->contador_tripulantes_vivos --;
 	if(patota->contador_tripulantes_vivos == 0){
@@ -2332,13 +2379,13 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
  void imprimir_dump_paginacion(){
-	printf ("--------------------------------------------------------------------------\n");printf ("--------------------------------------------------------------------------\n");
+	log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
 	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
-	printf ("Dump: %s \n",time);
+	log_info(logger_ram_hq,"Dump: %s \n",time);
 
 	for(int i=0; i<frames->elements_count; i++){
 		t_frame_en_memoria* frame = list_get(frames,i);
-		printf("Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
+		log_info(logger_ram_hq,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
 	}
 	free(time);
 }
@@ -2634,16 +2681,16 @@ void explotar_la_nave(){
 
 void crear_mapa (){
 	
-	//nivel_gui_inicializar();
+	nivel_gui_inicializar();
 
 	cols = 10;
 	rows = 10;
 
-	//nivel_gui_get_area_nivel(&cols, &rows);
+	nivel_gui_get_area_nivel(&cols, &rows);
 	
 	nivel = nivel_crear("Nave");
 
-	//nivel_gui_dibujar(nivel);
+	nivel_gui_dibujar(nivel);
 }
 
 //actualizar_ubicacion
@@ -2666,7 +2713,7 @@ void mover_tripulante_mapa (char simbolo,direccion dir){
 		break;
 		
 	}
-	//nivel_gui_dibujar(nivel);
+	nivel_gui_dibujar(nivel);
 }
 
 //iniciar_patota
@@ -2675,7 +2722,7 @@ void crear_tripulante_mapa (uint32_t tid,uint32_t x,uint32_t y){
 	int trip_mem = personaje_crear(nivel, 'a'+tid-1, x, y);
 	//ver si se puede sacar este assert y asi no tira ese warning
 	ASSERT_CREATE(nivel, 'a'+tid-1, trip_mem);
-	//nivel_gui_dibujar(nivel);
+	nivel_gui_dibujar(nivel);
 	return;
 }
 

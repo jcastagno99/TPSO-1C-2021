@@ -22,7 +22,8 @@
 			"mi-ram-hq-lib.h": "c",
 			"math.h": "c",
 			"mathcalls.h": "c",
-			"nivel-gui.h": "c"
+			"nivel-gui.h": "c",
+			"fcntl.h": "c"
 		}
 	}
 }

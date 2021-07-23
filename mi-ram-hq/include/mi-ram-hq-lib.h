@@ -26,6 +26,7 @@
 #include <nivel-gui/nivel-gui.h>
 #include <nivel-gui/tad_nivel.h>
 #include <signal.h>
+//#include <fcntl.h>
 
 #define MAX_CLIENTS 128
 
@@ -218,6 +219,7 @@ void traerme_todo_el_tcb_a_memoria(inicio_tcb*, t_tabla_de_paginas*);
 //Otros paginacion
 int minimo_entre(int, int);
 void escribir_un_uint32_a_partir_de_indice(double,int,uint32_t,t_tabla_de_paginas*);
+uint32_t leer_un_uint32_a_partir_de_indice(double,int,t_tabla_de_paginas*);
 
 //Otros segmentacion
 uint32_t calcular_memoria_libre(void);
