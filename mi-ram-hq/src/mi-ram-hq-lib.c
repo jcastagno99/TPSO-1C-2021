@@ -2762,6 +2762,7 @@ void borrar_patota(uint32_t pid){
 
 		if(pid_aux == pid){
 			list_remove(patotas,i);
+			pthread_mutex_unlock(&mutex_tabla_patotas);
 			return;
 		}
 
