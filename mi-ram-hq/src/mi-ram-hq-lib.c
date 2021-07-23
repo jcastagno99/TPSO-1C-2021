@@ -304,7 +304,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		imprimir_dump_paginacion();
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
-		//imprimir_dump();
+		imprimir_dump();
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
 	liberar_paquete(paquete);
@@ -1234,7 +1234,7 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 			strcpy(tareas,obtener_proxima_tarea(tareas,id_tarea,auxiliar_patota->segmento_tarea->tamanio_segmento));
 			pthread_mutex_unlock(auxiliar_patota->segmento_tarea->mutex_segmento);		
 
-			if(!tareas){
+			if(!strlen(tareas)){
 				//Borro tripulante de la lista de tripulantes de la patota
 				tripulante_aux->libre = true;
 				list_remove(auxiliar_patota->segmentos_tripulantes,i);
@@ -1252,14 +1252,15 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 					pthread_mutex_unlock(auxiliar_patota->segmento_pcb->mutex_segmento);
 					pthread_mutex_unlock(&mutex_memoria);
 
+					borrar_patota(pid);
 					list_destroy(auxiliar_patota->segmentos_tripulantes);
 					pthread_mutex_destroy(auxiliar_patota->mutex_segmentos_tripulantes);
 					free(auxiliar_patota->mutex_segmentos_tripulantes);
 					auxiliar_patota->segmento_pcb->libre = true;
 					auxiliar_patota->segmento_tarea->libre = true;
 					free(auxiliar_patota);
-					borrar_patota(pid);
-					return RESPUESTA_OK;
+
+					return tareas;
 				};
 
 			}
