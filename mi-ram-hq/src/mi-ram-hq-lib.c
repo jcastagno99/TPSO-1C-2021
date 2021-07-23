@@ -415,7 +415,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 		
 		nuevo_tripulante_sin_pid* tripulante = list_get(patota_con_tareas_y_tripulantes.tripulantes,i);
 		
-		//crear_tripulante_mapa(tripulante);
+		crear_tripulante_mapa(tripulante->tid,tripulante->pos_x,tripulante->pos_y);
 		
 		cargar_tcb_sinPid_en_segmento(tripulante, segmento_a_usar_tripulante,patota_con_tareas_y_tripulantes.pid);
 	}
@@ -2646,6 +2646,7 @@ void crear_mapa (){
 	//nivel_gui_dibujar(nivel);
 }
 
+//actualizar_ubicacion
 void mover_tripulante_mapa (char simbolo,direccion dir){
 	switch(dir) {
 		case ABAJO:
@@ -2668,10 +2669,12 @@ void mover_tripulante_mapa (char simbolo,direccion dir){
 	//nivel_gui_dibujar(nivel);
 }
 
-void crear_tripulante_mapa (nuevo_tripulante_sin_pid * tripulante){
+//iniciar_patota
+void crear_tripulante_mapa (uint32_t tid,uint32_t x,uint32_t y){
 	
-	int trip_mem = personaje_crear(nivel, 'a'+tripulante->tid-1, tripulante->pos_x, tripulante->pos_y);
-	ASSERT_CREATE(nivel, 'a'+tripulante->tid-1, trip_mem);
+	int trip_mem = personaje_crear(nivel, 'a'+tid-1, x, y);
+	//ver si se puede sacar este assert y asi no tira ese warning
+	ASSERT_CREATE(nivel, 'a'+tid-1, trip_mem);
 	//nivel_gui_dibujar(nivel);
 	return;
 }

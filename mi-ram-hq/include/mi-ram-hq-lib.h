@@ -274,7 +274,7 @@ int cols, rows;
 
 void crear_mapa ();
 char obtener_caracter_mapa (uint32_t);
-void crear_tripulante_mapa (nuevo_tripulante_sin_pid *);
+void crear_tripulante_mapa (uint32_t tid,uint32_t x,uint32_t y);
 char obtener_caracter_mapa (uint32_t);
 void mover_tripulante_mapa (char,direccion);
 direccion obtener_direccion_movimiento_mapa(uint32_t,uint32_t,uint32_t,uint32_t);
