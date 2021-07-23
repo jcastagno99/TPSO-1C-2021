@@ -1304,6 +1304,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 			
 	}
 	item_borrar(nivel,obtener_caracter_mapa(tripulante_tid));
+	nivel_gui_dibujar(nivel);
 	free(tcb);
 	patota->contador_tripulantes_vivos --;
 	if(patota->contador_tripulantes_vivos == 0){
