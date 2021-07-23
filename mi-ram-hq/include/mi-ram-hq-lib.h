@@ -224,6 +224,7 @@ uint32_t calcular_memoria_libre(void);
 void swap(t_segmento **,t_segmento **);
 void borrar_patota(uint32_t pid);
 
+
 //Otros compartidos
 char obtener_char_estado (estado);
 
@@ -231,7 +232,7 @@ char obtener_char_estado (estado);
 void imprimir_dump(void);
 void recorrer_pcb_dump(t_segmento*);
 void recorrer_tareas_dump(uint32_t,t_segmento*);
-void recorrer_tcb_dump(uint32_t,t_list*);
+void recorrer_tcb_dump(uint32_t ,t_list* ,t_log * );
 void imprimir_dump_paginacion(void);
 
 
@@ -245,7 +246,8 @@ void recorrer_tripulante(t_segmento * );
 
 //Funciones para los signal
 void sighandlerDump(int);
-void sighandlerCompactacion(int);
+void sighandlerCompactar(int);
+void sighandlerLiberarSegmentacion(int);
 void sighandlerLiberarPaginacion(int);
 void explotar_la_nave();
 void explotar_la_nave_segmentada();
