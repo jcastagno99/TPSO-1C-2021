@@ -2302,49 +2302,37 @@ void recorrer_tripulante(t_segmento * tripulante){
 void imprimir_dump(void){
 	
 	char * time =  temporal_get_string_time("%d-%m-%y_%H:%M:%S");
-	//char * path_dump = malloc (100);
-	//strcpy(path_dump,"cfg/DMP_");
-	//strcat(path_dump,time);
-	//strcat(path_dump,".dmp");
+	char * path_dump = malloc (100);
+	strcpy(path_dump,"cfg/DMP_");
+	strcat(path_dump,time);
+	strcat(path_dump,".dmp");
 
-	//t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
+	t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
 	
-	//log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	//log_info(log_dump,"Dump: %s \n",time);
-	log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	log_info(logger_ram_hq,"Dump: %s \n",time);
+	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(log_dump,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"Dump: %s \n",time);
 	
 	//free(time);
 	for(int i = 0;i < patotas->elements_count;i++){
 		t_segmentos_de_patota* patota = list_get(patotas,i);
 		uint32_t pid = obtener_patota_memoria(patota->segmento_pcb);
 		//recorrer_pcb_dump(pid,patota->segmento_pcb);
-		log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_pcb->numero_segmento,patota->segmento_pcb->inicio_segmento,patota->segmento_pcb->tamanio_segmento);
+		log_info(log_dump,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_pcb->numero_segmento,patota->segmento_pcb->inicio_segmento,patota->segmento_pcb->tamanio_segmento);
 		//recorrer_tareas_dump(pid,patota->segmento_tarea);
-		log_info(logger_ram_hq,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_tarea->numero_segmento,patota->segmento_tarea->inicio_segmento,patota->segmento_tarea->tamanio_segmento);
+		log_info(log_dump,"Proceso: %i\t Segmento: %i\t Inicio: %i\t Tam: %i b\n",pid,patota->segmento_tarea->numero_segmento,patota->segmento_tarea->inicio_segmento,patota->segmento_tarea->tamanio_segmento);
 		pthread_mutex_lock(patota->mutex_segmentos_tripulantes);
-		recorrer_tcb_dump(pid,patota->segmentos_tripulantes,logger_ram_hq);
+		recorrer_tcb_dump(pid,patota->segmentos_tripulantes,log_dump);
 		pthread_mutex_unlock(patota->mutex_segmentos_tripulantes);
 	}
 
-	//char * time =  temporal_get_string_time("%d-%m-%y_%H:%M:%S");
-	//char * path_dump = malloc (100);
-	//strcpy(path_dump,"cfg/DMP_");
-	//strcat(path_dump,time);
-	//strcat(path_dump,".dmp");
-
-	//t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
-	
-	//log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	//log_info(log_dump,"Dump: %s \n",time);
-	log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	log_info(logger_ram_hq,"Dump alternativo: %s \n",time);
+	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(log_dump,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"Dump alternativo: %s \n",time);
 	
 	free(time);
 	for(int i = 0;i < segmentos_memoria->elements_count;i++){
 		t_segmento* segmento = list_get(segmentos_memoria,i);
 		pthread_mutex_lock(segmento->mutex_segmento);
-		log_info(logger_ram_hq,"Segmento: %i\t Inicio: %i\t Tam: %ib Libre: %d\n",segmento->numero_segmento,segmento->inicio_segmento,segmento->tamanio_segmento,segmento->libre);
+		log_info(log_dump,"Segmento: %i\t Inicio: %i\t Tam: %ib Libre: %d\n",segmento->numero_segmento,segmento->inicio_segmento,segmento->tamanio_segmento,segmento->libre);
 		pthread_mutex_unlock(segmento->mutex_segmento);
 		
 	}
