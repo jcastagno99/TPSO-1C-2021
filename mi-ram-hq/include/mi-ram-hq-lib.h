@@ -220,6 +220,7 @@ void escribir_un_uint32_a_partir_de_indice(double,int,uint32_t,t_tabla_de_pagina
 //Otros segmentacion
 uint32_t calcular_memoria_libre(void);
 void swap(t_segmento **,t_segmento **);
+void borrar_patota(uint32_t pid);
 
 //Otros compartidos
 char obtener_char_estado (estado);
@@ -241,10 +242,11 @@ void recorrer_tripulante(t_segmento * );
 
 
 //Funciones para los signal
-void sighandlerImpresionPatotas(int);
+void sighandlerDump(int);
 void sighandlerCompactacion(int);
 void sighandlerLiberarPaginacion(int);
 void explotar_la_nave();
+void explotar_la_nave_segmentada();
 
 //Mapa
 typedef enum
