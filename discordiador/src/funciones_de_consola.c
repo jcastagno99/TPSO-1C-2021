@@ -229,8 +229,6 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
                     trip->tareas_realizadas++;
                     tarea->estado_tarea = TERMINADA;
                     // [TODO] mensaje a i-mongo de tarea terminada
-                    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
-                    log_info(logger, "[ Tripulante %i ] Realizadas %i - Totales %i\n", trip->id, trip->tareas_realizadas, patota->cantidad_de_tareas);
                 }
                 else
                 {
@@ -296,7 +294,8 @@ void chequear_tripulante_finalizado(dis_tripulante *tripulante)
     if (tripulante->tareas_realizadas == patota->cantidad_de_tareas)
     {
         tripulante->estado = EXIT;
-        actualizar_estado_miriam(tripulante->id,tripulante->estado); 
+        //[TODO] en MIRAM no existe este estado
+        //actualizar_estado_miriam(tripulante->id,tripulante->estado); 
     }
 }
 
@@ -317,13 +316,13 @@ void listar_tripulantes()
 
 dis_tarea* pedir_tarea_miriam(uint32_t tid)
 {
-    dis_tripulante *trip = list_get(list_total_tripulantes,tid - 1);
-    dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
+    // dis_tripulante *trip = list_get(list_total_tripulantes,tid - 1);
+    // dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
     
-    if (trip->tareas_realizadas == patota->cantidad_de_tareas){
-        printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
-        return NULL;
-    }
+    // if (trip->tareas_realizadas == patota->cantidad_de_tareas){
+    //     printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
+    //     return NULL;
+    // }
     
     printf("\033[1;34mTRIP %d : pidiendo prox TAREA\033[0m\n",tid);
 
@@ -339,11 +338,11 @@ dis_tarea* pedir_tarea_miriam(uint32_t tid)
     free(paquete_recibido->stream); // recibir_paquete usa un malloc 
     free(paquete_recibido); // no mover despues del return se pierde la ultima
 
-    // if(strlen(tarea_recibida)==0){
-    //     printf("Ya no hay mas proxima tarea\n");
-    //     free(tarea_recibida); // en el caso de la ultima
-    //     return NULL;
-    // }
+    if(strlen(tarea_recibida)==0){
+        printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
+        free(tarea_recibida); // en el caso de la ultima
+        return NULL;
+    }
     log_info(logger,"[ Tripulante %d ] Pidio una tarea a MI-RAM-HQ y recibio %s\n",tid,tarea_recibida);
 
 

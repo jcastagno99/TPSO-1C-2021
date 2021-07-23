@@ -617,6 +617,8 @@ void *ejecutar_tripulantes_bloqueados()
 			}
 		}
 
+		log_info(logger, "[ Dispositivo E/S ] Rafaga finalizada. Tripulante %i ejecutado. %i tareas hechas",trip->id, trip->tareas_realizadas);
+
 		switch (trip->estado)
 		{
 		case READY:
