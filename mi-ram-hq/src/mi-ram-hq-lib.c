@@ -79,7 +79,7 @@ t_log *iniciar_logger_mi_ram_hq(char *path)
 {
 	system("rm cfg/mi-ram-hq.log");
 	//Al iniciarlizar ese parametro en 0, el logger no escribe por consola y le deja ese espacio al mapa
-	t_log *log_aux = log_create(path, "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
+	t_log *log_aux = log_create(path, "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
 	return log_aux;
 }
 
@@ -447,6 +447,8 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	}
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 
+
+
 	patota = malloc(sizeof(t_tabla_de_paginas));
 	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
@@ -458,6 +460,34 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 
 	float cant = patota_con_tareas_y_tripulantes.tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	int cantidad_paginas_a_usar = ceilf(cant);
+
+//----------------------------------------------------Prototipo--------------------------------------------------------------------------------------------
+	int contador_bytes_a_swap = 0;
+	for(int i=0; i<frames->elements_count && i<cantidad_paginas_a_usar; i++){
+		t_frame_en_memoria* frame_aux = list_get(frames,i);
+		if(!frame_aux->libre){
+			if(!frame_aux->pagina_a_la_que_pertenece->inicio_swap){
+				contador_bytes_a_swap += mi_ram_hq_configuracion->TAMANIO_PAGINA;
+			}
+		}
+	}
+	
+	if(contador_bytes_a_swap > (mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_swap)){
+		log_error(logger_ram_hq,"No hay espacio suficiente para swapear las paginas necesarias para cargar la nueva patota, la solicitud sera denegada");
+		pthread_mutex_destroy(patota->mutex_tabla_paginas);
+		free(patota->mutex_tabla_paginas);
+		list_destroy(patota->paginas);
+		while(patota->tareas){
+			tarea_ram* auxiliar_tarea = list_get(patota->tareas,0);
+			free(auxiliar_tarea->tarea);
+			free(auxiliar_tarea);
+			list_remove(patota->tareas,0);
+		}
+		list_destroy(patota->tareas);
+		free(patota);
+		return RESPUESTA_FAIL;
+	}
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	list_add(patotas,patota);
@@ -1002,6 +1032,8 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 
 	traerme_todo_el_tcb_a_memoria(tcb,patota);
 
+	free(tcb);
+
 	while(espacio_leido < 4){
 		for(int k=indice_de_posicion; k<patota->paginas->elements_count; k++){
 			t_pagina* auxiliar = list_get(patota->paginas,k);
@@ -1147,8 +1179,6 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-	free(tcb);
-
 	proxima_tarea[tarea_especifica->tamanio - 1] = '\0';
 
 	return proxima_tarea;
@@ -1282,10 +1312,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		i++;
 	}
 
-	//BORRAR AL TRIPULANTE DEL MAPA
-
-	//Esto asi funciona si el tripulante ocupa 2 o menos paginas, no mas, no se que tanto rebuscarmela, para que pase
-	//la pagina tendria que ser de 16 bytes o menos (son en potencia de 2)
+	
 	t_pagina* auxiliar_pagina; 
 	int indice_pagina = tcb->indice;
 	int offset_tcb = tcb->offset;
@@ -1302,6 +1329,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				auxiliar_pagina->presente = 0;
+				free(auxiliar_frame);
 				log_info(logger_ram_hq,"La pagina %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
 			}
 			total_tripulante_leido -= bytes_a_liberar;
@@ -1317,6 +1345,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				auxiliar_pagina->presente = 0;
+				free(auxiliar_frame);
 				log_info(logger_ram_hq,"La pagina %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
 			}
 			total_tripulante_leido = 0;
@@ -1325,6 +1354,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		}
 			
 	}
+	free(tcb);
 	patota->contador_tripulantes_vivos --;
 	if(patota->contador_tripulantes_vivos == 0){
 		while(patota->paginas->elements_count){
@@ -1335,6 +1365,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				pagina_aux->presente = 0;
+				free(auxiliar_frame);
 			}
 			pthread_mutex_destroy(pagina_aux->mutex_pagina);
 			free(pagina_aux->mutex_pagina);
@@ -1353,8 +1384,12 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		free(patota->mutex_tabla_paginas);
 		int indice_patota = obtener_indice_patota(patota->id_patota);
 		list_remove(patotas,indice_patota);
+		free(patota);
 		
 	}
+
+	//BORRAR AL TRIPULANTE DEL MAPA
+
 	return RESPUESTA_OK;
 }
 
@@ -2639,34 +2674,54 @@ void sighandlerLiberarPaginacion(int signum){
 
 
 void explotar_la_nave(){
-	/* log_info(logger_ram_hq,"¡Los reactores de la nave se sobrecalentaron y estan a punto de explotar! \n Liberando todos los recursos..");
-	for(int i=0; i<patotas->elements_count; i++){
-		t_tabla_de_paginas* auxiliar_patota = list_get(patotas,i);
-		for(int j=0; j<auxiliar_patota->paginas->elements_count; i++){
-			t_pagina* auxiliar_pagina = list_get(auxiliar_patota->paginas,j);
-			pthread_mutex_destroy(auxiliar_pagina->mutex_pagina);
-			free(auxiliar_pagina->mutex_pagina);
-		}
-		for(int k=0; k<auxiliar_patota->tareas->elements_count; k++){
-			tarea_ram* tarea_aux = list_get(auxiliar_patota->tareas,k);
-			free(tarea_aux);
-		}
-		list_destroy_and_destroy_elements(auxiliar_patota->paginas,free);
-		list_destroy_and_destroy_elements(auxiliar_patota->tareas,free);
-		pthread_mutex_destroy(auxiliar_patota->mutex_tabla_paginas);
-	}
-	list_destroy_and_destroy_elements(patotas,free);
-	free(memoria_principal);
-	free(memoria_swap);
+	log_info(logger_ram_hq,"¡Los reactores de la nave se sobrecalentaron y estan a punto de explotar! \n Liberando todos los recursos..");
 	pthread_mutex_destroy(&mutex_memoria);
 	pthread_mutex_destroy(&mutex_swap);
-	list_destroy_and_destroy_elements(historial_uso_paginas,free);
-	log_info(logger_ram_hq,"La nave volo en mil pedazos!!");
-	free(pct.tareas);
-	list_destroy_and_destroy_elements(pct.tripulantes, free);
-	*/
+	pthread_mutex_destroy(&mutex_iniciar_patota);
+	pthread_mutex_destroy(&mutex_tabla_patotas);
+	pthread_mutex_destroy(&mutex_tabla_de_segmentos);
+	while(patotas->elements_count){
+		t_tabla_de_paginas* auxiliar_patota = list_get(patotas,0);
+		while(auxiliar_patota->paginas){
+			t_pagina* auxiliar_pagina = list_get(auxiliar_patota->paginas,0);
+			pthread_mutex_destroy(auxiliar_pagina->mutex_pagina);
+			free(auxiliar_pagina->mutex_pagina);
+			list_remove(auxiliar_patota->paginas,0);
+		}
+		list_destroy(auxiliar_patota->paginas);
+		while(auxiliar_patota->tareas->elements_count){
+			tarea_ram* auxiliar_tarea = list_get(auxiliar_patota->tareas,0);
+			free(auxiliar_tarea->tarea);
+			list_remove(auxiliar_patota->tareas,0);
+		}
+		list_destroy(auxiliar_patota->tareas);
+		pthread_mutex_destroy(auxiliar_patota->mutex_tabla_paginas);
+		free(auxiliar_patota->mutex_tabla_paginas);
+		int indice_patota = obtener_indice_patota(auxiliar_patota->id_patota);
+		list_remove(patotas,indice_patota);
+		free(auxiliar_patota);
+	}
+	list_destroy(patotas);
+	while(frames->elements_count){
+		t_frame_en_memoria* auxiliar_frame = list_get(frames,0);
+		pthread_mutex_destroy(auxiliar_frame->mutex);
+		free(auxiliar_frame->mutex);
+		list_remove(frames,0);
+		free(auxiliar_frame);
+	}
+	list_destroy(frames);
+	while(historial_uso_paginas->elements_count){
+		t_pagina_y_frame* auxiliar_historial = list_get(historial_uso_paginas,0);
+		list_remove(historial_uso_paginas,0);
+		free(auxiliar_historial);
+	}
+	list_destroy(historial_uso_paginas);
+	free(memoria_principal);
+	munmap(memoria_swap,mi_ram_hq_configuracion->TAMANIO_SWAP);
 	config_destroy(config_aux);
+	free(mi_ram_hq_configuracion);
 	log_destroy(logger_ram_hq);
+	list_destroy(segmentos_memoria);
 	exit(0);
 }
 
