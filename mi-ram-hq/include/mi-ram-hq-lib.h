@@ -75,6 +75,7 @@ typedef struct{
 	uint8_t fue_modificada;
 	uint8_t uso;
 	pthread_mutex_t* mutex_pagina;
+	int bytes_usados;
 
 }t_pagina;
 
@@ -83,6 +84,7 @@ typedef struct{
 	t_list* paginas;
 	t_list* tareas;
 	int cantidad_tripulantes;
+	int contador_tripulantes_vivos;
 	int id_patota;
 	pthread_mutex_t* mutex_tabla_paginas;
 
@@ -103,7 +105,6 @@ typedef struct{
 	bool libre;
 	uint32_t pid_duenio;
 	uint32_t indice_pagina;
-	double espacio_ocupado;
 
 }t_frame_en_memoria;
 
@@ -177,6 +178,7 @@ t_segmento* buscar_segmento_tcb();
 //Buscar paginas en memoria
 t_list* buscar_cantidad_frames_libres(int);
 inicio_tcb* buscar_inicio_tcb(uint32_t,t_tabla_de_paginas*,double, int);
+int obtener_indice_patota(uint32_t);
 
 //Buscar frames
 t_frame_en_memoria* buscar_frame_libre();
@@ -229,7 +231,7 @@ char obtener_char_estado (estado);
 void imprimir_dump(void);
 void recorrer_pcb_dump(t_segmento*);
 void recorrer_tareas_dump(uint32_t,t_segmento*);
-void recorrer_tcb_dump(uint32_t,t_list*,t_log*);
+void recorrer_tcb_dump(uint32_t,t_list*);
 void imprimir_dump_paginacion(void);
 
 

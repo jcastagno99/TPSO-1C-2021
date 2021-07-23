@@ -24,7 +24,7 @@ void crear_estructuras_administrativas()
 		log_info(logger_ram_hq,"Se reservaron %i bytes de memoria que comienzan en %i",mi_ram_hq_configuracion->TAMANIO_MEMORIA,memoria_principal);
 		list_add(segmentos_memoria,segmento);
 		signal(SIGUSR1, sighandlerCompactacion); //10
-		signal(SIGINT,sighandlerLiberarCompactacion);
+		//signal(SIGINT,sighandlerLiberarCompactacion);
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
@@ -39,7 +39,6 @@ void crear_estructuras_administrativas()
 			un_frame->pagina_a_la_que_pertenece = NULL;
 			un_frame->pid_duenio = 0;
 			un_frame->indice_pagina = 0;
-			un_frame->espacio_ocupado = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			un_frame->mutex = malloc(sizeof(pthread_mutex_t));
 			pthread_mutex_init(un_frame->mutex,NULL);
 			offset += mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -453,6 +452,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	patota->paginas = list_create();
 	patota->tareas = patota_con_tareas_y_tripulantes.tareas;
 	patota->cantidad_tripulantes = patota_con_tareas_y_tripulantes.cantidad_tripulantes;
+	patota->contador_tripulantes_vivos = patota_con_tareas_y_tripulantes.cantidad_tripulantes;
 	patota->id_patota = pid;
 
 	float cant = patota_con_tareas_y_tripulantes.tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -488,7 +488,13 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		pthread_mutex_init(pagina->mutex_pagina,NULL);
 		pagina->presente = 1;
 		pagina->fue_modificada = 0;
-		pagina->uso = 1; 
+		pagina->uso = 1;
+		if(i == cantidad_paginas_a_usar - 1){
+			pagina->bytes_usados = bytes_que_faltan;
+		}
+		else{
+			pagina->bytes_usados = mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		}
 		list_add(patota->paginas,pagina);
 		frame->pagina_a_la_que_pertenece = pagina;
 		frame->libre = 0;
@@ -1060,7 +1066,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	log_info(logger_ram_hq,"El tripulante de tid: %i ya cumplio con todas sus tareas, no se actualizara la direccion logica",tripulante_tid);
 	proxima_tarea = malloc(4);
 	strcpy(proxima_tarea,"");
-	expulsar_tripulante_paginacion(tripulante_tid);
+	respuesta_ok_fail descartable =	expulsar_tripulante_paginacion(tripulante_tid);
 	return proxima_tarea;
 	}
 
@@ -1214,7 +1220,7 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 {
-	/*pthread_mutex_lock(&mutex_tabla_patotas);
+	pthread_mutex_lock(&mutex_tabla_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 	if(!patota){
@@ -1250,39 +1256,87 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 
 	//Esto asi funciona si el tripulante ocupa 2 o menos paginas, no mas, no se que tanto rebuscarmela, para que pase
 	//la pagina tendria que ser de 16 bytes o menos (son en potencia de 2)
-	t_pagina* auxiliar_pagina = list_get(patota->paginas,tcb->indice);
-	int contador = 0;
+	t_pagina* auxiliar_pagina; 
 	int indice_pagina = tcb->indice;
 	int offset_tcb = tcb->offset;
-	while(contador < 21){
-		if(auxiliar_pagina->presente){
-			int lo_que_ocupa = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_tcb;
-			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
-			t_frame_en_memoria* frame = list_get(frames,indice);
-			if(frame->espacio_ocupado - lo_que_ocupa > 0){
-				log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero ningun frame resulto herido\n",auxiliar_pagina->id_pagina,patota->id_patota);
-				frame->espacio_ocupado -= lo_que_ocupa;
-				log_info(logger_ram_hq,"El frame %i sigue vivo por %i bytes",indice,frame->espacio_ocupado);
-				contador += lo_que_ocupa;
-				auxiliar_pagina = list_get(patota->paginas,indice_pagina +1);
-				offset_tcb = 0;
-				indice_pagina ++;
-			}
-			else{
-				log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
+	int total_tripulante_leido = 21;
+	while(total_tripulante_leido > 0){
+		auxiliar_pagina = list_get(patota->paginas,indice_pagina);
+		if(total_tripulante_leido + offset_tcb > mi_ram_hq_configuracion->TAMANIO_PAGINA){
+			int bytes_a_liberar = (mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_tcb);
+			auxiliar_pagina->bytes_usados -= bytes_a_liberar;
+			log_info(logger_ram_hq,"La pagina %i del proceso %i libera %i bytes, le quedan %i bytes",auxiliar_pagina->id_pagina,patota->id_patota,bytes_a_liberar,auxiliar_pagina->bytes_usados);
+			if(auxiliar_pagina->bytes_usados == 0 && auxiliar_pagina->presente){
+				int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
-				frame->espacio_ocupado = mi_ram_hq_configuracion->TAMANIO_PAGINA;
-				contador += 21;
-				//achurarlo en la estructura administrativa
+				auxiliar_pagina->presente = 0;
+				log_info(logger_ram_hq,"La pagina %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
 			}
+			total_tripulante_leido -= bytes_a_liberar;
+			offset_tcb = 0;
+			indice_pagina ++;
 		}
 		else{
-			log_info(logger_ram_hq,"El tripulante %i del proceso %i fue achurado, pero como no estaba en memoria, murio solo y en silencio\n",auxiliar_pagina->id_pagina,patota->id_patota);
-			//achurarlo en la estructura administrativa
-		}	
+			auxiliar_pagina->bytes_usados -= total_tripulante_leido;
+			log_info(logger_ram_hq,"La pagina %i del proceso %i libera %i bytes, le quedan %i bytes",auxiliar_pagina->id_pagina,patota->id_patota,total_tripulante_leido,auxiliar_pagina->bytes_usados);
+			if(auxiliar_pagina->bytes_usados == 0 && auxiliar_pagina->presente){
+				int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				t_frame_en_memoria* frame = auxiliar_frame->frame;
+				frame->libre = 1;
+				auxiliar_pagina->presente = 0;
+				log_info(logger_ram_hq,"La pagina %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
+			}
+			total_tripulante_leido = 0;
+			offset_tcb = 0;
+			indice_pagina ++;
+		}
+			
 	}
-	//FALTA EXPULSARLO COMO TAL: ESPERAR A QUE RESPONDA EL ISSUE*/
+	patota->contador_tripulantes_vivos --;
+	if(patota->contador_tripulantes_vivos == 0){
+		while(patota->paginas->elements_count){
+			t_pagina* pagina_aux = list_get(patota->paginas,0);
+			if(pagina_aux->presente){
+				int indice = buscar_frame_y_pagina_con_tid_pid(pagina_aux->id_pagina,patota->id_patota);
+				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				t_frame_en_memoria* frame = auxiliar_frame->frame;
+				frame->libre = 1;
+				pagina_aux->presente = 0;
+			}
+			pthread_mutex_destroy(pagina_aux->mutex_pagina);
+			free(pagina_aux->mutex_pagina);
+			free(pagina_aux);
+			list_remove(patota->paginas,0);
+		}
+		list_destroy(patota->paginas);
+		while(patota->tareas->elements_count){
+			tarea_ram* auxiliar_tarea = list_get(patota->tareas,0);
+			free(auxiliar_tarea->tarea);
+			free(auxiliar_tarea);
+			list_remove(patota->tareas,0);
+		}
+		list_destroy(patota->tareas);
+		pthread_mutex_destroy(patota->mutex_tabla_paginas);
+		free(patota->mutex_tabla_paginas);
+		int indice_patota = obtener_indice_patota(patota->id_patota);
+		list_remove(patotas,indice_patota);
+		
+	}
 	return RESPUESTA_OK;
+}
+
+int obtener_indice_patota(uint32_t id_patota){
+	t_tabla_de_paginas* iterador;
+	for(int i=0; i<patotas->elements_count; i++){
+		iterador = list_get(patotas,i);
+		if(iterador->id_patota == id_patota){
+			return i;
+		}
+	}
+	return -1;
 }
 
 respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
