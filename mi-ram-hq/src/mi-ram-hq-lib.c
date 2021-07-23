@@ -547,109 +547,9 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	}
 
 	pthread_mutex_unlock(patota->mutex_tabla_paginas);
-	//pthread_mutex_unlock(&mutex_memoria);
+
 	log_info(logger_ram_hq,"Las estructuras administrativas fueron creadas correctamente");
-	/*
 
-	t_list* frames_patota = buscar_cantidad_frames_libres(cantidad_paginas_a_usar);
-
-	if(cantidad_paginas_a_usar < frames_patota->elements_count && mi_ram_hq_configuracion->TAMANIO_SWAP - offset_swap < patota_con_tareas_y_tripulantes.tamanio_patota){
-		pthread_mutex_unlock(&mutex_memoria);
-		log_error(logger_ram_hq,"No hay suficiente espacio ni en la MEMORIA ni en SWAP para almacenar la patota %i por lo que su solicitud será rechazada para mantener la integridad de los datos",patota->id_patota);
-		free(patota_con_tareas_y_tripulantes.stream);
-		list_destroy(patota->paginas);
-		free(patota->mutex_tabla_paginas);
-		free(patota->mutex_tabla_paginas);
-		free(patota);
-		free(patota_con_tareas_y_tripulantes.stream);
-		return RESPUESTA_FAIL;
-	}
-
-	pthread_mutex_lock(&mutex_tabla_patotas);
-	list_add(patotas,patota);
-	pthread_mutex_unlock(&mutex_tabla_patotas);
-
-	t_frame_en_memoria* auxiliar;
-
-
-	for(int i =0; i<frames_patota->elements_count; i++){
-		auxiliar = list_get(frames_patota,i);
-		t_pagina* pagina = malloc(sizeof(t_pagina));
-		pagina->id_pagina = id_pagina;
-		pagina->inicio_memoria = auxiliar->inicio;
-		pagina->inicio_swap = NULL;
-		pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
-		pthread_mutex_init(pagina->mutex_pagina,NULL);
-		pagina->presente = 1;
-		pagina->fue_modificada = 0;
-		pagina->uso = 1; 
-		list_add(patota->paginas,pagina);
-		auxiliar->pagina_a_la_que_pertenece = pagina;
-		auxiliar->libre = 0;
-		// -------------------------------------------- ESTO ES PARA EL DUMP -------------------------------------------------------------
-		auxiliar->pid_duenio = pid;
-		auxiliar->indice_pagina = id_pagina;
-		id_pagina ++;
-		// -------------------------------------------------------------------------------------------------------------------------------
-		t_pagina_y_frame* pagina_y_frame = malloc(sizeof(t_pagina_y_frame));
-		pagina_y_frame->pagina = pagina;
-		pagina_y_frame->frame = auxiliar;
-		list_add(historial_uso_paginas,pagina_y_frame);
-		//---------------------------------------------------------------------------------------------------------------------------------
-		memcpy(auxiliar->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
-		bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
-		offset = bytes_ya_escritos;
-	}
-
-	if(frames_patota->elements_count < cantidad_paginas_a_usar){
-		log_info(logger_ram_hq,"No hay espacio suficiente en memoria para guardar todo el proceso, se procede a almacenar en SWAP %i bytes",bytes_que_faltan);
-		for(int i=0;i<(cantidad_paginas_a_usar - frames_patota->elements_count); i++){
-			t_pagina* pagina = malloc(sizeof(t_pagina));
-			pagina->id_pagina = id_pagina;
-			id_pagina ++;
-			pagina->inicio_memoria = NULL;
-			pagina->inicio_swap = memoria_swap + offset_swap;
-			pagina->mutex_pagina = malloc(sizeof(pthread_mutex_t));
-			pthread_mutex_init(pagina->mutex_pagina,NULL);
-			pagina->presente = 0;
-			pagina->fue_modificada = 0;
-			pagina->uso = 0;
-			list_add(patota->paginas,pagina);
-			memcpy(pagina->inicio_swap,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
-			int calculo_auxiliar = patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos;
-			bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,calculo_auxiliar);
-			bytes_ya_escritos = (patota_con_tareas_y_tripulantes.tamanio_patota - bytes_que_faltan);
-			offset = bytes_ya_escritos;
-			offset_swap += bytes_ya_escritos;
-		}
-		log_info(logger_ram_hq,"La informacion se guardo satisfactoriamente en el almacenamiento secundario");	
-	}
-
-
-
-	list_destroy(frames_patota);
-	 */
- 
- /*
-	if(patotas->elements_count == 3){
-	char* banana = malloc(10);
-	t_tabla_de_paginas* p = list_get(patotas,0);
-	t_pagina* x = list_get(p->paginas,0);
-	memcpy(banana,x->inicio_swap + 28,4);
-	x = list_get(p->paginas,1);
-	memcpy(banana + 4,x->inicio_swap,6);
-	int j = 2222222 + 1;
-	}
-
-	char* banana = malloc(10);
-	t_tabla_de_paginas* p = list_get(patotas,0);
-	t_pagina* x = list_get(p->paginas,0);
-	memcpy(banana,x->inicio_memoria + 28,4);
-	x = list_get(p->paginas,1);
-	memcpy(banana + 4,x->inicio_memoria,6);
-	int j = 2222222 + 1;
-	*/
 	
 	free(patota_con_tareas_y_tripulantes.stream);
 	return RESPUESTA_OK;
@@ -2591,7 +2491,7 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 			actualizar_pagina(una_pagina_con_su_frame->pagina);
 			pagina_con_frame_quitadas->frame = una_pagina_con_su_frame->frame;
 			pagina_con_frame_quitadas->pagina = pagina_con_frame_quitadas->frame->pagina_a_la_que_pertenece;
-			log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %s", pagina_con_frame_quitadas->pagina->id_pagina);
+			log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %i del proceso %i", pagina_con_frame_quitadas->pagina->id_pagina,pagina_con_frame_quitadas->frame->pid_duenio);
 			if(indice + 1 == frames->elements_count)
 				puntero_lista_frames_clock = 0;
 			else
@@ -2610,7 +2510,7 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 	}
 	else{
 		a_retornar = list_get(frames,valor_original_puntero);
-		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %i", a_retornar->pagina_a_la_que_pertenece->id_pagina);
+		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %i del proceso %i", a_retornar->pagina_a_la_que_pertenece->id_pagina,a_retornar->pid_duenio);
 		actualizar_pagina(a_retornar->pagina_a_la_que_pertenece);
 		a_retornar->pagina_a_la_que_pertenece->presente = 0;
 		if(puntero_lista_frames_clock + 1 == frames->elements_count){
