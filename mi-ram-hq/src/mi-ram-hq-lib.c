@@ -462,7 +462,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	int cantidad_paginas_a_usar = ceilf(cant);
 
 //----------------------------------------------------Prototipo--------------------------------------------------------------------------------------------
-	int contador_bytes_a_swap = 0;
+/* 	int contador_bytes_a_swap = 0;
 	for(int i=0; i<frames->elements_count && i<cantidad_paginas_a_usar; i++){
 		t_frame_en_memoria* frame_aux = list_get(frames,i);
 		if(!frame_aux->libre){
@@ -486,7 +486,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		list_destroy(patota->tareas);
 		free(patota);
 		return RESPUESTA_FAIL;
-	}
+	}*/
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	pthread_mutex_lock(&mutex_tabla_patotas);
@@ -1059,6 +1059,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 				frame->pagina_a_la_que_pertenece = auxiliar;
 				frame->indice_pagina = auxiliar->id_pagina;
 				frame->pid_duenio = patota->id_patota;
+				frame->libre = 0;
 				memcpy(frame->inicio,auxiliar->inicio_swap,mi_ram_hq_configuracion->TAMANIO_PAGINA);
 				t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 				frame_y_pagina->frame = frame;
@@ -1146,6 +1147,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 			frame->pagina_a_la_que_pertenece = auxiliar_pagina;
 			frame->indice_pagina = auxiliar_pagina->id_pagina;
 			frame->pid_duenio = patota->id_patota;
+			frame->libre = 0;
 			memcpy(frame->inicio,auxiliar_pagina->inicio_swap,mi_ram_hq_configuracion->TAMANIO_PAGINA);
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
@@ -1358,6 +1360,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 	free(tcb);
 	patota->contador_tripulantes_vivos --;
 	if(patota->contador_tripulantes_vivos == 0){
+		log_info(logger_ram_hq,"Todos los tripulantes de la patota %i estan muertos, se procede a eliminar la patota y liberar los frames ocupados",patota->id_patota);
 		while(patota->paginas->elements_count){
 			t_pagina* pagina_aux = list_get(patota->paginas,0);
 			if(pagina_aux->presente){
@@ -1365,6 +1368,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
+				log_info(logger_ram_hq,"Liberando el frame correspondiente a la pagina %i del proceso %i",pagina_aux->id_pagina,patota->id_patota);
 				pagina_aux->presente = 0;
 				free(auxiliar_frame);
 			}
@@ -1565,6 +1569,7 @@ void traerme_todo_el_tcb_a_memoria(inicio_tcb* tcb, t_tabla_de_paginas* patota){
 			frame->pagina_a_la_que_pertenece = auxiliar_pagina;
 			frame->indice_pagina = auxiliar_pagina->id_pagina;
 			frame->pid_duenio = patota->id_patota;
+			frame->libre = 0;
 			memcpy(frame->inicio,auxiliar_pagina->inicio_swap,mi_ram_hq_configuracion->TAMANIO_PAGINA);
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
