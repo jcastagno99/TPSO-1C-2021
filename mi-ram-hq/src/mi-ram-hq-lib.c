@@ -301,10 +301,10 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 	}
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
-		imprimir_dump_paginacion();
+		//imprimir_dump_paginacion();
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
-		imprimir_dump();
+		//imprimir_dump();
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
 	liberar_paquete(paquete);
@@ -2299,15 +2299,9 @@ void recorrer_tripulante(t_segmento * tripulante){
 }
 
 
-void imprimir_dump(void){
+void imprimir_dump(t_log* log_dump,char * time){
 	
-	char * time =  temporal_get_string_time("%d-%m-%y_%H:%M:%S");
-	char * path_dump = malloc (100);
-	strcpy(path_dump,"cfg/DMP_");
-	strcat(path_dump,time);
-	strcat(path_dump,".dmp");
-
-	t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
+	
 	
 	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(log_dump,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
@@ -2328,7 +2322,6 @@ void imprimir_dump(void){
 	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(log_dump,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump alternativo: %s \n",time);
 	
-	free(time);
 	for(int i = 0;i < segmentos_memoria->elements_count;i++){
 		t_segmento* segmento = list_get(segmentos_memoria,i);
 		pthread_mutex_lock(segmento->mutex_segmento);
@@ -2366,16 +2359,14 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 
 
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
- void imprimir_dump_paginacion(){
-	log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
-	char * time =  temporal_get_string_time("%d/%m/%y %H:%M:%S");
-	log_info(logger_ram_hq,"Dump: %s \n",time);
+ void imprimir_dump_paginacion(t_log* log_dump,char * time){
+	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"Dump: %s \n",time);
 
 	for(int i=0; i<frames->elements_count; i++){
 		t_frame_en_memoria* frame = list_get(frames,i);
-		log_info(logger_ram_hq,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
+		log_info(log_dump,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
 	}
-	free(time);
 }
 
 /*
@@ -2583,11 +2574,21 @@ void sighandlerCompactar(int signum) {
 void sighandlerDump(int signum) {
 	log_info(logger_ram_hq,"Llego señal de dump");
 	//funcion_test_memoria_completa();
+	char * time =  temporal_get_string_time("%d-%m-%y_%H:%M:%S");
+	char * path_dump = malloc (100);
+	strcpy(path_dump,"cfg/DMP_");
+	strcat(path_dump,time);
+	strcat(path_dump,".dmp");
+
+	t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
+
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION"))
-		imprimir_dump();
+		imprimir_dump(log_dump,time);
 	else
-		imprimir_dump_paginacion();
-		
+		imprimir_dump_paginacion(log_dump,time);
+	free(path_dump);
+	free (time);
+	log_destroy(log_dump);	
 	signal(SIGUSR2, sighandlerDump);
 
 }

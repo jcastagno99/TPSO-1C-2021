@@ -231,11 +231,11 @@ void borrar_patota(uint32_t pid);
 char obtener_char_estado (estado);
 
 //Funciones del dump
-void imprimir_dump(void);
+void imprimir_dump(t_log*,char*);
 void recorrer_pcb_dump(t_segmento*);
 void recorrer_tareas_dump(uint32_t,t_segmento*);
 void recorrer_tcb_dump(uint32_t ,t_list* ,t_log * );
-void imprimir_dump_paginacion(void);
+void imprimir_dump_paginacion(t_log*,char*);
 
 
 //Funciones armadas para debuggear
