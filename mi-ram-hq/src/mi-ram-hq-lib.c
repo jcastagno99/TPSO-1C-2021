@@ -473,23 +473,21 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	float cant = patota_con_tareas_y_tripulantes.tamanio_patota / mi_ram_hq_configuracion->TAMANIO_PAGINA;
 	int cantidad_paginas_a_usar = ceilf(cant);
 
-//----------------------------------------------------Prototipo--------------------------------------------------------------------------------------------
-/* 	int contador_bytes_a_swap = 0;
-	for(int i=0; i<frames->elements_count && i<cantidad_paginas_a_usar; i++){
+	int contador_frames_libres = 0;
+	for(int i=0;i<frames->elements_count; i++){
 		t_frame_en_memoria* frame_aux = list_get(frames,i);
-		if(!frame_aux->libre){
-			if(!frame_aux->pagina_a_la_que_pertenece->inicio_swap){
-				contador_bytes_a_swap += mi_ram_hq_configuracion->TAMANIO_PAGINA;
-			}
-		}
+		if(frame_aux->libre || (frame_aux->pagina_a_la_que_pertenece->inicio_swap && !frame_aux->libre))
+			contador_frames_libres++;
 	}
 	
-	if(contador_bytes_a_swap > (mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_swap)){
+	double contador_bytes_a_swap = (cantidad_paginas_a_usar - contador_frames_libres) * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+
+	if(contador_bytes_a_swap > (mi_ram_hq_configuracion->TAMANIO_SWAP - offset_swap)){
 		log_error(logger_ram_hq,"No hay espacio suficiente para swapear las paginas necesarias para cargar la nueva patota, la solicitud sera denegada");
 		pthread_mutex_destroy(patota->mutex_tabla_paginas);
 		free(patota->mutex_tabla_paginas);
 		list_destroy(patota->paginas);
-		while(patota->tareas){
+		while(patota->tareas->elements_count){
 			tarea_ram* auxiliar_tarea = list_get(patota->tareas,0);
 			free(auxiliar_tarea->tarea);
 			free(auxiliar_tarea);
@@ -498,8 +496,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		list_destroy(patota->tareas);
 		free(patota);
 		return RESPUESTA_FAIL;
-	}*/
-//-------------------------------------------------------------------------------------------------------------------------------------------------------------
+	}
 
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	list_add(patotas,patota);
