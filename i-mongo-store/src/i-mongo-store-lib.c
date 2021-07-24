@@ -623,6 +623,7 @@ int escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo, uint32_t ti
 		int nro_ultimo_bloque = conseguir_bloque(llave_valor, cant_bloques, cant_bloques - 1);
 		char *ultimo_bloque = malloc(block_size);
 		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
+		// [TODO]
 		int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size); //Devuelve la posición del ultimo caracter anterior al barra cero
 		if((ultimo_bloque[block_size-1] == '\0' && ultima_posicion_escrita == block_size - 2) || ultima_posicion_escrita < block_size - 2){ //CHEQUEO EL CASO EXTREMO EN EL QUE EL
 		// BLOQUE YA ESTABA COMPLETAMENTE LLENO OSEA NO HABIA BARRA CERO
@@ -988,15 +989,14 @@ int conseguir_bloque(t_config *llave_valor, int cant_bloques, int indice)
 int encontrar_anterior_barra_cero(char *ultimo_bloque, int block_size)
 {
 	int i;
-	bool encontrado = 0;
-	for (i = 0; i < block_size && !encontrado; i++)
+	for (i = 0; i < block_size; i++)
 	{
 		if (ultimo_bloque[i] == '\0')
 		{
-			encontrado = 1;
+			return i-1;
 		}
 	}
-	return i - 1 - 1;
+	return i;
 }
 
 int get_block_size()
@@ -1450,19 +1450,20 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 		int block_count = config_get_int_value(archivo, "BLOCK_COUNT");
 		char *caracter = config_get_string_value(archivo, "CARACTER_LLENADO");
 		int i = 0;
-		char rellenar_con_esto[32];
+		char *buffer = malloc(block_size);
 
 		while(i<block_count){
 			int block = atoi(array_blocks[i]);
 			if(i == block_count-1){
-				//Acá estaría en el último bloque por lo tanto hay fragmentación interna
+				//Acá estaría en el último bloque por lo tanto deberia tener fragmentación interna.
+				//Si sucede que intercambie el orden el ultimo con el primero
 				for (int j = 0; j < block_size; j++)
 				{
 					if(size > 0){
-						rellenar_con_esto[j]=caracter[0];
+						buffer[j]=caracter[0];
 						size--;
 					}else{
-						rellenar_con_esto[j]='\0';
+						buffer[j]='\0';
 					}
 				}
 			}else{//Si no estoy en el último bloque, quiere decir que no tengo fragmentación interna
@@ -1470,10 +1471,10 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 				size -= block_size;
 				for (int j = 0; j < block_size; j++)
 				{
-					rellenar_con_esto[j]=caracter[0];
+					buffer[j]=caracter[0];
 				}
 			}
-			memcpy(blocks + (block * block_size), rellenar_con_esto, block_size);
+			memcpy(blocks + (block * block_size), buffer, block_size);
 			i++;
 		}
 		config_save(archivo);
@@ -1497,20 +1498,24 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 
 	for (int i = 0; i < block_count; i++)
 	{
-		if(i == block_count - 1){
-			//voy a leer hasta el \0 ya que voy a tener fragmentación interna
-			int bloque_actual = atoi(array_blocks[i]);
-			char *buffer = malloc(block_size);
-			memcpy(buffer, blocks + (bloque_actual * block_size), block_size);
+		int bloque_actual = atoi(array_blocks[i]);
+		char *buffer = malloc(block_size);
+		memcpy(buffer, blocks + (bloque_actual * block_size), block_size);
+		int ultimo_caracter_index = encontrar_anterior_barra_cero(buffer, block_size);
+		log_warning(logger_i_mongo_store, "El ultimo caracter esta en el index %i", ultimo_caracter_index);
+		if(ultimo_caracter_index < block_size - 1){
+			// Voy a tener fragmentación interna
 			int j=0;
 			while (buffer[j] != '\0')
 			{
 				contador_de_caracteres_escritos++;
 				j++;
 			}
-			free(buffer);
 		}else
 			contador_de_caracteres_escritos += block_size;
+		free(buffer);
+		log_warning(logger_i_mongo_store, "Bloque actual %i tengo %i caracteres. Acumulado %i", bloque_actual, ultimo_caracter_index + 1, contador_de_caracteres_escritos);
+
 	}
 
 	if(size_posiblemente_corrupto == contador_de_caracteres_escritos){
