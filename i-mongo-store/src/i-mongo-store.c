@@ -10,10 +10,11 @@ bool reparar_block_count_saboteado(char *file_path){
 	
 	int v = config_get_int_value(archivo, "BLOCK_COUNT");
 	
-	if(v == cantidad_real_de_blocks)
+	if(v == cantidad_real_de_blocks){
+		config_destroy(archivo);
 		return false;
-	else{
-		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado en %s . Corrigiendo", file_path);
+	}else{
+		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block Count detectado en %s . Corrigiendo...", file_path);
 		config_set_value(archivo, "BLOCK_COUNT", string_itoa(cantidad_real_de_blocks));
 		int t = config_get_int_value(archivo, "BLOCK_COUNT");
 		config_save(archivo);
@@ -22,6 +23,24 @@ bool reparar_block_count_saboteado(char *file_path){
 		return true;
 	}
 
+}
+
+bool reparar_sabotaje_md5(char *file_path){
+	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
+	t_config *archivo = config_create(full_path);
+	printf("Analizando %s...\n", file_path);
+	char *string_a_hashear = armar_string_para_MD5(archivo);
+	char *hash = obtener_MD5(string_a_hashear, archivo);
+	char *md5 = config_get_string_value(archivo, "MD5");
+	if(string_equals_ignore_case(md5, hash)){
+		printf("Son iguales\n");
+		return false;
+	}else{
+		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje MD5 detectado en %s . Corrigiendo...", file_path);
+		
+		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
+		return true;
+	}
 }
 
 bool sabotaje_block_count(){
@@ -43,7 +62,25 @@ bool sabotaje_block_count(){
 }
 
 bool sabotaje_superbloque(){
-	return true;
+	
+	return false;
+}
+
+bool sabotaje_md5(){
+	DIR *d;
+	struct dirent *dir;
+	d = opendir("/home/utnso/polus/Files");
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+				if(reparar_sabotaje_md5(dir->d_name))
+					return true;
+			}
+		}
+		closedir(d);
+	}
+	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje MD5.");
+	return false;
 }
 
 void handler_sabotaje(int signal)
@@ -57,6 +94,7 @@ void handler_sabotaje(int signal)
 
 	if(sabotaje_block_count()) return;
 	if(sabotaje_superbloque()) return;
+	if(sabotaje_md5()) return;
 	
 	//enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
 	//printf("\033[1;33mSabotaje enviado exitosamente!\033[0m\n");
