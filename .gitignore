@@ -46,6 +46,7 @@ i-mongo-store/i-mongo-store
 *.pdb
 *.log
 **/*.log
+*.dmp
 
 # Kernel Module Compile Results
 *.mod*
