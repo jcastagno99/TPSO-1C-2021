@@ -1,6 +1,7 @@
 #include "mi-ram-hq-lib.h"
 #include <stdlib.h>
 
+pthread_mutex_t mutex_aux;
 
 void crear_estructuras_administrativas()
 {
@@ -11,6 +12,10 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
+	pthread_mutex_init(&mutex_busqueda_patota,NULL);
+	pthread_mutex_init(&mutex_lru,NULL);
+	pthread_mutex_init(&mutex_aux,NULL);
+	
 	crear_mapa ();
 	signal(SIGUSR2, sighandlerDump);
 	signal(SIGINT,sighandlerLiberarMemoria); 
@@ -456,7 +461,9 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 
 	patota = malloc(sizeof(t_tabla_de_paginas));
 	patota->mutex_tabla_paginas = malloc(sizeof(pthread_mutex_t));
+	patota->mutex_tripulantes_vivos = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(patota->mutex_tabla_paginas,NULL);
+	pthread_mutex_init(patota->mutex_tripulantes_vivos,NULL);
 	patota->paginas = list_create();
 	patota->tareas = patota_con_tareas_y_tripulantes.tareas;
 	patota->cantidad_tripulantes = patota_con_tareas_y_tripulantes.cantidad_tripulantes;
@@ -554,7 +561,9 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		t_pagina_y_frame* pagina_y_frame = malloc(sizeof(t_pagina_y_frame));
 		pagina_y_frame->pagina = pagina;
 		pagina_y_frame->frame = frame;
+		pthread_mutex_lock(&mutex_lru);
 		list_add(historial_uso_paginas,pagina_y_frame);
+		pthread_mutex_unlock(&mutex_lru);
 		//---------------------------------------------------------------------------------------------------------------------------------
 		memcpy(frame->inicio,patota_con_tareas_y_tripulantes.stream + offset,minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,bytes_que_faltan));
 		bytes_que_faltan -= minimo_entre(mi_ram_hq_configuracion->TAMANIO_PAGINA,(patota_con_tareas_y_tripulantes.tamanio_patota - bytes_ya_escritos));
@@ -672,6 +681,7 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 		primer_indice += 5*sizeof(uint32_t) + sizeof(char);
 		offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA,&nuevo_indice);
 		offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		free(tcb);
 		tcb = buscar_inicio_tcb(tripulante_con_posicion.tid,patota,nuevo_indice,offset_entero);
 		i++;
 	}
@@ -690,7 +700,7 @@ respuesta_ok_fail actualizar_ubicacion_paginacion(tripulante_y_posicion tripulan
 	offset_posicion_entero = offset_posicion * mi_ram_hq_configuracion->TAMANIO_PAGINA;
 
 	uint32_t pos_y = leer_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,patota);
-	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_x,patota);
+	escribir_un_uint32_a_partir_de_indice(indice_de_posicion,offset_posicion_entero,tripulante_con_posicion.pos_y,patota);
 
 
 	direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);
@@ -729,6 +739,8 @@ uint32_t leer_un_uint32_a_partir_de_indice(double indice, int offset, t_tabla_de
 
 //PENDIENTE EL -1 QUE COMENTO ABAJO
 t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
+	pthread_mutex_lock(&mutex_busqueda_patota);
+	
 	t_tabla_de_paginas* auxiliar;
 	tarea_ram* tarea_aux;
 	t_pagina* pagina_aux;
@@ -761,28 +773,31 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
 				bytes_escritos = espacio_disponible_en_pagina;
-				pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
+				//pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
 				offset_pagina = 0;
+				
 			}
 			else if (bytes_a_leer <= espacio_disponible_en_pagina && pagina_aux->presente){
 				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
 				if(tid_aux == tid){
 					pthread_mutex_unlock(pagina_aux->mutex_pagina);
+					pthread_mutex_unlock(&mutex_busqueda_patota);
 					return auxiliar;
 				}
 			}
-			if(bytes_a_leer > espacio_disponible_en_pagina && !(pagina_aux->presente)){
+			else if(bytes_a_leer > espacio_disponible_en_pagina && !(pagina_aux->presente)){
 				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_swap + offset_pagina_entero,espacio_disponible_en_pagina);
 				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
 				bytes_escritos = espacio_disponible_en_pagina;
-				pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
+				//pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
 				offset_pagina = 0;
 			}
-			else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)){
+			else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)  && !(pagina_aux->inicio_swap)){
 				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_swap + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
 				if(tid_aux == tid){
 					pthread_mutex_unlock(pagina_aux->mutex_pagina);
+					pthread_mutex_unlock(&mutex_busqueda_patota);
 					return auxiliar;
 				}
 			}
@@ -790,6 +805,7 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 		}
 		
 	}
+	pthread_mutex_unlock(&mutex_busqueda_patota);
 	return NULL;
 }
 
@@ -861,7 +877,6 @@ void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t d
 	t_pagina* auxiliar_pagina = list_get(patota->paginas,indice);
 	int tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset;
 	int bytes_escritos = 0;
-	int bytes_desplazados_escritura = 0;
 	int offset_lectura = 0;
 
 	t_frame_en_memoria* frame;
@@ -888,19 +903,25 @@ void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t d
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
 			frame_y_pagina->pagina = auxiliar_pagina;
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 		}
 		else if(auxiliar_pagina->presente){
 			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+			pthread_mutex_lock(&mutex_lru);
 			t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+			pthread_mutex_unlock(&mutex_lru);
 			frame = frame_y_pagina->frame;
 			pthread_mutex_lock(frame->mutex);
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
+		
 		}
 		if(tamanio_disponible_pagina < 4){
-			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura,tamanio_disponible_pagina);
+			memcpy(auxiliar_pagina->inicio_memoria + offset,&dato + offset_lectura,tamanio_disponible_pagina);
 			bytes_escritos += tamanio_disponible_pagina;
-			bytes_desplazados_escritura += tamanio_disponible_pagina;
 			offset_lectura += tamanio_disponible_pagina;
 			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			auxiliar_pagina->fue_modificada = 1;
@@ -910,7 +931,7 @@ void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t d
 			offset = 0;
 		}
 		else{
-			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura, 4 - bytes_escritos);
+			memcpy(auxiliar_pagina->inicio_memoria + offset ,&dato + offset_lectura, 4 - bytes_escritos);
 			auxiliar_pagina->fue_modificada = 1;
 			auxiliar_pagina->uso = 1;
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
@@ -938,12 +959,14 @@ t_frame_en_memoria* buscar_frame_libre(){
 
 char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 {
-
+	
+	pthread_mutex_lock(&mutex_aux);
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
 	if(!patota){
 		log_error(logger_ram_hq,"No existe patota a la que pertenezca el tripulante de tid: %i",tripulante_tid);
+		pthread_mutex_unlock(&mutex_aux);
 		return "RESPUESTA_FAIL";
 	}
 	log_info(logger_ram_hq,"Encontre la patota a la que pertenece el tripulante de tid: %i",tripulante_tid);
@@ -967,6 +990,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 		primer_indice += 5*sizeof(uint32_t) + sizeof(char);
 		offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA,&nuevo_indice);
 		offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		free(tcb);
 		tcb = buscar_inicio_tcb(tripulante_tid,patota,nuevo_indice,offset_entero);
 		i++;
 	}
@@ -1014,14 +1038,20 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 				t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 				frame_y_pagina->frame = frame;
 				frame_y_pagina->pagina = auxiliar;
+				pthread_mutex_lock(&mutex_lru);
 				list_add(historial_uso_paginas,frame_y_pagina);
+				pthread_mutex_unlock(&mutex_lru);
 			}
 			else if(auxiliar->presente){
 				int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar->id_pagina,patota->id_patota);
+				pthread_mutex_lock(&mutex_lru);
 				t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+				pthread_mutex_unlock(&mutex_lru);	
 				frame = frame_y_pagina->frame;
 				pthread_mutex_lock(frame->mutex);
+				pthread_mutex_lock(&mutex_lru);
 				list_add(historial_uso_paginas,frame_y_pagina);
+				pthread_mutex_unlock(&mutex_lru);
 			}
 			if(bytes_a_leer > espacio_disponible_en_pagina){
 				memcpy(&indice_proxima_tarea + espacio_leido,auxiliar->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
@@ -1051,6 +1081,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	proxima_tarea = malloc(4);
 	strcpy(proxima_tarea,"");
 	expulsar_tripulante_paginacion(tripulante_tid);
+	pthread_mutex_unlock(&mutex_aux);
 	return proxima_tarea;
 	}
 
@@ -1102,14 +1133,24 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
 			frame_y_pagina->pagina = auxiliar_pagina;
+			
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 		}
 		else if(auxiliar_pagina->presente){
 			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+
+			pthread_mutex_lock(&mutex_lru);
 			t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+			pthread_mutex_unlock(&mutex_lru);
+			
 			frame = frame_y_pagina->frame;
 			pthread_mutex_lock(frame->mutex);
+
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 		}
 		if((bytes_de_tarea - bytes_leidos_tarea) > espacio_disponible_en_pagina){
 			memcpy(proxima_tarea + bytes_leidos_tarea,auxiliar_pagina->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
@@ -1132,7 +1173,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 	proxima_tarea[tarea_especifica->tamanio - 1] = '\0';
-
+	pthread_mutex_unlock(&mutex_aux);
 	return proxima_tarea;
 }
 
@@ -1233,6 +1274,8 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 {
+	item_borrar(nivel,obtener_caracter_mapa(tripulante_tid));
+	nivel_gui_dibujar(nivel);
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
 	pthread_mutex_unlock(&mutex_tabla_patotas);
@@ -1261,6 +1304,7 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		primer_indice += 5*sizeof(uint32_t) + sizeof(char);
 		offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA,&nuevo_indice);
 		offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		free(tcb);
 		tcb = buscar_inicio_tcb(tripulante_tid,patota,nuevo_indice,offset_entero);
 		i++;
 	}
@@ -1278,7 +1322,9 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 			log_info(logger_ram_hq,"La pagina %i del proceso %i libera %i bytes, le quedan %i bytes",auxiliar_pagina->id_pagina,patota->id_patota,bytes_a_liberar,auxiliar_pagina->bytes_usados);
 			if(auxiliar_pagina->bytes_usados == 0 && auxiliar_pagina->presente){
 				int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+				pthread_mutex_lock(&mutex_lru);
 				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				pthread_mutex_unlock(&mutex_lru);
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				auxiliar_pagina->presente = 0;
@@ -1294,12 +1340,15 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 			log_info(logger_ram_hq,"La pagina %i del proceso %i libera %i bytes, le quedan %i bytes",auxiliar_pagina->id_pagina,patota->id_patota,total_tripulante_leido,auxiliar_pagina->bytes_usados);
 			if(auxiliar_pagina->bytes_usados == 0 && auxiliar_pagina->presente){
 				int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+				pthread_mutex_lock(&mutex_lru);
 				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				pthread_mutex_unlock(&mutex_lru);
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				auxiliar_pagina->presente = 0;
 				free(auxiliar_frame);
 				log_info(logger_ram_hq,"La pagina %i del proceso %i fue achurado y su frame fue liberado\n",auxiliar_pagina->id_pagina,patota->id_patota);
+	
 			}
 			total_tripulante_leido = 0;
 			offset_tcb = 0;
@@ -1307,17 +1356,19 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		}
 			
 	}
-	item_borrar(nivel,obtener_caracter_mapa(tripulante_tid));
-	nivel_gui_dibujar(nivel);
 	free(tcb);
-	patota->contador_tripulantes_vivos --;
+	pthread_mutex_lock(patota->mutex_tripulantes_vivos);
+	patota->contador_tripulantes_vivos --; //mutex a este contador?
+	pthread_mutex_unlock(patota->mutex_tripulantes_vivos);
 	if(patota->contador_tripulantes_vivos == 0){
 		log_info(logger_ram_hq,"Todos los tripulantes de la patota %i estan muertos, se procede a eliminar la patota y liberar los frames ocupados",patota->id_patota);
 		while(patota->paginas->elements_count){
 			t_pagina* pagina_aux = list_get(patota->paginas,0);
-			if(pagina_aux->presente){
+			if(pagina_aux->presente){ 	
 				int indice = buscar_frame_y_pagina_con_tid_pid(pagina_aux->id_pagina,patota->id_patota);
+				pthread_mutex_lock(&mutex_lru);
 				t_pagina_y_frame* auxiliar_frame = list_remove(historial_uso_paginas,indice);
+				pthread_mutex_unlock(&mutex_lru);
 				t_frame_en_memoria* frame = auxiliar_frame->frame;
 				frame->libre = 1;
 				log_info(logger_ram_hq,"Liberando el frame correspondiente a la pagina %i del proceso %i",pagina_aux->id_pagina,patota->id_patota);
@@ -1339,6 +1390,8 @@ respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 		list_destroy(patota->tareas);
 		pthread_mutex_destroy(patota->mutex_tabla_paginas);
 		free(patota->mutex_tabla_paginas);
+		pthread_mutex_lock(patota->mutex_tripulantes_vivos);
+		free(patota->mutex_tripulantes_vivos);
 		int indice_patota = obtener_indice_patota(patota->id_patota);
 		list_remove(patotas,indice_patota);
 		free(patota);
@@ -1475,7 +1528,9 @@ respuesta_ok_fail actualizar_estado_paginacion(uint32_t tid, estado estado,int s
 		primer_indice += 5*sizeof(uint32_t) + sizeof(char);
 		offset = modf(primer_indice / mi_ram_hq_configuracion->TAMANIO_PAGINA,&nuevo_indice);
 		offset_entero = offset * mi_ram_hq_configuracion->TAMANIO_PAGINA;
+		free(tcb);
 		tcb = buscar_inicio_tcb(tid,patota,nuevo_indice,offset_entero);
+
 		i++;
 	}
 
@@ -1526,7 +1581,9 @@ void traerme_todo_el_tcb_a_memoria(inicio_tcb* tcb, t_tabla_de_paginas* patota){
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
 			frame_y_pagina->pagina = auxiliar_pagina;
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 			pthread_mutex_unlock(frame->mutex);
 		}
 		/* else if(auxiliar_pagina->presente){
@@ -1584,14 +1641,22 @@ void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_ta
 			t_pagina_y_frame* frame_y_pagina = malloc(sizeof(t_pagina_y_frame));
 			frame_y_pagina->frame = frame;
 			frame_y_pagina->pagina = auxiliar_pagina;
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 		}
 		else if(auxiliar_pagina->presente){
 			int indice = buscar_frame_y_pagina_con_tid_pid(auxiliar_pagina->id_pagina,patota->id_patota);
+
+			pthread_mutex_lock(&mutex_lru);
 			t_pagina_y_frame* frame_y_pagina = list_remove(historial_uso_paginas,indice);
+			pthread_mutex_unlock(&mutex_lru);
 			frame = frame_y_pagina->frame;
 			pthread_mutex_lock(frame->mutex);
+
+			pthread_mutex_lock(&mutex_lru);
 			list_add(historial_uso_paginas,frame_y_pagina);
+			pthread_mutex_unlock(&mutex_lru);
 		}
 		if(tamanio_disponible_pagina < 1){
 			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura,tamanio_disponible_pagina);
@@ -1601,8 +1666,8 @@ void escribir_un_char_a_partir_de_indice(double indice,int offset,char dato,t_ta
 			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			auxiliar_pagina->fue_modificada = 1;
 			auxiliar_pagina->uso = 1;
-			auxiliar_pagina = list_get(patotas,indice+1);
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			auxiliar_pagina = list_get(patota->paginas,indice+1);
 		}
 		else{
 			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura, 1 - bytes_escritos);
@@ -2461,7 +2526,9 @@ uint32_t calcular_memoria_libre(){
 
  t_frame_en_memoria* sustituir_LRU(){
 	log_info(logger_ram_hq,"inicio algoritmo de sustitucion LRU");
+	pthread_mutex_lock(&mutex_lru);
 	t_pagina_y_frame* pagina_a_quitar_con_su_frame = list_remove(historial_uso_paginas,0); //basicamente el que fue usado hace mas tiempo
+	pthread_mutex_unlock(&mutex_lru);
 	actualizar_pagina(pagina_a_quitar_con_su_frame->pagina);
 	pagina_a_quitar_con_su_frame->pagina->presente = 0;
 	log_info(logger_ram_hq, "se ha elegido como victima a la pagina %i del proceso %i", pagina_a_quitar_con_su_frame->pagina->id_pagina,pagina_a_quitar_con_su_frame->frame->pid_duenio);
@@ -2557,12 +2624,16 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 
 int buscar_frame_y_pagina_con_tid_pid(int id_pagina,int id_patota){
 	t_pagina_y_frame* auxiliar;
+	pthread_mutex_lock(&mutex_lru);
 	for(int i=0; i<historial_uso_paginas->elements_count; i++){
 		auxiliar = list_get(historial_uso_paginas,i);
+
 		if(auxiliar->frame->indice_pagina == id_pagina && auxiliar->frame->pid_duenio == id_patota){
+			pthread_mutex_unlock(&mutex_lru);
 			return i;
 		}
 	}
+	pthread_mutex_unlock(&mutex_lru);
 	log_error(logger_ram_hq,"Un frame marcado como presente no tiene asignado ningun frame");
 	return -1;
 }
@@ -2622,6 +2693,8 @@ void funcion_test_memoria_completa (void){
 
 void sighandlerLiberarMemoria(int signum){
 	log_info(logger_ram_hq,"Llego la señal para evacuar el modulo");
+	nivel_gui_terminar();
+	nivel_destruir(nivel);
 	
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 		explotar_la_nave();
@@ -2637,6 +2710,7 @@ void explotar_la_nave(){
 	pthread_mutex_destroy(&mutex_iniciar_patota);
 	pthread_mutex_destroy(&mutex_tabla_patotas);
 	pthread_mutex_destroy(&mutex_tabla_de_segmentos);
+	pthread_mutex_destroy(&mutex_busqueda_patota);
 	while(patotas->elements_count){
 		t_tabla_de_paginas* auxiliar_patota = list_get(patotas,0);
 		while(auxiliar_patota->paginas){
@@ -2654,6 +2728,9 @@ void explotar_la_nave(){
 		list_destroy(auxiliar_patota->tareas);
 		pthread_mutex_destroy(auxiliar_patota->mutex_tabla_paginas);
 		free(auxiliar_patota->mutex_tabla_paginas);
+		pthread_mutex_destroy(auxiliar_patota->mutex_tripulantes_vivos);
+		free(auxiliar_patota->mutex_tripulantes_vivos);
+		
 		int indice_patota = obtener_indice_patota(auxiliar_patota->id_patota);
 		list_remove(patotas,indice_patota);
 		free(auxiliar_patota);
@@ -2667,11 +2744,13 @@ void explotar_la_nave(){
 		free(auxiliar_frame);
 	}
 	list_destroy(frames);
+	pthread_mutex_lock(&mutex_lru);
 	while(historial_uso_paginas->elements_count){
 		t_pagina_y_frame* auxiliar_historial = list_get(historial_uso_paginas,0);
 		list_remove(historial_uso_paginas,0);
 		free(auxiliar_historial);
 	}
+	pthread_mutex_unlock(&mutex_lru);
 	list_destroy(historial_uso_paginas);
 	free(memoria_principal);
 	munmap(memoria_swap,mi_ram_hq_configuracion->TAMANIO_SWAP);
@@ -2686,6 +2765,7 @@ void explotar_la_nave(){
 void crear_mapa (){
 	
 	nivel_gui_inicializar();
+
 
 	cols = 10;
 	rows = 10;
