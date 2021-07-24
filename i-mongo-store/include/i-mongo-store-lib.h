@@ -82,6 +82,9 @@ t_list* mutex_bitacoras;
 pthread_mutex_t mutex_lista_bitacoras;
 t_list* lista_hilos;
 uint32_t* tamanios_global;
+pthread_mutex_t mutex_oxigeno;
+pthread_mutex_t mutex_comida;
+pthread_mutex_t mutex_basura;
 //------------Firmas de funciones------------
 
 i_mongo_store_config* leer_config_i_mongo_store(char*);
@@ -139,6 +142,8 @@ void* sincronizar(void* tamanios);
 pthread_mutex_t* buscar_mutex_con_tid(uint32_t tid);
 void agregar_a_lista_bitacoras_si_es_necesario(uint32_t tid);
 bool esta_el_tripulante(uint32_t tid);
+void bloquear_recurso_correspondiente(char* recurso);
+void desbloquear_recurso_correspondiente(char* recurso);
 //--------------Sabotajes-------------
 posicion get_proximo_sabotaje_y_avanzar_indice();
 int realizar_fsck();

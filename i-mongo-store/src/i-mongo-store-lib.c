@@ -114,13 +114,19 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			int cant_unidades = conseguir_parametros(tct.tarea);
 			switch(operacion_sobre_archivo){
 				case GENERAR:
+					bloquear_recurso_correspondiente(recurso);
 					resultado2 = generar_recurso(recurso,cant_unidades,tct.tid);
+					desbloquear_recurso_correspondiente(recurso);
 				break;
 				case CONSUMIR:
+					bloquear_recurso_correspondiente(recurso);
 					resultado2 = consumir_recurso(recurso,cant_unidades);
+					desbloquear_recurso_correspondiente(recurso);
 				break;
 				case DESCARTAR:
+					bloquear_recurso_correspondiente(recurso);
 					resultado2 = descartar_recurso(recurso);
+					desbloquear_recurso_correspondiente(recurso);
 				default:
 					resultado2 = -1;
 				break;
@@ -393,7 +399,7 @@ void inicializar_superbloque_existente(uint32_t* block_size_ref, uint32_t* block
 	}
 	int res2 = pread(fd_superbloques ,cant_ref,sizeof(uint32_t), sizeof(uint32_t));
 	if( res2 == sizeof(uint32_t)){
-		log_info(logger_i_mongo_store,"la cantidad existente de los bloques es de %d bytes",*cant_ref);
+		log_info(logger_i_mongo_store,"La cantidad de bloques existentes es de %d bloques",*cant_ref);
 	} else{
 		log_error(logger_i_mongo_store, "No se pudo leer la cantidad de bloques. Se esperaban leer %d bytes y se leyeron %d", sizeof(uint32_t), res2);
 	}
@@ -1443,7 +1449,6 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 		char **array_blocks = config_get_array_value(archivo, "BLOCKS");
 		int block_count = config_get_int_value(archivo, "BLOCK_COUNT");
 		char *caracter = config_get_string_value(archivo, "CARACTER_LLENADO");
-		int res;
 		int i = 0;
 		char rellenar_con_esto[32];
 
@@ -1487,7 +1492,6 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 	int block_size = get_block_size();
 	char **array_blocks = config_get_array_value(archivo, "BLOCKS");
 	int block_count = config_get_int_value(archivo, "BLOCK_COUNT");
-	char *caracter = config_get_string_value(archivo, "CARACTER_LLENADO");
 	int size_posiblemente_corrupto = config_get_int_value(archivo, "SIZE");
 	int contador_de_caracteres_escritos = 0;
 
@@ -1683,5 +1687,35 @@ bool sabotaje_superbloque(){
 	}else{
 		reparar_sabotaje_superbloque_block_count(cant_segun_blocks);
 		return true;
+	}
+}
+
+void bloquear_recurso_correspondiente(char* recurso){
+	if(strcmp(recurso,"OXIGENO") == 0){
+		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
+		pthread_mutex_lock(&mutex_oxigeno);
+	}
+	if(strcmp(recurso,"COMIDA") == 0){
+		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
+		pthread_mutex_lock(&mutex_comida);
+	}
+	if(strcmp(recurso,"BASURA")==0){
+		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
+		pthread_mutex_lock(&mutex_basura);
+	}
+}
+void desbloquear_recurso_correspondiente(char* recurso){
+	log_error(logger_i_mongo_store,"recurso a desbloquear: %s", recurso);
+	if(strcmp(recurso,"Oxigeno") == 0){
+		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
+		pthread_mutex_unlock(&mutex_oxigeno);
+	}
+	if(strcmp(recurso,"Comida") == 0){
+		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
+		pthread_mutex_unlock(&mutex_comida);
+	}
+	if(strcmp(recurso,"Basura")==0){
+		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
+		pthread_mutex_unlock(&mutex_basura);
 	}
 }

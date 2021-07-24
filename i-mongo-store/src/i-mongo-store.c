@@ -18,6 +18,9 @@ void handler_sabotaje(int signal)
 }
 
 void handler_sigint(int signal){
+	pthread_mutex_destroy(&mutex_oxigeno);
+	pthread_mutex_destroy(&mutex_comida);
+	pthread_mutex_destroy(&mutex_basura);
 	pthread_mutex_destroy(&mutex_lista_bitacoras);
 	log_destroy(logger_i_mongo_store);
 	pthread_mutex_destroy(&superbloque_bitarray_mutex);
@@ -56,6 +59,9 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handler_sigint);
 	system("rm cfg/i-mongo-store.log");
 	pthread_mutex_init(&mutex_lista_bitacoras,NULL);
+	pthread_mutex_init(&mutex_oxigeno,NULL);
+	pthread_mutex_init(&mutex_comida,NULL);
+	pthread_mutex_init(&mutex_basura,NULL);
 	mutex_bitacoras = list_create();
 	lista_hilos = list_create();
 	pthread_mutex_init(&superbloque_bitarray_mutex, NULL); //creo que este SI es necesario

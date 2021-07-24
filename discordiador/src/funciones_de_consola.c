@@ -470,7 +470,7 @@ t_list * armar_tareas_para_enviar(char *nombre_archivo)
     while (feof(archivo) == 0)
     {
         fgets(caracteres, 99, archivo);
-        printf("longitud caracteres: %d", strlen(caracteres));
+        //printf("longitud caracteres: %d", strlen(caracteres));
         char * aux = malloc(strlen(caracteres)+1);
         //[SANTI] al aux le faltaria el +1 para almacenar el /0. En algunas ocasiones muy random me tira error. Gian fue testigo de ese error random. Revisar archivo de log de Valgrind
         if(caracteres[strlen(caracteres)-1] == '\n')
