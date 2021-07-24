@@ -387,7 +387,7 @@ void notificar_movimiento_a_miram(dis_tripulante *trip){
     void * info = serializar_tripulante_y_posicion(tripulante_posicion);
     uint32_t size_paquete = sizeof(uint32_t) *3;
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
-    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     close(conexion_mi_ram_hq);
 
     // Verificar respuesta: Ver si es nesesario en un futuro
