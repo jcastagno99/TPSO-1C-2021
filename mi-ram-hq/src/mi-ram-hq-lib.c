@@ -2435,7 +2435,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
 
-	for(int i=0; i<frames->elements_count; i++){
+	for(int i=0; i<frames->elements_count && i<10; i++){
 		t_frame_en_memoria* frame = list_get(frames,i);
 		int bit_uso;
 		if(!frame->libre){
@@ -2451,7 +2451,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 		t_pagina_y_frame * auxiliar;
 		pthread_mutex_lock(&mutex_lru);
 		log_info(log_dump,"Imprimiendo la cola de LRU:");
-		for(int i=0; i<historial_uso_paginas->elements_count; i++){
+		for(int i=0; i<historial_uso_paginas->elements_count && i<10; i++){
 			auxiliar = list_get(historial_uso_paginas,i);
 			log_info(log_dump,"Frame perteneciente a la pagina %i, del proceso %i en la posicion %i",auxiliar->frame->indice_pagina,auxiliar->frame->pid_duenio,i);
 		}
