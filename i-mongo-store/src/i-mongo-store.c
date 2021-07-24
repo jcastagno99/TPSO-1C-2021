@@ -13,7 +13,7 @@ bool reparar_block_count_saboteado(char *file_path){
 	if(v == cantidad_real_de_blocks)
 		return false;
 	else{
-		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado. Corrigiendo");
+		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado en %s . Corrigiendo", file_path);
 		config_set_value(archivo, "BLOCK_COUNT", string_itoa(cantidad_real_de_blocks));
 		int t = config_get_int_value(archivo, "BLOCK_COUNT");
 		config_save(archivo);
@@ -42,6 +42,10 @@ bool sabotaje_block_count(){
 	return false;
 }
 
+bool sabotaje_superbloque(){
+	return true;
+}
+
 void handler_sabotaje(int signal)
 {
 	printf("\033[1;33mSabotaje detectado. Enviando información a Discordiador...\033[0m\n");
@@ -51,7 +55,8 @@ void handler_sabotaje(int signal)
 	void *stream = pserializar_posicion(nueva_pos.pos_x,nueva_pos.pos_y);
 	uint32_t size_paquete = 2 * sizeof(uint32_t);
 
-	if(sabotaje_block_count())
+	if(sabotaje_block_count()) return;
+	if(sabotaje_superbloque()) return;
 	
 	//enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
 	//printf("\033[1;33mSabotaje enviado exitosamente!\033[0m\n");
