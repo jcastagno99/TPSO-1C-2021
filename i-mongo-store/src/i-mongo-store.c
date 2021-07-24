@@ -1,6 +1,7 @@
 #include "i-mongo-store-lib.h"
 void handler_sabotaje(int signal)
 {
+	estoy_saboteado = 1;
 	printf("\033[1;33mSabotaje detectado. Enviando información a Discordiador...\033[0m\n");
 	char* puerto = itoa_propio(i_mongo_store_configuracion->PUERTO_DISCORDIADOR);
 	int conexion_discordiador = crear_conexion(i_mongo_store_configuracion ->IP_DISCORDIADOR, puerto);
@@ -55,6 +56,7 @@ void handler_sigint(int signal){
 }
 int main(int argc, char *argv[])
 {
+	estoy_saboteado = 0;
 	signal(SIGUSR1, handler_sabotaje);
 	signal(SIGINT, handler_sigint);
 	system("rm cfg/i-mongo-store.log");

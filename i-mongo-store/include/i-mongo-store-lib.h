@@ -155,5 +155,5 @@ bool sabotaje_superbloque();
 bool sabotaje_md5();
 bool sabotaje_bitmap();
 bool sabotaje_size();
-
+bool estoy_saboteado;
 #endif /* I_MONGO_STORE_LIB_H */
