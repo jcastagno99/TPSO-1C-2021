@@ -1,0 +1,6 @@
+#!/bin/bash
+FILE=alterador
+make $FILE
+if test -f "./$FILE"; then
+    ./$FILE cfg/alterador.config
+fi
