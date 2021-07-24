@@ -143,9 +143,12 @@ bool esta_el_tripulante(uint32_t tid);
 posicion get_proximo_sabotaje_y_avanzar_indice();
 int realizar_fsck();
 bool reparar_block_count_saboteado(char *file_path);
-bool reparar_sabotaje_md5(char *file_path);
+bool reparar_sabotaje_md5_en_archivo(char *file_path);
 bool sabotaje_block_count();
 bool reparar_sabotaje_superbloque_block_count(uint32_t nueva_cant);
 bool sabotaje_superbloque();
 bool sabotaje_md5();
+bool sabotaje_bitmap();
+bool sabotaje_size();
+
 #endif /* I_MONGO_STORE_LIB_H */

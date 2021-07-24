@@ -1,5 +1,4 @@
 #include "i-mongo-store-lib.h"
-
 void handler_sabotaje(int signal)
 {
 	printf("\033[1;33mSabotaje detectado. Enviando información a Discordiador...\033[0m\n");
@@ -8,9 +7,6 @@ void handler_sabotaje(int signal)
 	posicion nueva_pos = get_proximo_sabotaje_y_avanzar_indice();
 	void *stream = pserializar_posicion(nueva_pos.pos_x,nueva_pos.pos_y);
 	uint32_t size_paquete = 2 * sizeof(uint32_t);
-
-
-	
 	enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
 	printf("\033[1;33mSabotaje enviado exitosamente!\033[0m\n");
 	t_paquete *respuesta = recibir_paquete(conexion_discordiador);
