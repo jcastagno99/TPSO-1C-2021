@@ -308,6 +308,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
 		//imprimir_dump_paginacion();
+		sighandlerDump(1);
+		
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
 		//imprimir_dump();
@@ -441,6 +443,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 	
 	return RESPUESTA_OK;
 }
+
 
 respuesta_ok_fail 
 iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
@@ -790,7 +793,7 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 				//pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
 				offset_pagina = 0;
 			}
-			else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)  && !(pagina_aux->inicio_swap)){
+			else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)){
 				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_swap + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
 				if(tid_aux == tid){
 					pthread_mutex_unlock(pagina_aux->mutex_pagina);
@@ -2432,7 +2435,14 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 
 	for(int i=0; i<frames->elements_count; i++){
 		t_frame_en_memoria* frame = list_get(frames,i);
-		log_info(log_dump,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \n",i,frame->libre,frame->pid_duenio,frame->indice_pagina);
+		int bit_uso;
+		if(!frame->libre){
+			bit_uso = frame->pagina_a_la_que_pertenece->uso;
+		}
+		else{
+			bit_uso = -1;
+		}
+		log_info(log_dump,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \t	Bit de uso: %i",i,frame->libre,frame->pid_duenio,frame->indice_pagina,bit_uso);
 	}
 }
 
@@ -2537,15 +2547,15 @@ uint32_t calcular_memoria_libre(){
 
 
 void actualizar_pagina(t_pagina* pagina){
-	if(pagina->inicio_swap){
+
+	if(pagina->inicio_swap && pagina->fue_modificada){
 		pthread_mutex_lock(&mutex_swap);
 		pthread_mutex_lock(pagina->mutex_pagina);
 		memcpy(pagina->inicio_swap,pagina->inicio_memoria,mi_ram_hq_configuracion->TAMANIO_PAGINA);
 		pthread_mutex_unlock(pagina->mutex_pagina);
 		pthread_mutex_unlock(&mutex_swap);
 	}
-	else{
-		//Deberia controlar aca que tenga lugar en swap
+	else if(!pagina->inicio_swap){
 		pthread_mutex_lock(&mutex_swap);
 		pthread_mutex_lock(pagina->mutex_pagina);
 		pagina->inicio_swap = memoria_swap + offset_swap;
@@ -2581,7 +2591,6 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 		una_pagina_con_su_frame->frame = auxiliar;
 		una_pagina_con_su_frame->pagina = una_pagina_con_su_frame->frame->pagina_a_la_que_pertenece;
 
-			//chequear por caso (0,0) que esta escribiendo igualmente en swap
 		if (!una_pagina_con_su_frame->pagina->uso) {
 			actualizar_pagina(una_pagina_con_su_frame->pagina);
 			pagina_con_frame_quitadas->frame = una_pagina_con_su_frame->frame;
@@ -2658,11 +2667,11 @@ void sighandlerDump(int signum) {
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION"))
 		imprimir_dump(log_dump,time);
 	else
-		imprimir_dump_paginacion(log_dump,time);
+		imprimir_dump_paginacion(logger_ram_hq,time);
 	free(path_dump);
 	free (time);
 	log_destroy(log_dump);	
-	signal(SIGUSR2, sighandlerDump);
+	//signal(SIGUSR2, sighandlerDump);
 
 }
 
