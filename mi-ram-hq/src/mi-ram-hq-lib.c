@@ -143,11 +143,10 @@ void crear_hilo_para_manejar_suscripciones(int socket)
 	int *socket_hilo = malloc(sizeof(int));
 	*socket_hilo = socket;
 	pthread_t hilo_conectado;
-	pthread_create(&hilo_conectado, NULL, (void *)manejar_suscripciones_mi_ram_hq, socket_hilo);
-	//list_add(lista_hilos, &hilo_conectado);
-	pthread_join(hilo_conectado, NULL);
-	close(socket);
-	free(socket_hilo);
+	pthread_attr_t atributo_hilo;
+	pthread_attr_init(&atributo_hilo);
+	pthread_attr_setdetachstate(&atributo_hilo, PTHREAD_CREATE_DETACHED);
+	pthread_create(&hilo_conectado, &atributo_hilo, (void *)manejar_suscripciones_mi_ram_hq, socket_hilo);
 	return;
 }
 
@@ -308,6 +307,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	log_info(logger_ram_hq,"Cerrando socket %i",*socket_hilo);
 	liberar_paquete(paquete);
+	close(*socket_hilo);
+    free(socket_hilo);
+    pthread_exit(NULL);
 	return NULL;
 }
 

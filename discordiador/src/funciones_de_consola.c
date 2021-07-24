@@ -212,6 +212,9 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
             // [VERIFICAMOS] Si ya realico el ciclo inicial de CPU de la tarea e/s
             if (trip->hice_ciclo_inicial_tarea_es)
             {
+                if(tarea->tiempo_total == tarea->tiempo_restante){
+                 notificar_inicio_tarea_imongo(trip->id, tarea);
+                }
                 log_info(logger, "[ Tripulante %i ] Comenzando Tarea bloqueante %s. Duracion: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
                 sleep(tiempo_retardo_ciclo_cpu);
                 tarea->tiempo_restante--;
@@ -241,7 +244,6 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
                 log_info(logger, "[ Tripulante %i ] Syscall realizada", trip->id);
                 trip->estado = BLOCKED_E_S;
                 sem_post(&(trip->procesador));
-                notificar_inicio_tarea_imongo(trip->id, tarea);
             }
         }
         else
