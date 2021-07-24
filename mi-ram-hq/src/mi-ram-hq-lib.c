@@ -2431,7 +2431,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
  void imprimir_dump_paginacion(t_log* log_dump,char * time){
-	 pthread_mutex_lock(&mutex_dump);
+	pthread_mutex_lock(&mutex_dump);
 	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
 
@@ -2457,7 +2457,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 		}
 		pthread_mutex_unlock(&mutex_lru);
 	}
-  pthread_mutex_unlock(&mutex_dump);
+  	pthread_mutex_unlock(&mutex_dump);
 }
 
 /*
@@ -2676,16 +2676,17 @@ void sighandlerDump(int signum) {
 	strcat(path_dump,time);
 	strcat(path_dump,".dmp");
 
-	t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
 
-	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION"))
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION")){
+		t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
 		imprimir_dump(log_dump,time);
+		signal(SIGUSR2, sighandlerDump);
+		log_destroy(log_dump);	
+	}
 	else
 		imprimir_dump_paginacion(logger_ram_hq,time);
 	free(path_dump);
 	free (time);
-	log_destroy(log_dump);	
-	//signal(SIGUSR2, sighandlerDump);
 
 }
 
