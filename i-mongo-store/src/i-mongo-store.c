@@ -28,16 +28,53 @@ bool reparar_block_count_saboteado(char *file_path){
 bool reparar_sabotaje_md5(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
-	printf("Analizando %s...\n", file_path);
+	printf(logger_i_mongo_store, "[ I-mongo ] Analizando el archivo %s...", file_path);
 	char *string_a_hashear = armar_string_para_MD5(archivo);
 	char *hash = obtener_MD5(string_a_hashear, archivo);
 	char *md5 = config_get_string_value(archivo, "MD5");
+
 	if(string_equals_ignore_case(md5, hash)){
-		printf("Son iguales\n");
+		printf("[ I-mongo ] El archivo %s no está saboteado.", file_path);
+		config_destroy(archivo);
 		return false;
+
 	}else{
 		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje MD5 detectado en %s . Corrigiendo...", file_path);
-		
+		int block_size = get_block_size();
+		int size = config_get_int_value(archivo, "SIZE");
+		char **array_blocks = config_get_array_value(archivo, "BLOCKS");
+		int block_count = config_get_int_value(archivo, "BLOCK_COUNT");
+		char *caracter = config_get_string_value(archivo, "CARACTER_LLENADO");
+		int res;
+		int i = 0;
+		char rellenar_con_esto[32];
+
+		while(i<block_count){
+			int block = atoi(array_blocks[i]);
+			if(i == block_count-1){
+				//Acá estaría en el último bloque por lo tanto hay fragmentación interna
+				for (int j = 0; j < block_size; j++)
+				{
+					if(size > 0){
+						rellenar_con_esto[j]=caracter[0];
+						size--;
+					}else{
+						rellenar_con_esto[j]='\0';
+					}
+				}
+			}else{//Si no estoy en el último bloque, quiere decir que no tengo fragmentación interna
+			// asi que lleno todo el bloque de una
+				size -= block_size;
+				for (int j = 0; j < block_size; j++)
+				{
+					rellenar_con_esto[j]=caracter[0];
+				}
+			}
+			memcpy(blocks + (block * block_size), rellenar_con_esto, block_size);
+			i++;
+		}
+		config_save(archivo);
+		config_destroy(archivo);
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
 		return true;
 	}
