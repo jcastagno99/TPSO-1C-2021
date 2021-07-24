@@ -1,6 +1,6 @@
 #include "i-mongo-store-lib.h"
 
-bool reparar_block_count_saboteado(char *file_path){
+bool reparar_block_count(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
 	char **test = config_get_array_value(archivo, "BLOCKS");
@@ -80,15 +80,58 @@ bool reparar_sabotaje_md5(char *file_path){
 	}
 }
 
+bool reparar_size(char *file_path){
+	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
+	t_config *archivo = config_create(full_path);
+	// Primero tengo que leer todos los bloques y contar cuantos caracteres de llenado tengo
+	// Luego tengo que compararlo con el size que tengo actualmente para ver si está corrupto
+	// Si lo está, piso ese valor con lo que conté
+	int block_size = get_block_size();
+	char **array_blocks = config_get_array_value(archivo, "BLOCKS");
+	int block_count = config_get_int_value(archivo, "BLOCK_COUNT");
+	char *caracter = config_get_string_value(archivo, "CARACTER_LLENADO");
+	int size_posiblemente_corrupto = config_get_int_value(archivo, "SIZE");
+	int contador_de_caracteres_escritos = 0;
+
+	for (int i = 0; i < block_count; i++)
+	{
+		if(i == block_count - 1){
+			//voy a leer hasta el \0 ya que voy a tener fragmentación interna
+			int bloque_actual = atoi(array_blocks[i]);
+			char buffer[32];
+			memcpy(buffer, blocks + (bloque_actual * block_size), block_size);
+			int j=0;
+			while (buffer[j] != '\0')
+			{
+				contador_de_caracteres_escritos++;
+				j++;
+			}
+		}else
+			contador_de_caracteres_escritos += block_size;
+	}
+	
+	if(size_posiblemente_corrupto == contador_de_caracteres_escritos){
+		config_destroy(archivo);
+		return false;
+	}else{
+		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Size detectado en %s . Corrigiendo...", file_path);
+		config_set_value(archivo, "SIZE", string_itoa(contador_de_caracteres_escritos));
+		config_save(archivo);
+		config_destroy(archivo);
+		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Size corregido exitosamente!");
+		return true;
+	}
+}
+
 bool sabotaje_block_count(){
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] Detectando Sabotaje Block Count...");
+	log_warning(logger_i_mongo_store, "[ I-Mongo ] Detectando sabotaje Block Count...");
 	DIR *d;
 	struct dirent *dir;
 	d = opendir("/home/utnso/polus/Files");
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_block_count_saboteado(dir->d_name))
+				if(reparar_block_count(dir->d_name))
 					return true;
 			}
 		}
@@ -99,7 +142,24 @@ bool sabotaje_block_count(){
 }
 
 bool sabotaje_superbloque(){
-	
+	return false;
+}
+
+bool sabotaje_size(){
+	log_warning(logger_i_mongo_store, "[ I-Mongo ] Detectando sabotaje Size...");
+	DIR *d;
+	struct dirent *dir;
+	d = opendir("/home/utnso/polus/Files");
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+				if(reparar_size(dir->d_name))
+					return true;
+			}
+		}
+		closedir(d);
+	}
+	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje Size...");
 	return false;
 }
 
@@ -131,6 +191,7 @@ void handler_sabotaje(int signal)
 
 	if(sabotaje_block_count()) return;
 	if(sabotaje_superbloque()) return;
+	if(sabotaje_size()) return;
 	if(sabotaje_md5()) return;
 	
 	//enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
