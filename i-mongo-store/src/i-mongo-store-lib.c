@@ -1545,7 +1545,7 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 		log_warning(logger_i_mongo_store, "Bloque actual %i tengo %i caracteres. Acumulado %i", bloque_actual, ultimo_caracter_index + 1, contador_de_caracteres_escritos);
 
 	}
-
+	log_warning(logger_i_mongo_store, "Size posiblemente corrupto %i Contador %i", size_posiblemente_corrupto, contador_de_caracteres_escritos);
 	if(size_posiblemente_corrupto == contador_de_caracteres_escritos){
 		config_destroy(archivo);
 		return false;
@@ -1568,7 +1568,7 @@ void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal){
 	{
 		int block = atoi(used_blocks[i]);
 		bitmap_temporal[block] = 1;
-	}		
+	}	
 	config_destroy(archivo);
 }
 
@@ -1616,6 +1616,10 @@ bool sabotaje_bitmap(){
 	int total_block_amount = get_block_amount();
 	int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
 	memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
+	for (int i = 0; i < total_block_amount; i++)
+	{
+		if(bitmap_temporal[i] != 0) log_error(logger_i_mongo_store, "No se inicializo bien");
+	}
 
 	d = opendir("/home/utnso/polus/Bitacoras");
 
@@ -1642,10 +1646,11 @@ bool sabotaje_bitmap(){
 
 	for (int i = 0; i < total_block_amount; i++)
 	{
-		if((!bitarray_test_bit(bitarray, i)) == bitmap_temporal[i]){
-			printf("Comparando %i %i\n", bitarray_test_bit(bitarray, i), bitmap_temporal[i]);
+		log_warning(logger_i_mongo_store, "Comparando %i %i\n", bitarray_test_bit(bitarray, i), bitmap_temporal[i]);
+		if(bitarray_test_bit(bitarray, i) != bitmap_temporal[i]){
 			log_error(logger_i_mongo_store, "[ I-mongo ] Sabotaje Bitmap detectado en el bloque %i. Corrigiendo...", i);
 			bitarray_set_bit(bitarray, bitmap_temporal[i]);
+			msync(superbloque, 2 * sizeof(uint32_t) + get_block_amount()/8 + 1, 0);
 			log_warning(logger_i_mongo_store, "[ I-mongo ] Sabotaje Bitmap corregido exitosamente!", i);
 			bitarray_destroy(bitarray);
 			return true;
