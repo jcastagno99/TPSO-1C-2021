@@ -1,0 +1,6 @@
+#!/bin/bash
+FILE=i-mongo-store
+make $FILE
+if test -f "./$FILE"; then
+    valgrind --tool=memcheck --leak-check=yes --show-possibly-lost=no --show-reachable=no --num-callers=20 --log-file="cfg/valgrind.log" ./$FILE cfg/i-mongo-store.config cfg/i-mongo-store.log cfg/bloques.config 1
+fi

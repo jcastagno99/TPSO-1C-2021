@@ -479,11 +479,12 @@ movimiento_tripulante deserializar_movimiento_tripulante(void* stream){
 tripulante_con_tarea deserializar_tripulante_con_tarea(void* stream){
 	tripulante_con_tarea tct;
 	int offset = 0;
-	uint32_t longitud;
+	uint32_t longitud = 0;
 	memcpy(&tct.tid, stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
 	memcpy(&longitud,stream+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
+	tct.tarea = malloc(longitud);
 	memcpy(tct.tarea,stream+offset,longitud);
 	offset+= longitud;
 	return tct;
