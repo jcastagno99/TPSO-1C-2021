@@ -1,6 +1,7 @@
 #include "mi-ram-hq-lib.h"
 #include <stdlib.h>
 
+
 void crear_estructuras_administrativas()
 {
 	patotas = list_create();
@@ -232,6 +233,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	{
 		switch (paquete->codigo_operacion)
 		{
+				
 		case INICIAR_PATOTA:
 		{
 			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Comenzando deserializacion del mensaje",*socket_hilo);
@@ -309,7 +311,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	liberar_paquete(paquete);
 	close(*socket_hilo);
     free(socket_hilo);
-    pthread_exit(NULL);
+	pthread_exit(NULL);
 	return NULL;
 }
 
@@ -806,6 +808,7 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 			int espacio_disponible_en_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina;
 			if(bytes_a_leer > espacio_disponible_en_pagina && auxiliar->presente){
 				memcpy(&tid_aux + espacio_leido, auxiliar->inicio_memoria + offset_pagina, espacio_disponible_en_pagina);
+				
 				espacio_leido += espacio_disponible_en_pagina;
 				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
 				offset_pagina = 0;
@@ -902,9 +905,9 @@ void escribir_un_uint32_a_partir_de_indice(double indice, int offset, uint32_t d
 			tamanio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA;
 			auxiliar_pagina->fue_modificada = 1;
 			auxiliar_pagina->uso = 1;
-			auxiliar_pagina = list_get(patotas,indice+1);
-			offset = 0;
 			pthread_mutex_unlock(auxiliar_pagina->mutex_pagina);
+			auxiliar_pagina = list_get(patota->paginas,indice+1);
+			offset = 0;
 		}
 		else{
 			memcpy(auxiliar_pagina->inicio_memoria + offset + bytes_desplazados_escritura,&dato + offset_lectura, 4 - bytes_escritos);

@@ -771,8 +771,8 @@ void actualizar_estado_miriam(int tid,estado est){
     void *info = serializar_estado_tcb(est,tid); 
     uint32_t size_paquete = sizeof(uint32_t)+sizeof(estado);
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
-    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    //respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
     //printf("Recibi respuesta %i\n",respuesta);
     close(conexion_mi_ram_hq);
     // Que debemos hace en caso no funcione
