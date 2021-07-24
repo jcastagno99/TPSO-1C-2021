@@ -57,6 +57,7 @@ void iniciar_patota(char **str_split)
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    //free(paquete_recibido->stream);
     close(conexion_mi_ram_hq);
 
     if (paquete_recibido->codigo_operacion == RESPUESTA_INICIAR_PATOTA){
@@ -388,6 +389,7 @@ void notificar_movimiento_a_miram(dis_tripulante *trip){
     uint32_t size_paquete = sizeof(uint32_t) *3;
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    liberar_paquete(paquete_recibido);
     close(conexion_mi_ram_hq);
 
     // Verificar respuesta: Ver si es nesesario en un futuro
