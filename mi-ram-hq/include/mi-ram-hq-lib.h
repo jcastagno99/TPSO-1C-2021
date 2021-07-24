@@ -133,6 +133,7 @@ pthread_mutex_t mutex_iniciar_patota;
 pthread_mutex_t mutex_swap;
 pthread_mutex_t mutex_lru;
 pthread_mutex_t mutex_busqueda_patota;
+pthread_mutex_t mutex_dump;
 
 t_list* historial_uso_paginas;
 int puntero_lista_frames_clock;

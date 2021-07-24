@@ -15,6 +15,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_busqueda_patota,NULL);
 	pthread_mutex_init(&mutex_lru,NULL);
 	pthread_mutex_init(&mutex_aux,NULL);
+	pthread_mutex_init(&mutex_dump,NULL);
 	
 	crear_mapa ();
 	signal(SIGUSR2, sighandlerDump);
@@ -2430,6 +2431,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
  void imprimir_dump_paginacion(t_log* log_dump,char * time){
+	 pthread_mutex_lock(&mutex_dump);
 	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
 
@@ -2444,6 +2446,18 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 		}
 		log_info(log_dump,"Marco: %i\t Estado: %i\t Proceso: %i\t Pagina: %i \t	Bit de uso: %i",i,frame->libre,frame->pid_duenio,frame->indice_pagina,bit_uso);
 	}
+
+	if(!strcmp(mi_ram_hq_configuracion->ALGORITMO_REEMPLAZO,"LRU")){
+		t_pagina_y_frame * auxiliar;
+		pthread_mutex_lock(&mutex_lru);
+		log_info(log_dump,"Imprimiendo la cola de LRU:");
+		for(int i=0; i<historial_uso_paginas->elements_count; i++){
+			auxiliar = list_get(historial_uso_paginas,i);
+			log_info(log_dump,"Frame perteneciente a la pagina %i, del proceso %i en la posicion %i",auxiliar->frame->indice_pagina,auxiliar->frame->pid_duenio,i);
+		}
+		pthread_mutex_unlock(&mutex_lru);
+	}
+  pthread_mutex_unlock(&mutex_dump);
 }
 
 /*
