@@ -16,7 +16,7 @@ Comando_Discordiador obtener_comando(char *comando)
         return GET_BINNACLE;
     if (strcmp(comando, "q") == 0)
         return QUIT;
-    return NO_VALIDO; //Para el warning
+    return NO_VALIDO;
 }
 
 bool posicion_validas_tripulantes(char **str_split)
@@ -141,7 +141,7 @@ void validacion_sintactica(char *text)
             if (atoi(str_split[1]) != 0)
             {
                 printf("OBTENER_BITACORA : OK\n");
-                // [TODO] Solo nesecito el id = atoi(str_split[1])
+                obtener_bitacora(atoi(str_split[1]));
             }
             else
                 printf("OBTENER_BITACORA : id tripulante no es un [int]\n");

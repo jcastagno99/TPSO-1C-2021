@@ -26,7 +26,7 @@ void chequear_tripulante_finalizado(dis_tripulante *);
 bool chequear_tripulante_expulsado(dis_tripulante *);
 
 // FUNCIONES DE MENSAJERIA
-void guardar_movimiento_en_imongo(dis_tripulante *, dis_tarea *, int, int);
+void guardar_movimiento_en_imongo(dis_tripulante *, int, int);
 void *serializar_trip_con_char(uint32_t, char *);
 void notificar_inicio_tarea_imongo(int, dis_tarea *);
 void notificar_fin_tarea_imongo(int, char *);
@@ -39,5 +39,6 @@ void iterador_listar_tripulantes(dis_tripulante *);
 
 // Funciones de FREE
 void free_distarea(dis_tarea*);
+void obtener_bitacora(int);
 
 #endif

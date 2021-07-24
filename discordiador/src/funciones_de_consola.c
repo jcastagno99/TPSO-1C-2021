@@ -198,7 +198,7 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         mover_tri_hacia_tarea(tarea, trip);
         notificar_movimiento_a_miram(trip);
         log_info(logger, "[ Tripulante %i ] (%d,%d) => (%d,%d) | TAREA: %s - UBICACION: (%d,%d)", trip->id, pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
-        //guardar_movimiento_en_imongo(trip, tarea, pos_vieja_x, pos_vieja_y); [TODO]
+        guardar_movimiento_en_imongo(trip, pos_vieja_x, pos_vieja_y);
         sleep(tiempo_retardo_ciclo_cpu);
         sem_post(&(trip->procesador));
     }
@@ -207,10 +207,6 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
         // [TRIPULANTE] Estoy parado en la posicion de la tarea  --------------------------------
         // [TIPO TAREA] ESTE ES de la E/S el de caminar es el de arriba
         // [TODO] enviar mensaje de tarea comenzada a imongo
-        if(tarea->tiempo_total == tarea->tiempo_restante){
-            printf("mandando msj a imongo\n");
-            //notificar_inicio_tarea_imongo(trip->id, tarea);
-        }
         if (tarea_es_de_entrada_salida(tarea))
         {
             // [VERIFICAMOS] Si ya realico el ciclo inicial de CPU de la tarea e/s
@@ -222,7 +218,7 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
 
                 if (tarea->tiempo_restante == 0)
                 {
-                    //notificar_fin_tarea_imongo(trip->id, tarea->nombre_tarea); [TODO]
+                    notificar_fin_tarea_imongo(trip->id, tarea->nombre_tarea);
                     log_info(logger, "[ Tripulante %i ] Tarea bloqueante %s TERMINADA", trip->id, tarea->nombre_tarea);
                     trip->estado = READY;
                     trip->hice_ciclo_inicial_tarea_es = false;
@@ -245,12 +241,16 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
                 log_info(logger, "[ Tripulante %i ] Syscall realizada", trip->id);
                 trip->estado = BLOCKED_E_S;
                 sem_post(&(trip->procesador));
+                notificar_inicio_tarea_imongo(trip->id, tarea);
             }
         }
         else
         {
             // [NO ES TAREA DE RECURSO E/S] ----------------------------------------
             //  POR LO QUE SOLO CONSUMIMOS DE A 1 EL TIEMPO
+            if(tarea->tiempo_total == tarea->tiempo_restante){
+                 notificar_inicio_tarea_imongo(trip->id, tarea);
+            }
             log_info(logger, "[ Tripulante %i ] Realizando Tarea no bloqueante %s. Tiempo restante: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
             sleep(tiempo_retardo_ciclo_cpu);
             tarea->tiempo_restante = tarea->tiempo_restante - 1;
@@ -275,7 +275,7 @@ void chequear_tarea_terminada(dis_tarea *tarea, dis_tripulante *tripulante)
 {
     if (tarea->tiempo_restante == 0)
     {
-        //notificar_fin_tarea_imongo(tripulante->id, tarea->nombre_tarea); [TODO]
+        notificar_fin_tarea_imongo(tripulante->id, tarea->nombre_tarea);
         log_info(logger, "[ Tripulante %i ] Tarea no bloqueante %s TERMINADA. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo_restante);
         tarea->estado_tarea = TERMINADA;
         
@@ -356,10 +356,11 @@ dis_tarea* pedir_tarea_miriam(uint32_t tid)
     char *nombre_de_tarea = string_duplicate(tarea_p[0]);
     bool tiene_parametro = longitud_lista_string(tarea_p) - 1;
 
-    if (tiene_parametro){
-        //nueva_tarea->cantidad_parametro = 1; NO LO USAMOS APARTE CREO QUE CUANDO LE MANDAMOS A IMONGO LE MANDAMOS UN CHAR*
+    if (tiene_parametro)
         nueva_tarea->parametro = atoi(tarea_p[1]);
-    }
+    else
+        nueva_tarea->parametro = 0;
+
     nueva_tarea->estado_tarea = DISPONIBLE;
     nueva_tarea->nombre_tarea = nombre_de_tarea;
 
@@ -560,63 +561,90 @@ bool tarea_es_de_entrada_salida(dis_tarea *tarea)
 
 // MENSAJE PARA IMONGO
 
-void guardar_movimiento_en_imongo(dis_tripulante *trip, dis_tarea *tarea, int pos_vieja_x, int pos_vieja_y){
+void guardar_movimiento_en_imongo(dis_tripulante *trip, int pos_vieja_x, int pos_vieja_y){
     // int id_trip , char* log_desplazamiento
     /*      id_trip : id del Tripulante
             log_desplazamiento : "[ Tripulante 1 ] (2,1) => (3,1) | TAREA: REGAR_PLANTAS - UBICACION: (3,3)"
     */
-    char *msg = string_new();
-    string_from_format("(%d,%d) => (%d,%d) | TAREA: %s  - UBICACION: (%d,%d)", pos_vieja_x, pos_vieja_y, trip->pos_x, trip->pos_y, tarea->nombre_tarea, tarea->pos_x, tarea->pos_y);
+    printf("\033[1;33m[ IMONGO ] TRIP notifica movimiento \033[0m\n");
+
     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
-    void * info = serializar_trip_con_char(trip->id, msg);
-    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(msg) + 1;
-    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+	op_code codigo = REGISTRAR_MOVIMIENTO;
+	void* stream = pserializar_movimiento_tripulante(trip->id,pos_vieja_x,pos_vieja_y,trip->pos_x,trip->pos_y); 
+	size_t size = 5 * sizeof(uint32_t);
+	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);    
+    // [ISSUE] recv()
     //[TODO] recibir el ok
     close(conexion_i_mongo_store);
-    free(msg);
-}
-
-void *serializar_trip_con_char(uint32_t tid,char* palabra){
-    /*    [  tid  | longitud_tarea |  palabra  ]
-          uint32_t     uint32_t       uint32_t
-    */
-    int offset = 0;
-    uint32_t longitud_nombre = strlen(palabra) + 1;
-	void* stream = malloc(2*sizeof(uint32_t)+longitud_nombre);
-    memcpy(stream+offset,&tid,sizeof(uint32_t));
-    offset+= sizeof(uint32_t);
-	memcpy(stream+offset,&longitud_nombre,sizeof(uint32_t));
-	offset+= sizeof(uint32_t);
-	memcpy(stream+offset,palabra,longitud_nombre);
-    return stream;
 }
 
 void notificar_inicio_tarea_imongo(int id_trip , dis_tarea *tarea){
     /*      id_trip : id del Tripulante
-            tarea : "GENERAR_OXIGENO 10;4;4;15"  la nesecita para saber cuanto de oxigeno va a generar
+            tarea : "GENERAR_OXIGENO 10"
     */
     char *tarea_imongo = string_new();
+
     string_append(&tarea_imongo, tarea->nombre_tarea);
+    string_append(&tarea_imongo, " ");
+
+    char* tarea_parametro = string_itoa(tarea->parametro);
+    string_append(&tarea_imongo, tarea_parametro);
     string_append(&tarea_imongo, ";");
-    string_append(&tarea_imongo, string_itoa(tarea->parametro));
-    
+
+    char* tarea_pos_x = string_itoa(tarea->pos_x);
+    string_append(&tarea_imongo, tarea_pos_x);
+    string_append(&tarea_imongo, ";");
+
+    char* tarea_pos_y = string_itoa(tarea->pos_y);
+    string_append(&tarea_imongo, tarea_pos_y);
+
+
+    printf("\033[1;33m[ IMONGO ] TRIP %d INICIO TAREA : %s \033[0m\n",id_trip,tarea_imongo);
+
+	uint32_t tripulante_id = id_trip;
     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
-    void * info = serializar_trip_con_char(id_trip,tarea_imongo);
-    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea_imongo) + 1;
-    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
-    //[TODO] recibir el ok
+	op_code codigo = OPERAR_SOBRE_TAREA;
+	void* stream = pserializar_tripulante_con_tarea(tripulante_id,tarea_imongo);
+	size_t size = strlen(tarea_imongo) + 1 + sizeof(uint32_t) + sizeof(uint32_t);
+	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
+    // [ISSUE] recv()
+    // [TODO] recibir el ok
     close(conexion_i_mongo_store);
     free(tarea_imongo);
+    free(tarea_parametro);
+    free(tarea_pos_x);
+    free(tarea_pos_y);
 }
 
 void notificar_fin_tarea_imongo(int id_trip , char* tarea){// char* nombre_tarea
     /*      id_trip : id del Tripulante
-            tarea : "GENERAR_OXIGENO 10;4;4;15" / o "Fin de Trea GENERAR_OXIGENO" tarea->nombre
+            tarea : "GENERAR_OXIGENO" / "GENERAR_OXIGENO 10"  u otra coas
     */
+    printf("\033[1;33m[ IMONGO ] TRIP %d FIN TAREA : %s\033[0m\n",id_trip,tarea);
+
+    uint32_t tripulante_id = id_trip;
     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
-    void * info = serializar_trip_con_char(id_trip,tarea);
-    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea) + 1;
-    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+    op_code codigo = REGISTRAR_FIN_TAREA;
+	void* stream = pserializar_tripulante_con_tarea(tripulante_id,tarea);
+	size_t size = strlen(tarea) + 1 + sizeof(uint32_t) + sizeof(uint32_t);
+	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
+    // [ISSUE] recv()
     //[TODO] recibir el ok
     close(conexion_i_mongo_store);
+}
+
+void obtener_bitacora(int id){
+
+    uint32_t tripulante_id = id;
+    int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+	op_code codigo = OBTENER_BITACORA;
+	void* stream = serializar_pid(tripulante_id);
+	size_t size = sizeof(uint32_t);
+	enviar_paquete(conexion_i_mongo_store,codigo,size,stream);
+
+    t_paquete* respuesta = recibir_paquete(conexion_i_mongo_store);
+	char* resultado = deserializar_recurso(respuesta->stream);
+	log_warning(logger, "[ IMONGO ] [ Tripulante 1] bitacora : \n%s", resultado);
+    close(conexion_i_mongo_store);
+    //free(resultado) [TODO]
 }

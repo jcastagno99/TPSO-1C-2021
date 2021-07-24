@@ -472,7 +472,7 @@ void *procesar_tripulante_fifo(void *temp)
 		// SI justo termina su rafago y recien se cambia el estado del sabotaje(un caso muy borde) agrregarle un && !planificacion_pausada
 		if (!sabotaje)
 		{
-			log_info(logger, "[ Procesador %i ] \033[1;34mRafaga finalizada.\033[0m Tripulante %i ejecutado. %i tareas hechas", id, tripulante->id, tripulante->tareas_realizadas);
+			log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado. %i tareas hechas", id, tripulante->id, tripulante->tareas_realizadas);
 
 			pthread_mutex_lock(&mutex_cola_de_exec);
 			list_remove_by_condition(cola_de_exec, (void *)tripulante_procesado);
@@ -514,9 +514,9 @@ void *procesar_tripulante_rr(void *temp)
 	dis_tripulante *tripulante;
 	bool tripulante_procesado(dis_tripulante * t)
 	{
-		printf("Comparando %i con %i\n", t->id, tripulante->id);
 		return t->id == tripulante->id;
 	}
+	
 	while (1)
 	{
 		chequear_planificacion_pausada(&sem_procesador, id);
@@ -548,7 +548,7 @@ void *procesar_tripulante_rr(void *temp)
 
 		if (!sabotaje)
 		{
-			log_info(logger, "[ Procesador %i ] \033[1;34mRafaga finalizada.\033[0m Tripulante %i ejecutado. %i tareas hechas. Quantum actual: %i", id, tripulante->id, tripulante->tareas_realizadas, quantum_actual);
+			log_info(logger, "[ Procesador %i ] Rafaga finalizada. Tripulante %i ejecutado. %i tareas hechas. Quantum actual: %i", id, tripulante->id, tripulante->tareas_realizadas, quantum_actual);
 			printf("[ Procesador %i ] Estado %i. El de Exit es %i\n", id, tripulante->estado, EXIT);
 
 			pthread_mutex_lock(&mutex_cola_de_exec);
@@ -798,26 +798,27 @@ void liberar_listas(){
 
 // MENSAJES PARA IMONGO
 
-void notificar_atencion_sabotaje_imongo(int id_trip , char* tarea){// podriamos solo serializar el tid y luego desde imongo crear y guardar el log(decidan)
-    /*      id_trip : id del Tripulante
-            tarea : "Fin de Tarea SABOTAJE"
-    */
-    int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
-    void * info = serializar_trip_con_char(id_trip,tarea);
-    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea) + 1;
-    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
-    //[TODO] recibir el ok
-	close(conexion_i_mongo_store);
-}
+// void notificar_atencion_sabotaje_imongo(int id_trip , char* tarea){// podriamos solo serializar el tid y luego desde imongo crear y guardar el log(decidan)
+//     /*      id_trip : id del Tripulante
+//             tarea : "Fin de Tarea SABOTAJE"
+//     */
+//     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
+//     void * info = serializar_trip_con_char(id_trip,tarea);
+//     uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea) + 1;
+//     enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
+//     //[TODO] recibir el ok
+// 	close(conexion_i_mongo_store);
+// }
 
-void notificar_fin_sabotaje_imongo(int id_trip , char* tarea){// podriamos solo serializar el tid y luego desde imongo crear y guardar el log(decidan)
-    /*      id_trip : id del Tripulante
-            tarea : "Fin de Tarea SABOTAJE"
-    */
+void notificar_fin_sabotaje_imongo(int id_trip){// podriamos solo serializar el tid y luego desde imongo crear y guardar el log(decidan)
+    /*      id_trip : id del Tripulante		*/
+    
     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
-    void * info = serializar_trip_con_char(id_trip,tarea);
-    uint32_t size_paquete = 2*sizeof(uint32_t) + strlen(tarea) + 1;
-    enviar_paquete(conexion_i_mongo_store, ACTUALIZAR_UBICACION, size_paquete, info); // Ver el opcode si hay uno mejor
-    //[TODO] recibir el ok
-	close(conexion_i_mongo_store);
+	op_code codigo = REGISTRAR_SABOTAJE_RESUELTO;
+	void* stream = serializar_pid(id_trip);
+	size_t size = sizeof(uint32_t);
+	enviar_paquete(conexion_i_mongo_store,codigo,size,stream);
+	// [ISSUE] recv()
+    // [TODO] recibir el ok
+    close(conexion_i_mongo_store);
 }

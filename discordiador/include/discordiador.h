@@ -116,7 +116,7 @@ int chequear_expulsion_de_tripulante(t_list *, pthread_mutex_t *);
 
 // MENSAJES PARA IMONGO
 void notificar_atencion_sabotaje_imongo(int, char *);
-void notificar_fin_sabotaje_imongo(int, char *);
+void notificar_fin_sabotaje_imongo(int);
 
 // Funciones de serializacion
 void actualizar_estado_miriam(int,estado);
