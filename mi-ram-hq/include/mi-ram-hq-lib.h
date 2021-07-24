@@ -88,6 +88,7 @@ typedef struct{
 	int contador_tripulantes_vivos;
 	int id_patota;
 	pthread_mutex_t* mutex_tabla_paginas;
+	pthread_mutex_t* mutex_tripulantes_vivos;
 
 }t_tabla_de_paginas;
 
@@ -130,6 +131,8 @@ pthread_mutex_t mutex_tabla_patotas;
 pthread_mutex_t mutex_tabla_de_segmentos;
 pthread_mutex_t mutex_iniciar_patota;
 pthread_mutex_t mutex_swap;
+pthread_mutex_t mutex_lru;
+pthread_mutex_t mutex_busqueda_patota;
 
 t_list* historial_uso_paginas;
 int puntero_lista_frames_clock;
