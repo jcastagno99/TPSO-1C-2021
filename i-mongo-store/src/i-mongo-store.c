@@ -43,7 +43,6 @@ void handler_sigint(int signal){
 		free(un_trip->mutex_bitacora);
 		free(un_trip);
 	}
-	pthread_t* un_hilo;
 	list_destroy(lista_hilos);
 	list_destroy(mutex_bitacoras);
 	free(tamanios_global);

@@ -646,7 +646,6 @@ int escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo, uint32_t ti
 
 			free(ultimo_bloque);
 			free(tamanio_nuevo);
-			int cant_llaves = config_keys_amount(llave_valor);
 			config_save(llave_valor);
 		 }else{
 			free(ultimo_bloque);
@@ -873,19 +872,23 @@ int quitar_de_archivo(char *ruta, char *contenido)
 
 int borrar_archivo(char *archivo)
 {	
-	t_config *llave_valor = config_create(archivo);
-	char **bloques = config_get_array_value(llave_valor, "BLOCKS");
-	int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
-	int nro_bloque;
-	pthread_mutex_lock(&superbloque_bitarray_mutex);
-	for (int i = 0; i<cant_bloques;i++){
-		nro_bloque = atoi(bloques[i]);
-		vaciar_bloque(nro_bloque);
-		liberar_bloque(nro_bloque);
-		free(bloques[i]);
-	}
-	pthread_mutex_unlock(&superbloque_bitarray_mutex);
-	free(bloques);
+	FILE* fd = fopen(archivo,"r+");
+	if(fd != NULL){
+		t_config *llave_valor = config_create(archivo);
+		char **bloques = config_get_array_value(llave_valor, "BLOCKS");
+		int cant_bloques = config_get_int_value(llave_valor, "BLOCK_COUNT");
+		int nro_bloque;
+		pthread_mutex_lock(&superbloque_bitarray_mutex);
+		for (int i = 0; i<cant_bloques;i++){
+			nro_bloque = atoi(bloques[i]);
+			vaciar_bloque(nro_bloque);
+			liberar_bloque(nro_bloque);
+			free(bloques[i]);
+		}
+		pthread_mutex_unlock(&superbloque_bitarray_mutex);
+		free(bloques);
+		config_destroy(llave_valor);
+	}	
 	int resultado_borrar = unlink(archivo);
 	if(resultado_borrar == 0){
 		log_info(logger_i_mongo_store, "Se borro el archivo de metadata: %s", archivo);
@@ -900,7 +903,6 @@ int borrar_archivo(char *archivo)
 	config_set_value(llave_valor,"BLOCK_COUNT",el_cero);
 	free(el_cero);
 	config_save_in_file(llave_valor,archivo);*/
-	config_destroy(llave_valor);
 	return 1;
 }
 
@@ -1327,6 +1329,7 @@ char* obtener_MD5(char* string_a_hashear, t_config* llave_valor){
 	memcpy(comando + strlen("echo "), string_a_hashear, longitud_string);
 	memcpy(comando + strlen("echo ")+ longitud_string, md5sumcosito, strlen(md5sumcosito));
 	memcpy(comando + strlen("echo ")+ longitud_string + strlen(md5sumcosito), archivo, strlen(archivo)+1);
+	log_warning(logger_i_mongo_store,"para comando md5: %s", comando);
 	//formato: echo <strings> | md5sum > utnso/polus/MD5/O.ims
 	system(comando);
 	free(comando);
