@@ -1,0 +1,6 @@
+#!/bin/bash
+FILE=i-mongo-store
+make $FILE
+if test -f "./$FILE"; then
+    ./$FILE cfg/i-mongo-store.config cfg/i-mongo-store.log cfg/bloques.config 1
+fi
