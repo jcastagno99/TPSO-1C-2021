@@ -106,9 +106,9 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		agregar_a_lista_bitacoras_si_es_necesario(tct.tid);
 		char* tarea_aux = malloc(strlen(tct.tarea)+1);
 		memcpy(tarea_aux,tct.tarea,strlen(tct.tarea)+1);
+		operaciones operacion_sobre_archivo = conseguir_operacion(tct.tarea);
 		int resultado1 = registrar_comienzo_tarea(tarea_aux,tct.tid);
 		int resultado2;
-		operaciones operacion_sobre_archivo = conseguir_operacion(tct.tarea);
 		if(operacion_sobre_archivo != OTRA && operacion_sobre_archivo != SABOTEAR){		
 			char* recurso = conseguir_recurso(tct.tarea);
 			int cant_unidades = conseguir_parametros(tct.tarea);
@@ -276,6 +276,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 
 	case REGISTRAR_SABOTAJE_RESUELTO:
 	{
+		estoy_saboteado = 0;
 		uint32_t tid;
 		memcpy(&tid, stream, sizeof(uint32_t));
 		agregar_a_lista_bitacoras_si_es_necesario(tid);
@@ -697,7 +698,6 @@ int escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo, uint32_t ti
 		if(tipo == RECURSO){
 			char* string_md5 = armar_string_para_MD5(llave_valor);
 			char* md5 = obtener_MD5(string_md5,llave_valor);
-			log_warning(logger_i_mongo_store,"valor md5: %s", md5);
 			config_set_value(llave_valor, "MD5",md5);
 			free(md5);
 		}
@@ -1008,9 +1008,38 @@ int get_block_size()
 
 int get_block_amount()
 {
-	uint32_t ba;
-	memcpy(&ba, superbloque + sizeof(uint32_t), sizeof(uint32_t));
-	return ba;
+	if(!estoy_saboteado){
+		uint32_t ba;
+		memcpy(&ba, superbloque + sizeof(uint32_t), sizeof(uint32_t));
+		return ba;
+	}else{
+		char* comando = malloc(strlen("ls -l ") + strlen(ruta_blocks) + strlen(" > ") + strlen(ruta_info_blocks) + 1);
+		comando[0] = '\0';
+		strcat(comando, "ls -l ");
+		strcat(comando, ruta_blocks);
+		strcat(comando, " > ");
+		strcat(comando, ruta_info_blocks);
+		system(comando);
+		free(comando);
+		char* comando2 = malloc(strlen("sed 's/ /,/g' ") + strlen(ruta_info_blocks) + strlen(" > ") + strlen(ruta_info_blocks_aux) + 1);
+		comando2[0] = '\0';
+		strcat(comando2, "sed 's/ /,/g' ");
+		strcat(comando2, ruta_info_blocks);
+		strcat(comando2, " > ");
+		strcat(comando2, ruta_info_blocks_aux);
+		system(comando2);
+		free(comando2);
+		char buffer[500];
+		FILE* fd = fopen(ruta_info_blocks, "r+");
+		fgets(buffer,499,fd);
+		char** cosas_del_comando = string_split(buffer, " ");
+		printf("\033[1;31m Rojo %s \033[0m\n",cosas_del_comando[4]);
+		int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
+		int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
+		liberar_lista_string(cosas_del_comando);
+		return cant_segun_blocks;
+	}
+
 }
 
 int get_primer_bloque_libre()
@@ -1343,7 +1372,6 @@ char* obtener_MD5(char* string_a_hashear, t_config* llave_valor){
 	memcpy(comando + strlen("echo "), string_a_hashear, longitud_string);
 	memcpy(comando + strlen("echo ")+ longitud_string, md5sumcosito, strlen(md5sumcosito));
 	memcpy(comando + strlen("echo ")+ longitud_string + strlen(md5sumcosito), archivo, strlen(archivo)+1);
-	log_warning(logger_i_mongo_store,"para comando md5: %s", comando);
 	//formato: echo <strings> | md5sum > utnso/polus/MD5/O.ims
 	system(comando);
 	free(comando);
@@ -1644,7 +1672,7 @@ bool sabotaje_md5(){
 
 bool reparar_sabotaje_superbloque_block_count(uint32_t nueva_cant){
 	log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado Superbloque cantidad de bloques... Corrigiendo...");
-	memcpy(superbloque, &nueva_cant, sizeof(uint32_t));
+	memcpy(superbloque + sizeof(uint32_t), &nueva_cant, sizeof(uint32_t));
 	if(get_block_amount() == nueva_cant){
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Superbloque cantidad de bloques corregido exitosamente");
 		return true;
@@ -1679,7 +1707,7 @@ bool sabotaje_superbloque(){
 	printf("\033[1;31m Rojo %s \033[0m\n",cosas_del_comando[4]);
 	int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
 	int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
-	int cant_segun_superbloque = get_block_amount();
+	int cant_segun_superbloque = get_block_amount_aux();
 	liberar_lista_string(cosas_del_comando);
 	if(cant_segun_blocks == cant_segun_superbloque){
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje de block amount de superbloque.");
@@ -1692,30 +1720,29 @@ bool sabotaje_superbloque(){
 
 void bloquear_recurso_correspondiente(char* recurso){
 	if(strcmp(recurso,"OXIGENO") == 0){
-		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
 		pthread_mutex_lock(&mutex_oxigeno);
 	}
 	if(strcmp(recurso,"COMIDA") == 0){
-		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
 		pthread_mutex_lock(&mutex_comida);
 	}
 	if(strcmp(recurso,"BASURA")==0){
-		log_warning(logger_i_mongo_store, "Bloqueo recurso %s", recurso);
 		pthread_mutex_lock(&mutex_basura);
 	}
 }
 void desbloquear_recurso_correspondiente(char* recurso){
-	log_error(logger_i_mongo_store,"recurso a desbloquear: %s", recurso);
 	if(strcmp(recurso,"Oxigeno") == 0){
-		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
 		pthread_mutex_unlock(&mutex_oxigeno);
 	}
 	if(strcmp(recurso,"Comida") == 0){
-		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
 		pthread_mutex_unlock(&mutex_comida);
 	}
 	if(strcmp(recurso,"Basura")==0){
-		log_warning(logger_i_mongo_store, "Desbloqueo recurso %s", recurso);
 		pthread_mutex_unlock(&mutex_basura);
 	}
+}
+
+int get_block_amount_aux(){
+	uint32_t ba;
+	memcpy(&ba, superbloque + sizeof(uint32_t), sizeof(uint32_t));
+	return ba;
 }
