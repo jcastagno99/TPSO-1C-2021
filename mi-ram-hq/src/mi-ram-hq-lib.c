@@ -309,7 +309,7 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 	}
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
 		//imprimir_dump_paginacion();
-		sighandlerDump(1);
+		//sighandlerDump(1);
 		
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
