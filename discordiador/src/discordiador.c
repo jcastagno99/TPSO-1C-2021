@@ -777,6 +777,9 @@ void actualizar_estado_miriam(int tid,estado est){
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+	
+	free(paquete_recibido->stream);
+	free(paquete_recibido);
     //printf("Recibi respuesta %i\n",respuesta);
     close(conexion_mi_ram_hq);
     // Que debemos hace en caso no funcione

@@ -399,7 +399,7 @@ void inicializar_superbloque_existente(uint32_t* block_size_ref, uint32_t* block
 	}
 	int res2 = pread(fd_superbloques ,cant_ref,sizeof(uint32_t), sizeof(uint32_t));
 	if( res2 == sizeof(uint32_t)){
-		log_info(logger_i_mongo_store,"la cantidad existente de los bloques es de %d bytes",*cant_ref);
+		log_info(logger_i_mongo_store,"La cantidad de bloques existentes es de %d bloques",*cant_ref);
 	} else{
 		log_error(logger_i_mongo_store, "No se pudo leer la cantidad de bloques. Se esperaban leer %d bytes y se leyeron %d", sizeof(uint32_t), res2);
 	}
