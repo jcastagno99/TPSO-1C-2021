@@ -52,6 +52,7 @@ typedef enum
 	GENERAR,
 	CONSUMIR,
 	DESCARTAR,
+	SABOTEAR,
 	OTRA
 }operaciones;
 
@@ -70,6 +71,7 @@ char* ruta_blocks;
 char* carpeta_files;
 char* carpeta_bitacoras;
 char* carpeta_md5;
+char* ruta_info_blocks;
 void* superbloque;
 void* blocks;
 pthread_mutex_t superbloque_bitarray_mutex;
@@ -116,6 +118,7 @@ char* setear_nuevos_blocks(t_config* config, int cant_bloques_actual);
 void inicializar_superbloque_existente(uint32_t* block_size_ref, uint32_t* block_amount_ref);
 void inicializar_blocks_existente(uint32_t block_size, uint32_t block_amount);
 void vaciar_bloque(int numero_bloque);
+
 //--------------Armado de char*-----------------
 char* a_mayusc_primera_letra(char* palabra);
 char* itoa_propio(uint32_t entero);
@@ -137,5 +140,11 @@ void agregar_a_lista_bitacoras_si_es_necesario(uint32_t tid);
 bool esta_el_tripulante(uint32_t tid);
 //--------------Sabotajes-------------
 posicion get_proximo_sabotaje_y_avanzar_indice();
-
+int realizar_fsck();
+bool reparar_block_count_saboteado(char *file_path);
+bool reparar_sabotaje_md5(char *file_path);
+bool sabotaje_block_count();
+bool reparar_sabotaje_superbloque_block_count(uint32_t nueva_cant);
+bool sabotaje_superbloque();
+bool sabotaje_md5();
 #endif /* I_MONGO_STORE_LIB_H */

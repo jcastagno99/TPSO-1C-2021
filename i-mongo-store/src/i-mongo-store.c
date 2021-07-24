@@ -1,88 +1,5 @@
 #include "i-mongo-store-lib.h"
 
-bool reparar_block_count_saboteado(char *file_path){
-	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
-	t_config *archivo = config_create(full_path);
-	char **test = config_get_array_value(archivo, "BLOCKS");
-	int cantidad_real_de_blocks = 0;
-	while (test[cantidad_real_de_blocks])
-		cantidad_real_de_blocks++;
-	
-	int v = config_get_int_value(archivo, "BLOCK_COUNT");
-	
-	if(v == cantidad_real_de_blocks){
-		config_destroy(archivo);
-		return false;
-	}else{
-		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block Count detectado en %s . Corrigiendo...", file_path);
-		config_set_value(archivo, "BLOCK_COUNT", string_itoa(cantidad_real_de_blocks));
-		int t = config_get_int_value(archivo, "BLOCK_COUNT");
-		config_save(archivo);
-		config_destroy(archivo);
-		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
-		return true;
-	}
-
-}
-
-bool reparar_sabotaje_md5(char *file_path){
-	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
-	t_config *archivo = config_create(full_path);
-	printf("Analizando %s...\n", file_path);
-	char *string_a_hashear = armar_string_para_MD5(archivo);
-	char *hash = obtener_MD5(string_a_hashear, archivo);
-	char *md5 = config_get_string_value(archivo, "MD5");
-	if(string_equals_ignore_case(md5, hash)){
-		printf("Son iguales\n");
-		return false;
-	}else{
-		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje MD5 detectado en %s . Corrigiendo...", file_path);
-		
-		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
-		return true;
-	}
-}
-
-bool sabotaje_block_count(){
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] Detectando Sabotaje Block Count...");
-	DIR *d;
-	struct dirent *dir;
-	d = opendir("/home/utnso/polus/Files");
-	if (d) {
-		while ((dir = readdir(d)) != NULL) {
-			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_block_count_saboteado(dir->d_name))
-					return true;
-			}
-		}
-		closedir(d);
-	}
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje Block Count.");
-	return false;
-}
-
-bool sabotaje_superbloque(){
-	
-	return false;
-}
-
-bool sabotaje_md5(){
-	DIR *d;
-	struct dirent *dir;
-	d = opendir("/home/utnso/polus/Files");
-	if (d) {
-		while ((dir = readdir(d)) != NULL) {
-			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_sabotaje_md5(dir->d_name))
-					return true;
-			}
-		}
-		closedir(d);
-	}
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje MD5.");
-	return false;
-}
-
 void handler_sabotaje(int signal)
 {
 	printf("\033[1;33mSabotaje detectado. Enviando información a Discordiador...\033[0m\n");
@@ -92,15 +9,14 @@ void handler_sabotaje(int signal)
 	void *stream = pserializar_posicion(nueva_pos.pos_x,nueva_pos.pos_y);
 	uint32_t size_paquete = 2 * sizeof(uint32_t);
 
-	if(sabotaje_block_count()) return;
-	if(sabotaje_superbloque()) return;
-	if(sabotaje_md5()) return;
+
 	
-	//enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
-	//printf("\033[1;33mSabotaje enviado exitosamente!\033[0m\n");
-	//t_paquete *respuesta = recibir_paquete(conexion_discordiador);
-	//[TODO] validar respuesta
-	//printf("\033[1;32mPaquete recibido. Sabotaje finalizado! ** \033[0m\n");
+	enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
+	printf("\033[1;33mSabotaje enviado exitosamente!\033[0m\n");
+	t_paquete *respuesta = recibir_paquete(conexion_discordiador);
+	respuesta_ok_fail rta = deserializar_respuesta_ok_fail(respuesta->stream);
+	log_info(logger_i_mongo_store,"Se recibio la respuesta a iniciar sabotaje %d",rta);
+	liberar_paquete(respuesta);
 	free(puerto);
 	close(conexion_discordiador);
 }
@@ -122,6 +38,7 @@ void handler_sigint(int signal){
 	free(carpeta_files);
 	free(carpeta_bitacoras);
 	free(carpeta_md5);
+	free(ruta_info_blocks);
 	close(fd_bloques);
 	close(fd_superbloques);
 	bitacora_trip_mutex* un_trip;
@@ -177,4 +94,7 @@ void inicializar_rutas(char *montaje)
 	carpeta_md5 = malloc(strlen(montaje)+ strlen("/MD5/")+1);
 	memcpy(carpeta_md5,montaje, strlen(montaje)+1);
 	strcat(carpeta_md5,"/MD5/");
+	ruta_info_blocks = malloc(strlen(montaje) + strlen("/Infoblocks.ims")+1);
+	memcpy(ruta_info_blocks, montaje, strlen(montaje)+1);
+	strcat(ruta_info_blocks, "/Infoblocks.ims");
 }

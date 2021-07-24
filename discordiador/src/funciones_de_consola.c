@@ -214,7 +214,7 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
             {
                 if(tarea->tiempo_total == tarea->tiempo_restante){
                  notificar_inicio_tarea_imongo(trip->id, tarea);
-                }
+                 }
                 log_info(logger, "[ Tripulante %i ] Comenzando Tarea bloqueante %s. Duracion: %i", trip->id, tarea->nombre_tarea, tarea->tiempo_restante);
                 sleep(tiempo_retardo_ciclo_cpu);
                 tarea->tiempo_restante--;
