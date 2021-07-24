@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "shared"
+		},
+		{
+			"path": "alterador"
 		}
 	],
 	"settings": {
@@ -23,7 +26,8 @@
 			"math.h": "c",
 			"mathcalls.h": "c",
 			"nivel-gui.h": "c",
-			"fcntl.h": "c"
+			"fcntl.h": "c",
+			"alterador.c": "c",
 		}
 	}
 }

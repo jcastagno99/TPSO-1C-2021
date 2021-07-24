@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Make",
+            "type": "shell",
+            "command": "make",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "alterador Normal",
+            "type": "shell",
+            "command": "./exec"
+        },
+        {
+            "label": "alterador Valgrind",
+            "type": "shell",
+            "command": "./vexec"
+        }
+    ]
+}
