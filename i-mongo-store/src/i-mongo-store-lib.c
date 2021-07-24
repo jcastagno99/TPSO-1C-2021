@@ -626,7 +626,7 @@ int escribir_archivo(char *ruta, char *contenido, tipo_archivo tipo, uint32_t ti
 		memcpy(ultimo_bloque, blocks + (nro_ultimo_bloque * block_size), block_size);
 		// [TODO]
 		int ultima_posicion_escrita = encontrar_anterior_barra_cero(ultimo_bloque, block_size); //Devuelve la posición del ultimo caracter anterior al barra cero
-		if((ultimo_bloque[block_size-1] == '\0' && ultima_posicion_escrita == block_size - 1) || ultima_posicion_escrita < block_size - 1){ //CHEQUEO EL CASO EXTREMO EN EL QUE EL
+		if((ultimo_bloque[block_size-1] == '\0' && ultima_posicion_escrita != block_size - 1) || ultima_posicion_escrita < block_size - 1){ //CHEQUEO EL CASO EXTREMO EN EL QUE EL
 		// BLOQUE YA ESTABA COMPLETAMENTE LLENO OSEA NO HABIA BARRA CERO
 			for (int j = 1; (j + ultima_posicion_escrita) < block_size && longitud_restante > 0; j++)
 			{ //Arranco desde el \0
@@ -996,7 +996,7 @@ int encontrar_anterior_barra_cero(char *ultimo_bloque, int block_size)
 			return i-1;
 		}
 	}
-	return i;
+	return i-1;
 }
 
 int get_block_size()
