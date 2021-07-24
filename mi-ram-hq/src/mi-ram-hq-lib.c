@@ -11,6 +11,8 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_swap,NULL);
 	pthread_mutex_init(&mutex_iniciar_patota,NULL);
 	crear_mapa ();
+	signal(SIGUSR2, sighandlerDump);
+	signal(SIGINT,sighandlerLiberarMemoria); 
 	if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION"))
 	{
 		log_info(logger_ram_hq,"Creando estructuras administrativas para esquema de memoria: Segmentacion");
@@ -24,8 +26,7 @@ void crear_estructuras_administrativas()
 		log_info(logger_ram_hq,"Se reservaron %i bytes de memoria que comienzan en %i",mi_ram_hq_configuracion->TAMANIO_MEMORIA,memoria_principal);
 		list_add(segmentos_memoria,segmento);
 		signal(SIGUSR1, sighandlerCompactar); //10
-		signal(SIGUSR2, sighandlerDump); //10
-		signal(SIGINT,sighandlerLiberarSegmentacion);
+		
 	}
 	else if (!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
 	{
@@ -49,7 +50,6 @@ void crear_estructuras_administrativas()
 		inicializar_swap();
 		puntero_lista_frames_clock = 0;
 		historial_uso_paginas = list_create();
-		signal(SIGINT,sighandlerLiberarPaginacion);
 	}
 	else
 	{
@@ -606,8 +606,8 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 				memcpy(&pos_y,segmento_tripulante_auxiliar -> inicio_segmento + offset_y,sizeof(uint32_t)); 
 				pthread_mutex_unlock(&mutex_memoria);	
 				
-				//direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);	
-				//mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
+				direccion direc = obtener_direccion_movimiento_mapa(tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y,pos_x,pos_y);	
+				mover_tripulante_mapa(obtener_caracter_mapa(tripulante_con_posicion.tid),direc);
 				
 				//obtengo pid para informar
 				uint32_t pid;
@@ -616,7 +616,6 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 				memcpy(&pid,auxiliar_patota ->segmento_pcb-> inicio_segmento,sizeof(uint32_t)); 
 				pthread_mutex_unlock(auxiliar_patota ->segmento_pcb -> mutex_segmento);	
 				pthread_mutex_unlock(&mutex_memoria);	
-				
 
 				log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Encontre al tripulante %d en el segmento #%i en memoria perteneciente a la patota #%i, posicion actual %d %d",socket,tripulante_con_posicion.tid,segmento_tripulante_auxiliar -> numero_segmento,pid,tripulante_con_posicion.pos_x,tripulante_con_posicion.pos_y);
 				
@@ -1187,8 +1186,8 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 				tripulante_aux->libre = true;
 				list_remove(auxiliar_patota->segmentos_tripulantes,i);
 
-				//item_borrar(nivel,obtener_caracter_mapa(tid));
-				//nivel_gui_dibujar(nivel);
+				item_borrar(nivel,obtener_caracter_mapa(tid_aux));
+				nivel_gui_dibujar(nivel);
 					
 
 				if(! auxiliar_patota->segmentos_tripulantes->elements_count){
@@ -1394,8 +1393,8 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 				tripulante_aux->libre = true;
 				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
 
-				//item_borrar(nivel,obtener_caracter_mapa(tid));
-				//nivel_gui_dibujar(nivel);
+				item_borrar(nivel,obtener_caracter_mapa(tid));
+				nivel_gui_dibujar(nivel);
 				
 				//obtengo su pid para informarlo
 				uint32_t pid;
@@ -2568,6 +2567,7 @@ int buscar_frame_y_pagina_con_tid_pid(int id_pagina,int id_patota){
 		}
 	}
 	log_error(logger_ram_hq,"Un frame marcado como presente no tiene asignado ningun frame");
+	return -1;
 }
 
 // Funciones de manejo de señales
@@ -2582,8 +2582,13 @@ void sighandlerCompactar(int signum) {
 void sighandlerDump(int signum) {
 	log_info(logger_ram_hq,"Llego señal de dump");
 	//funcion_test_memoria_completa();
-	imprimir_dump();
-	signal(SIGUSR2, sighandlerDump); 
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA,"SEGMENTACION"))
+		imprimir_dump();
+	else
+		imprimir_dump_paginacion();
+		
+	signal(SIGUSR2, sighandlerDump);
+
 }
 
 void funcion_test_memoria_completa (void){
@@ -2608,9 +2613,13 @@ void funcion_test_memoria_completa (void){
 	
 }
 
-void sighandlerLiberarPaginacion(int signum){
+void sighandlerLiberarMemoria(int signum){
 	log_info(logger_ram_hq,"Llego la señal para evacuar el modulo");
-	explotar_la_nave();
+	
+	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION"))
+		explotar_la_nave();
+	else
+		explotar_la_nave_segmentada();
 }
 
 
@@ -2707,9 +2716,9 @@ void mover_tripulante_mapa (char simbolo,direccion dir){
 //iniciar_patota
 void crear_tripulante_mapa (uint32_t tid,uint32_t x,uint32_t y){
 	
-	int trip_mem = personaje_crear(nivel, 'a'+tid-1, x, y);
+	personaje_crear(nivel, 'a'+tid-1, x, y);
 	//ver si se puede sacar este assert y asi no tira ese warning
-	ASSERT_CREATE(nivel, 'a'+tid-1, trip_mem);
+	//ASSERT_CREATE(nivel, 'a'+tid-1, trip_mem);
 	nivel_gui_dibujar(nivel);
 	return;
 }
@@ -2741,9 +2750,6 @@ direccion obtener_direccion_movimiento_mapa(uint32_t pos_nueva_x,uint32_t pos_nu
 	return direc;
 }
 
-void sighandlerLiberarSegmentacion(int signum){
-	explotar_la_nave_segmentada();
-}
 
 void explotar_la_nave_segmentada(){
 	pthread_mutex_lock(&mutex_iniciar_patota);

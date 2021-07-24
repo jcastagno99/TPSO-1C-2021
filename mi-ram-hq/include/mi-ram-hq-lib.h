@@ -238,7 +238,6 @@ void recorrer_tcb_dump(uint32_t ,t_list* ,t_log * );
 void imprimir_dump_paginacion(void);
 
 
-
 //Funciones armadas para debuggear
 void funcion_test_memoria_completa(void);
 void recorrer_pcb(t_segmento * );
@@ -249,8 +248,7 @@ void recorrer_tripulante(t_segmento * );
 //Funciones para los signal
 void sighandlerDump(int);
 void sighandlerCompactar(int);
-void sighandlerLiberarSegmentacion(int);
-void sighandlerLiberarPaginacion(int);
+void sighandlerLiberarMemoria(int);
 void explotar_la_nave();
 void explotar_la_nave_segmentada();
 

@@ -1,0 +1,152 @@
+[INFO] 20:56:06:895 DUMP/(8745:8919): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Dump: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 0	 Inicio: 143884808	 Tam: 8 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 1	 Inicio: 143884816	 Tam: 100 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 2	 Inicio: 143884916	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 3	 Inicio: 143884937	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 4	 Inicio: 143884958	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Proceso: 1	 Segmento: 5	 Inicio: 143884979	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Dump alternativo: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 0	 Inicio: 143884808	 Tam: 8b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 1	 Inicio: 143884816	 Tam: 100b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 2	 Inicio: 143884916	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 3	 Inicio: 143884937	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 4	 Inicio: 143884958	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 5	 Inicio: 143884979	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:895 DUMP/(8745:8919): Segmento: 1970561792	 Inicio: 143885000	 Tam: 3904b Libre: 1
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Dump: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 0	 Inicio: 143884808	 Tam: 8 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 1	 Inicio: 143884816	 Tam: 100 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 2	 Inicio: 143884916	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 3	 Inicio: 143884937	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 4	 Inicio: 143884958	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): Proceso: 1	 Segmento: 5	 Inicio: 143884979	 Tam: 21 b
+
+[INFO] 20:56:06:895 DUMP/(8745:8920): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Dump alternativo: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 0	 Inicio: 143884808	 Tam: 8b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 1	 Inicio: 143884816	 Tam: 100b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 2	 Inicio: 143884916	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 3	 Inicio: 143884937	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 4	 Inicio: 143884958	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 5	 Inicio: 143884979	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8920): Segmento: 1970561792	 Inicio: 143885000	 Tam: 3904b Libre: 1
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Dump: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 0	 Inicio: 143884808	 Tam: 8 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 1	 Inicio: 143884816	 Tam: 100 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 2	 Inicio: 143884916	 Tam: 21 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 3	 Inicio: 143884937	 Tam: 21 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 4	 Inicio: 143884958	 Tam: 21 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Proceso: 1	 Segmento: 5	 Inicio: 143884979	 Tam: 21 b
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Dump alternativo: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 0	 Inicio: 143884808	 Tam: 8b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 1	 Inicio: 143884816	 Tam: 100b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 2	 Inicio: 143884916	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 3	 Inicio: 143884937	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 4	 Inicio: 143884958	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 5	 Inicio: 143884979	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:896 DUMP/(8745:8921): Segmento: 1970561792	 Inicio: 143885000	 Tam: 3904b Libre: 1
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Dump: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 0	 Inicio: 143884808	 Tam: 8 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 1	 Inicio: 143884816	 Tam: 100 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 2	 Inicio: 143884916	 Tam: 21 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 3	 Inicio: 143884937	 Tam: 21 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 4	 Inicio: 143884958	 Tam: 21 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Proceso: 1	 Segmento: 5	 Inicio: 143884979	 Tam: 21 b
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): --------------------------------------------------------------------------
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Dump alternativo: 23-07-21_20:56:06 
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 0	 Inicio: 143884808	 Tam: 8b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 1	 Inicio: 143884816	 Tam: 100b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 2	 Inicio: 143884916	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 3	 Inicio: 143884937	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 4	 Inicio: 143884958	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 5	 Inicio: 143884979	 Tam: 21b Libre: 0
+
+[INFO] 20:56:06:901 DUMP/(8745:8922): Segmento: 1970561792	 Inicio: 143885000	 Tam: 3904b Libre: 1
+
