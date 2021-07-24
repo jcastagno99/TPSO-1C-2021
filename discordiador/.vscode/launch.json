@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/discordiador",
-            "args": ["-test"],
+            "args": ["cfg/discordiador.config,cfg/discordiador.log,-test"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

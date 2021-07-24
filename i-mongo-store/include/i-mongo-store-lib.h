@@ -72,6 +72,7 @@ char* carpeta_files;
 char* carpeta_bitacoras;
 char* carpeta_md5;
 char* ruta_info_blocks;
+char* ruta_info_blocks_aux;
 void* superbloque;
 void* blocks;
 pthread_mutex_t superbloque_bitarray_mutex;

@@ -39,6 +39,7 @@ void handler_sigint(int signal){
 	free(carpeta_bitacoras);
 	free(carpeta_md5);
 	free(ruta_info_blocks);
+	free(ruta_info_blocks_aux);
 	close(fd_bloques);
 	close(fd_superbloques);
 	bitacora_trip_mutex* un_trip;
@@ -97,4 +98,7 @@ void inicializar_rutas(char *montaje)
 	ruta_info_blocks = malloc(strlen(montaje) + strlen("/Infoblocks.ims")+1);
 	memcpy(ruta_info_blocks, montaje, strlen(montaje)+1);
 	strcat(ruta_info_blocks, "/Infoblocks.ims");
+	ruta_info_blocks_aux = malloc(strlen(montaje) + strlen("/Infoblocks_aux.ims")+1);
+	memcpy(ruta_info_blocks_aux, montaje, strlen(montaje)+1);
+	strcat(ruta_info_blocks_aux, "/Infoblocks_aux.ims");
 }

@@ -141,8 +141,6 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		stream_respuesta = serializar_respuesta_ok_fail(resultado);
 		tamanio_respuesta = sizeof(respuesta_ok_fail);
 		free(tct.tarea);
-		
-
 	}
 	break;
 
@@ -1477,13 +1475,19 @@ bool sabotaje_superbloque(){
 	strcat(comando, ruta_info_blocks);
 	system(comando);
 	free(comando);
+	char* comando2 = malloc(strlen("sed 's/ /,/g' ") + strlen(ruta_info_blocks) + strlen(" > ") + strlen(ruta_info_blocks_aux) + 1);
+	comando2[0] = '\0';
+	strcat(comando2, "sed 's/ /,/g' ");
+	strcat(comando2, ruta_info_blocks);
+	strcat(comando2, " > ");
+	strcat(comando2, ruta_info_blocks_aux);
+	system(comando2);
+	free(comando2);
 	char buffer[500];
 	FILE* fd = fopen(ruta_info_blocks, "r+");
-	fscanf(fd, "%s", buffer);
-	char* buffer_pequenio = malloc(strlen(buffer)+1);
-	memcpy(buffer_pequenio, buffer, strlen(buffer)+1);
-	char** cosas_del_comando = string_split(buffer_pequenio, " ");
-	free(buffer_pequenio);
+	fgets(buffer,499,fd);
+	char** cosas_del_comando = string_split(buffer, " ");
+	printf("\033[1;31m Rojo %s \033[0m\n",cosas_del_comando[4]);
 	int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
 	int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
 	int cant_segun_superbloque = get_block_amount();

@@ -387,7 +387,7 @@ void notificar_movimiento_a_miram(dis_tripulante *trip){
     void * info = serializar_tripulante_y_posicion(tripulante_posicion);
     uint32_t size_paquete = sizeof(uint32_t) *3;
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
-    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     close(conexion_mi_ram_hq);
 
     // Verificar respuesta: Ver si es nesesario en un futuro
@@ -468,7 +468,8 @@ t_list * armar_tareas_para_enviar(char *nombre_archivo)
     while (feof(archivo) == 0)
     {
         fgets(caracteres, 99, archivo);
-        char * aux = malloc(strlen(caracteres));
+        printf("longitud caracteres: %d", strlen(caracteres));
+        char * aux = malloc(strlen(caracteres)+1);
         //[SANTI] al aux le faltaria el +1 para almacenar el /0. En algunas ocasiones muy random me tira error. Gian fue testigo de ese error random. Revisar archivo de log de Valgrind
         if(caracteres[strlen(caracteres)-1] == '\n')
             caracteres[strlen(caracteres)-1] = '\0';

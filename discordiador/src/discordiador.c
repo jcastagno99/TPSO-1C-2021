@@ -219,7 +219,6 @@ void manejar_sabotaje(int pos_sab_x, int pos_sab_y, int conexion_imongo)
 	void* stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
 	enviar_paquete(conexion_imongo,RESPUESTA_INICIAR_SABOTAJE,sizeof(respuesta_ok_fail),stream_respuesta);
 	close(conexion_imongo);
-	free(stream_respuesta);
 	sleep(tiempo_retardo_ciclo_cpu + 4);
 
 	// 2- Ordenar la cola de exec, agregar sus tripulantes a la lista de sabotaje y vaciar la cola. Lo mismo con la cola de Ready
@@ -275,7 +274,6 @@ void manejar_sabotaje(int pos_sab_x, int pos_sab_y, int conexion_imongo)
 	int socket_respuesta = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
 	enviar_paquete(socket_respuesta, REGISTRAR_SABOTAJE_RESUELTO, sizeof(uint32_t), stream_tid);
 	close(socket_respuesta);
-	free(stream_tid);
 	// 7- Mandar a todos a ready en el orden de la lista esa local de sabotaje
 	list_iterate(cola_sabotaje, (void *)enviar_a_ready);
 
@@ -777,8 +775,8 @@ void actualizar_estado_miriam(int tid,estado est){
     void *info = serializar_estado_tcb(est,tid); 
     uint32_t size_paquete = sizeof(uint32_t)+sizeof(estado);
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
-    //t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    //respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+    t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
+    respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
     //printf("Recibi respuesta %i\n",respuesta);
     close(conexion_mi_ram_hq);
     // Que debemos hace en caso no funcione
