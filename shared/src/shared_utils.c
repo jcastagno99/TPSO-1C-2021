@@ -67,17 +67,17 @@ void* pserializar_tid(uint32_t tid){
 	return stream;	
 }
 
-void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
-	char * nueva_tarea;
-	/*nueva_tarea.nombre_tarea = nombre;
-	nueva_tarea.cantidad_parametro = cantidad_parametros;
-	nueva_tarea.parametro = parametro;
-	nueva_tarea.pos_x = posx;
-	nueva_tarea.pos_y = posy;
-	nueva_tarea.tiempo = tiempo;
-	*/
-	return serializar_tarea(nueva_tarea,0);
-}
+// void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo){
+// 	char * nueva_tarea;
+// 	/*nueva_tarea.nombre_tarea = nombre;
+// 	nueva_tarea.cantidad_parametro = cantidad_parametros;
+// 	nueva_tarea.parametro = parametro;
+// 	nueva_tarea.pos_x = posx;
+// 	nueva_tarea.pos_y = posy;
+// 	nueva_tarea.tiempo = tiempo;
+// 	*/
+// 	return serializar_tarea(nueva_tarea,0);
+// }
 
 void* serializar_tarea(char* tarea,uint32_t longitud_nombre){
 	int offset = 0;

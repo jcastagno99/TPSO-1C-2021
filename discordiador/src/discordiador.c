@@ -777,17 +777,12 @@ void actualizar_estado_miriam(int tid,estado est){
     enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_ESTADO, size_paquete, info); 
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
+	if(respuesta == RESPUESTA_FAIL)
+	 	printf("\033[1;31m[RESPUESTA_FAIL] discordiador.c Linea 781 \033[0m\n");
 	
 	free(paquete_recibido->stream);
 	free(paquete_recibido);
-    //printf("Recibi respuesta %i\n",respuesta);
     close(conexion_mi_ram_hq);
-    // Que debemos hace en caso no funcione
-	// Creo que este siempre y si no pasa se debe pausar algo ??
-	// Solo imprimir cosas importantes dado que en los logs habra mucho contenido
-	// 
-    
-	//return respuesta;
 }
 
 void liberar_listas(){
