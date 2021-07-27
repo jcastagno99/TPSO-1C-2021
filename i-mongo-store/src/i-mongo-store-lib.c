@@ -1048,17 +1048,34 @@ int get_primer_bloque_libre()
 	t_bitarray *bit_array = bitarray_create_with_mode(superbloque + 2*sizeof(uint32_t),cant_bloques/8,MSB_FIRST);
 	bool ocupado = 1;
 	int i;
+	bool es_primer_bloque = 1;
+// [TODO]
 	for (i = 0; i < bitarray_get_max_bit(bit_array) && ocupado; i++)
 	{
 		ocupado = bitarray_test_bit(bit_array, i);
+		if(!ocupado){
+			if(!estoy_saboteado || !es_primer_bloque) return i;
+			else{
+				es_primer_bloque = 0;
+				/*
+					Si el bloque i no es el mismo  
+				*/
+			}
+		}
 	}
 	bitarray_destroy(bit_array);
 	if (ocupado == 0)
 	{
-		return i-1;
+		if(estoy_saboteado){
+			
+		}else
+			return i-1;
+		
+		
 	}
 	else
 	{
+		
 		log_error(logger_i_mongo_store,"NO HAY MAS BLOQUES LIBRES");
 		return -1;
 	}
@@ -1616,10 +1633,6 @@ bool sabotaje_bitmap(){
 	int total_block_amount = get_block_amount();
 	int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
 	memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
-	for (int i = 0; i < total_block_amount; i++)
-	{
-		if(bitmap_temporal[i] != 0) log_error(logger_i_mongo_store, "No se inicializo bien");
-	}
 
 	d = opendir("/home/utnso/polus/Bitacoras");
 
@@ -1646,10 +1659,12 @@ bool sabotaje_bitmap(){
 
 	for (int i = 0; i < total_block_amount; i++)
 	{
-		log_warning(logger_i_mongo_store, "Comparando %i %i\n", bitarray_test_bit(bitarray, i), bitmap_temporal[i]);
 		if(bitarray_test_bit(bitarray, i) != bitmap_temporal[i]){
 			log_error(logger_i_mongo_store, "[ I-mongo ] Sabotaje Bitmap detectado en el bloque %i. Corrigiendo...", i);
-			bitarray_set_bit(bitarray, bitmap_temporal[i]);
+			if(bitmap_temporal[i])
+				bitarray_set_bit(bitarray, i);
+			else
+				bitarray_clean_bit(bitarray, i);
 			msync(superbloque, 2 * sizeof(uint32_t) + get_block_amount()/8 + 1, 0);
 			log_warning(logger_i_mongo_store, "[ I-mongo ] Sabotaje Bitmap corregido exitosamente!", i);
 			bitarray_destroy(bitarray);
@@ -1658,6 +1673,7 @@ bool sabotaje_bitmap(){
 	}
 	
 	bitarray_destroy(bitarray);
+	free(bitmap_temporal);
 	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje Bitmap...");
 	return false;
 }
