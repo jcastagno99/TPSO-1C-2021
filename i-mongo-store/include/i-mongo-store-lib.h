@@ -156,4 +156,7 @@ bool sabotaje_md5();
 bool sabotaje_bitmap();
 bool sabotaje_size();
 bool estoy_saboteado;
+bool es_el_bloque_corrupto(int nro_bloque);
+void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal);
+int get_block_amount_aux();
 #endif /* I_MONGO_STORE_LIB_H */

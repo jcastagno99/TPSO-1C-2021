@@ -1049,35 +1049,63 @@ int get_primer_bloque_libre()
 	bool ocupado = 1;
 	int i;
 	bool es_primer_bloque = 1;
-// [TODO]
-	for (i = 0; i < bitarray_get_max_bit(bit_array) && ocupado; i++)
+	for (i = 0; i < bitarray_get_max_bit(bit_array); i++)
 	{
 		ocupado = bitarray_test_bit(bit_array, i);
 		if(!ocupado){
-			if(!estoy_saboteado || !es_primer_bloque) return i;
+			if(!estoy_saboteado || !es_primer_bloque){
+				bitarray_destroy(bit_array);
+				return i;
+			}
 			else{
 				es_primer_bloque = 0;
-				/*
-					Si el bloque i no es el mismo  
-				*/
+				if(!es_el_bloque_corrupto(i)){
+					bitarray_destroy(bit_array);
+					return i;
+				}
 			}
 		}
 	}
-	bitarray_destroy(bit_array);
-	if (ocupado == 0)
-	{
-		if(estoy_saboteado){
-			
-		}else
-			return i-1;
-		
-		
+	log_error(logger_i_mongo_store,"NO HAY MAS BLOQUES LIBRES");
+	return -1;
+}
+
+bool es_el_bloque_corrupto(int nro_bloque){
+	DIR *d;
+	struct dirent *dir;
+	int total_block_amount = get_block_amount();
+	int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
+	memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
+
+	d = opendir("/home/utnso/polus/Bitacoras");
+
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+				char *full_path = string_from_format("/home/utnso/polus/Bitacoras/%s", dir->d_name);
+				cargar_bitmap_temporal(full_path, bitmap_temporal);
+			}
+		}
+		closedir(d);
 	}
-	else
-	{
-		
-		log_error(logger_i_mongo_store,"NO HAY MAS BLOQUES LIBRES");
-		return -1;
+
+	d = opendir("/home/utnso/polus/Files");
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+				char *full_path = string_from_format("/home/utnso/polus/Files/%s", dir->d_name);
+				cargar_bitmap_temporal(full_path, bitmap_temporal);
+			}
+		}
+		closedir(d);
+	}
+
+	if(bitmap_temporal[nro_bloque]){
+		free(bitmap_temporal);
+		return 1;
+	}else{
+		free(bitmap_temporal);
+		return 0;
 	}
 }
 
