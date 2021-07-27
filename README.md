@@ -3,27 +3,36 @@
 <p align="center"><img src="oviedo.jpg" width="200px"/></p>
 
 
+
 ## COMANDOS DE LA CONSOLA
 
 ````powershell
 INICIAR_PATOTA 2 plantas.txt 1|1 3|4
-INICIAR_PATOTA 1 oxigeno.txt 5|5
 LISTAR_TRIPULANTES
 INICIAR_PLANIFICACION
 PAUSAR_PLANIFICACION
 EXPULSAR_TRIPULANTE 3
+OBTENER_BITACORA 1
 ````
 
-#### Ejecución del  mi-ram-hq e i-mongo-store
 
-Usar `./exec` para ejecutar y compilar. Solo `make` para compilar. `make clean` para borrar los ejecutables. Para usar valgrind `./vexec` 
+
+## I-MONGO-STORE
+
+Tenemos los siguientes comandos
+
+- `./execb`    :    remueve la carpeta **polus** e inicia i-mongo
+-  `./exec`    :    Inicia i-mongo
+
+
 
 
 #### Ver logs filtrados
-Ubicarse en el /cfg antes de ejecutar el comando
+Ubicarse en el `/cfg` antes de ejecutar el comando
 ````powershell
 cat discordiador.log | grep "Tripulante 1"
 ````
+
 
 
 ## Integrantes

@@ -208,7 +208,6 @@ void* pserializar_nuevo_tripulante(uint32_t tid, uint32_t posx, uint32_t posy, u
 void* serializar_nuevo_tripulante(nuevo_tripulante tripulante);
 void* pserializar_respuesta_ok_fail(char caracter);
 void* serializar_respuesta_ok_fail(respuesta_ok_fail resultado);
-void* pserializar_tarea(char* nombre, uint32_t cantidad_parametros, uint32_t parametro, uint32_t posx, uint32_t posy, uint32_t tiempo);
 void* serializar_tarea(char* tarea,uint32_t);
 void* pserializar_respuesta_verificar_finalizacion(char okfail, char sino);
 void* serializar_respuesta_verificar_finalizacion(respuesta_ok_fail res, resultado_verificacion siono);
