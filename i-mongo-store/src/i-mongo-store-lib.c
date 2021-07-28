@@ -94,6 +94,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 {
 	log_info(logger_i_mongo_store, "Se creó el hilo correctamente");
 	t_paquete *paquete = recibir_paquete(*socket_envio);
+	log_warning(logger_i_mongo_store, "Recibi paquete");
 	void *stream = paquete->stream;
 	op_code codigo_respuesta;
 	uint32_t tamanio_respuesta;
@@ -135,8 +136,12 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		}else if(operacion_sobre_archivo == OTRA){
 			resultado2 = 1;
 		}else{
+			pthread_mutex_t *mutex = buscar_mutex_con_tid(tct.tid);
+			pthread_mutex_lock(mutex);
 			resultado2 = realizar_fsck();
+			pthread_mutex_unlock(mutex);
 		}
+
 		respuesta_ok_fail resultado;
 		if(resultado1 == 1 && resultado2 == 1){
 			resultado = RESPUESTA_OK;
@@ -1084,6 +1089,7 @@ bool es_el_bloque_corrupto(int nro_bloque){
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
 				char *full_path = string_from_format("/home/utnso/polus/Bitacoras/%s", dir->d_name);
 				cargar_bitmap_temporal(full_path, bitmap_temporal);
+				free(full_path);
 			}
 		}
 		closedir(d);
@@ -1095,6 +1101,7 @@ bool es_el_bloque_corrupto(int nro_bloque){
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
 				char *full_path = string_from_format("/home/utnso/polus/Files/%s", dir->d_name);
 				cargar_bitmap_temporal(full_path, bitmap_temporal);
+				free(full_path);
 			}
 		}
 		closedir(d);
@@ -1292,13 +1299,7 @@ void armar_lista_de_posiciones(char* ruta_config){
     while (magio[i] != NULL)
     {
 		una_posicion = malloc(sizeof(posicion));
-		if(i == 0){
-			char* primer_elemento = magio[0];
-			primer_elemento[0] = primer_elemento[1];
-			primer_elemento[1] = primer_elemento[2];
-			primer_elemento[2] = primer_elemento[3];
-			primer_elemento[3] = '\0';
-		}
+		
         char **posiciones = string_split(magio[i], "|");
         una_posicion->pos_x = atoi(posiciones[0]);
         una_posicion->pos_y = atoi(posiciones[1]);
@@ -1469,7 +1470,7 @@ pthread_mutex_t* buscar_mutex_con_tid(uint32_t tid){
 	return NULL;
 }
 
-int realizar_fsck(){		
+int realizar_fsck(){	
 	if(sabotaje_block_count()) return 1;
 	if(sabotaje_superbloque()) return 1;
 	if(sabotaje_size()) return 1;
@@ -1481,21 +1482,27 @@ int realizar_fsck(){
 bool reparar_sabotaje_block_count_en_archivo(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
+	free(full_path);
 	char **test = config_get_array_value(archivo, "BLOCKS");
+
 	int cantidad_real_de_blocks = 0;
 	while (test[cantidad_real_de_blocks])
 		cantidad_real_de_blocks++;
 	
-	int v = config_get_int_value(archivo, "BLOCK_COUNT");
+	int block_count_posiblemente_corrupto = config_get_int_value(archivo, "BLOCK_COUNT");
 	
-	if(v == cantidad_real_de_blocks){
+	if(block_count_posiblemente_corrupto == cantidad_real_de_blocks){
 		config_destroy(archivo);
+		liberar_lista_string(test);
 		return false;
 	}else{
 		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block Count detectado en %s . Corrigiendo...", file_path);
-		config_set_value(archivo, "BLOCK_COUNT", string_itoa(cantidad_real_de_blocks));
+		char *str = string_itoa(cantidad_real_de_blocks);
+		config_set_value(archivo, "BLOCK_COUNT", str);
 		config_save(archivo);
 		config_destroy(archivo);
+		free(str);
+		liberar_lista_string(test);
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
 		return true;
 	}
@@ -1505,6 +1512,7 @@ bool reparar_sabotaje_block_count_en_archivo(char *file_path){
 bool reparar_sabotaje_md5_en_archivo(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
+	free(full_path);
 	printf("[ I-mongo ] Analizando el archivo %s...", file_path);
 	char *string_a_hashear = armar_string_para_MD5(archivo);
 	char *hash = obtener_MD5(string_a_hashear, archivo);
@@ -1513,9 +1521,11 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 	if(string_equals_ignore_case(md5, hash)){
 		printf("[ I-mongo ] El archivo %s no está saboteado.", file_path);
 		config_destroy(archivo);
+		free(hash);
 		return false;
 
 	}else{
+		free(hash);
 		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje MD5 detectado en %s . Corrigiendo...", file_path);
 		int block_size = get_block_size();
 		int size = config_get_int_value(archivo, "SIZE");
@@ -1552,6 +1562,8 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 		}
 		config_save(archivo);
 		config_destroy(archivo);
+		free(buffer);
+		liberar_lista_string(array_blocks);
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Block_Count corregido exitosamente!");
 		return true;
 	}
@@ -1560,6 +1572,7 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 bool reparar_sabotaje_size_en_archivo(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
+	free(full_path);
 	// Primero tengo que leer todos los bloques y contar cuantos caracteres de llenado tengo
 	// Luego tengo que compararlo con el size que tengo actualmente para ver si está corrupto
 	// Si lo está, piso ese valor con lo que conté
@@ -1575,7 +1588,6 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 		char *buffer = malloc(block_size);
 		memcpy(buffer, blocks + (bloque_actual * block_size), block_size);
 		int ultimo_caracter_index = encontrar_anterior_barra_cero(buffer, block_size);
-		log_warning(logger_i_mongo_store, "El ultimo caracter esta en el index %i", ultimo_caracter_index);
 		if(ultimo_caracter_index < block_size - 1){
 			// Voy a tener fragmentación interna
 			int j=0;
@@ -1587,18 +1599,19 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 		}else
 			contador_de_caracteres_escritos += block_size;
 		free(buffer);
-		log_warning(logger_i_mongo_store, "Bloque actual %i tengo %i caracteres. Acumulado %i", bloque_actual, ultimo_caracter_index + 1, contador_de_caracteres_escritos);
 
 	}
-	log_warning(logger_i_mongo_store, "Size posiblemente corrupto %i Contador %i", size_posiblemente_corrupto, contador_de_caracteres_escritos);
+	liberar_lista_string(array_blocks);
 	if(size_posiblemente_corrupto == contador_de_caracteres_escritos){
 		config_destroy(archivo);
 		return false;
 	}else{
 		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Size detectado en %s . Corrigiendo...", file_path);
-		config_set_value(archivo, "SIZE", string_itoa(contador_de_caracteres_escritos));
+		char *str = string_itoa(contador_de_caracteres_escritos);
+		config_set_value(archivo, "SIZE", str);
 		config_save(archivo);
 		config_destroy(archivo);
+		free(str);
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Size corregido exitosamente!");
 		return true;
 	}
@@ -1607,13 +1620,14 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal){
 	t_config *archivo = config_create(full_path);
 	char **used_blocks = config_get_array_value(archivo, "BLOCKS");
-	int size_array = config_get_int_value(archivo, "BLOCK_COUNT");
-				
-	for (int i = 0; i<size_array; i++)
-	{
+
+	int i = 0;
+	while (used_blocks[i]){
 		int block = atoi(used_blocks[i]);
 		bitmap_temporal[block] = 1;
-	}	
+		i++;
+	}
+	liberar_lista_string(used_blocks);
 	config_destroy(archivo);
 }
 
@@ -1625,8 +1639,10 @@ bool sabotaje_block_count(){
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_sabotaje_block_count_en_archivo(dir->d_name))
+				if(reparar_sabotaje_block_count_en_archivo(dir->d_name)){
+					closedir(d);
 					return true;
+				}
 			}
 		}
 		closedir(d);
@@ -1643,10 +1659,14 @@ bool sabotaje_size(){
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_sabotaje_size_en_archivo(dir->d_name))
+				if(reparar_sabotaje_size_en_archivo(dir->d_name)){
+					closedir(d);
 					return true;
+				}
+					
 			}
 		}
+		
 		closedir(d);
 	}
 	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje Size...");
@@ -1669,6 +1689,7 @@ bool sabotaje_bitmap(){
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
 				char *full_path = string_from_format("/home/utnso/polus/Bitacoras/%s", dir->d_name);
 				cargar_bitmap_temporal(full_path, bitmap_temporal);
+				free(full_path);
 			}
 		}
 		closedir(d);
@@ -1680,6 +1701,7 @@ bool sabotaje_bitmap(){
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
 				char *full_path = string_from_format("/home/utnso/polus/Files/%s", dir->d_name);
 				cargar_bitmap_temporal(full_path, bitmap_temporal);
+				free(full_path);
 			}
 		}
 		closedir(d);
@@ -1696,6 +1718,7 @@ bool sabotaje_bitmap(){
 			msync(superbloque, 2 * sizeof(uint32_t) + get_block_amount()/8 + 1, 0);
 			log_warning(logger_i_mongo_store, "[ I-mongo ] Sabotaje Bitmap corregido exitosamente!", i);
 			bitarray_destroy(bitarray);
+			free(bitmap_temporal);
 			return true;
 		}
 	}
@@ -1714,8 +1737,10 @@ bool sabotaje_md5(){
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_sabotaje_md5_en_archivo(dir->d_name))
+				if(reparar_sabotaje_md5_en_archivo(dir->d_name)){
+					closedir(d);
 					return true;
+				}
 			}
 		}
 		closedir(d);
@@ -1725,13 +1750,13 @@ bool sabotaje_md5(){
 }
 
 bool reparar_sabotaje_superbloque_block_count(uint32_t nueva_cant){
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado Superbloque cantidad de bloques... Corrigiendo...");
+	log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje detectado Superbloque cantidad de bloques... Corrigiendo...");
 	memcpy(superbloque + sizeof(uint32_t), &nueva_cant, sizeof(uint32_t));
 	if(get_block_amount() == nueva_cant){
 		log_warning(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Superbloque cantidad de bloques corregido exitosamente");
 		return true;
 	} else{
-		log_warning(logger_i_mongo_store, "[ I-Mongo ] No se pudo corregir el sabotaje de Superbloque cantidad de bloques");
+		log_error(logger_i_mongo_store, "[ I-Mongo ] No se pudo corregir el sabotaje de Superbloque cantidad de bloques");
 		return false;
 	}
 }
