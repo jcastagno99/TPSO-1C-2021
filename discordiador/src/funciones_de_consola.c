@@ -8,7 +8,7 @@ void *gestion_patotas_a_memoria()
         sem_wait(&sem_contador_cola_iniciar_patota);
 
         pthread_mutex_lock(&mutex_cola_iniciar_patota);
-        char **res = queue_pop(cola_de_iniciar_patotas);// TA BIEN
+        char **res = queue_pop(cola_de_iniciar_patotas);
         pthread_mutex_unlock(&mutex_cola_iniciar_patota);
 
         log_info(logger, "[ Discordiador ] Procesando la patota con %s tripulantes...", res[1]);
@@ -17,7 +17,6 @@ void *gestion_patotas_a_memoria()
     }
 }
 
-// Cambiar nombre quitar el global
 void iniciar_patota(char **str_split)
 {
     int cant_tripulantes = atoi(str_split[1]);
@@ -57,7 +56,6 @@ void iniciar_patota(char **str_split)
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
-    //free(paquete_recibido->stream);
     close(conexion_mi_ram_hq);
 
     if (paquete_recibido->codigo_operacion == RESPUESTA_INICIAR_PATOTA){
@@ -99,7 +97,6 @@ void iniciar_patota(char **str_split)
 // Carga las estrucuras localmente
 void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
 {
-    //t_list *tareas_de_serializacion = patota_full->tareas;
     t_list *tripulantes_sin_pid = patota_full->tripulantes;
 
     for (int i = 0; i < tripulantes_sin_pid->elements_count; i++)
@@ -120,7 +117,7 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
         sem_init(&(tripulante->sem_tri), 0, 0);    // Semaforo para que el tripulante pueda comenzar a ejecutar.
 
         agregar_elemento_a_cola(cola_de_new, &mutex_cola_de_new, tripulante);
-        list_add(list_total_tripulantes, tripulante); // [TODO] esto lo pondre en el for de confirmacion [PENDIENTE]
+        list_add(list_total_tripulantes, tripulante);
         
         pthread_t hilo_tripulante;
         pthread_attr_t atributo_hilo;
@@ -139,7 +136,7 @@ void iniciar_patota_local(pid_con_tareas_y_tripulantes *patota_full)
     new_patota->cantidad_de_tareas = patota_full->tareas->elements_count;
     list_add(lista_de_patotas, new_patota);
 
-    destroy_pid_con_tareas_y_tripulantes(patota_full); //CUIDADO CON ESTO HACIA SEGMENT FAULT QUISA CON ALGUNA ACTUALIZACION DE LAS ESTRUCTURAS
+    destroy_pid_con_tareas_y_tripulantes(patota_full); //CUIDADO CON ESTO HACIA SEGMENT FAULT ahora estaria bien
 }
 
 //  FUNCION DEL HILO: TRIPULANTE ----------------------------
@@ -148,10 +145,9 @@ void ejecucion_tripulante(int indice)
     dis_tripulante *trip = list_get(list_total_tripulantes, indice - 1);
     sem_wait(&(trip->sem_tri)); // CUANDO PASA A READY EL PLANI LARGO PLAZO LE TIRA UN SIGNAL
     dis_tarea *tarea = pedir_tarea_miriam((uint32_t)trip->id);
-    // ESTOY EN EXEC voy a ejecutar la tarea que tengo
 
     while (tarea != NULL){
-        tarea->estado_tarea = EN_CURSO;// ME parece que no sirve porque cuando creo una tarea la seteo con 'EN_CURSO'
+        tarea->estado_tarea = EN_CURSO; // [No lo se rick, funciona]
         trip->tarea_actual = tarea;
         while (trip->tarea_actual->estado_tarea == EN_CURSO)
         {
@@ -159,10 +155,6 @@ void ejecucion_tripulante(int indice)
             realizar_operacion(trip->tarea_actual, trip);
         }
         log_info(logger, "[ Tripulante %i ] Tarea %s TERMINADA", trip->id, trip->tarea_actual->nombre_tarea);
-        // Sale porque la funcion cambia realizar_operacion() : tarea->estado_tarea = TERMINADA;
-        /*  1. NOTIFICAR A IMONGO que la tarea finalizo ? Para la BITACORA
-            2. LIBERAR RECURSO de la tarea (free_tarea(*tarea)) // >CUIDADO liberarla si no es sabotaje justo antes de pedir una nueva tarea
-        */
 
         // Solo el trip que tenga una tarea con nombre SABOTAJE podra entrar en el IF
         if (strcmp(trip->tarea_actual->nombre_tarea, "SABOTAJE") == 0){
@@ -172,9 +164,7 @@ void ejecucion_tripulante(int indice)
         }
         else{
             // ME asegura que no pida una nueva TAREA si ya fue EXPULSADO (pasaba si se mandaba el mensaje de EXPULSAR justo cuando termina una TAREA)
-            if (trip->expulsado != true){
-                
-                // LIBERAR MEMORIA DE LA TAREA ANTERIOR
+            if (trip->expulsado == false){
                 free_distarea(tarea);
                 tarea = pedir_tarea_miriam((uint32_t)trip->id);
             }
@@ -228,7 +218,6 @@ void realizar_operacion(dis_tarea *tarea, dis_tripulante *trip)
                     trip->hice_ciclo_inicial_tarea_es = false;
                     trip->tareas_realizadas++;
                     tarea->estado_tarea = TERMINADA;
-                    // [TODO] mensaje a i-mongo de tarea terminada
                 }
                 else
                 {
@@ -282,24 +271,18 @@ void chequear_tarea_terminada(dis_tarea *tarea, dis_tripulante *tripulante)
         log_info(logger, "[ Tripulante %i ] Tarea no bloqueante %s TERMINADA. Tiempo restante: %i", tripulante->id, tarea->nombre_tarea, tarea->tiempo_restante);
         tarea->estado_tarea = TERMINADA;
         
+        // LA TAREA DE SABOTAJE NO CUENTA COMO TAREA REALIZADA
         if (strcmp(tarea->nombre_tarea, "SABOTAJE") != 0)
-        {   // LA TAREA DE SABOTAJE NO CUENTA COMO TAREA REALIZADA
             tripulante->tareas_realizadas++;
-        }
-        
     }
 }
 
 void chequear_tripulante_finalizado(dis_tripulante *tripulante)
 {
     dis_patota *patota = list_get(lista_de_patotas, tripulante->id_patota - 1);
-    //log_info(logger, "[ Tripulante %i ] Realizadas %i - Totales %i\n", tripulante->id, tripulante->tareas_realizadas, patota->cantidad_de_tareas); //TODO borrarlo
+     // [MIRAM]   no maneja el estado EXIT
     if (tripulante->tareas_realizadas == patota->cantidad_de_tareas)
-    {
         tripulante->estado = EXIT;
-        //[TODO] en MIRAM no existe este estado
-        //actualizar_estado_miriam(tripulante->id,tripulante->estado); 
-    }
 }
 
 //  CONSOLA: LISTAR_TRIPULANTES -----------------------------
@@ -318,15 +301,7 @@ void listar_tripulantes()
 *******************************************************/
 
 dis_tarea* pedir_tarea_miriam(uint32_t tid)
-{
-    // dis_tripulante *trip = list_get(list_total_tripulantes,tid - 1);
-    // dis_patota *patota = list_get(lista_de_patotas, trip->id_patota - 1);
-    
-    // if (trip->tareas_realizadas == patota->cantidad_de_tareas){
-    //     printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
-    //     return NULL;
-    // }
-    
+{ 
     printf("\033[1;34mTRIP %d : pidiendo prox TAREA\033[0m\n",tid);
 
     // PEDIR A MI-RAM-HQ -----------------------------------------
@@ -338,8 +313,7 @@ dis_tarea* pedir_tarea_miriam(uint32_t tid)
     char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
     close(conexion_mi_ram_hq);
 
-    free(paquete_recibido->stream); // recibir_paquete usa un malloc 
-    free(paquete_recibido); // no mover despues del return se pierde la ultima
+    liberar_paquete(paquete_recibido);
 
     if(strlen(tarea_recibida)==0){
         printf("\033[1;32mTRIP %d : todas las TAREAS se completaron\033[0m\n",tid);
@@ -392,26 +366,6 @@ void notificar_movimiento_a_miram(dis_tripulante *trip){
     liberar_paquete(paquete_recibido);
     close(conexion_mi_ram_hq);
 
-    // Verificar respuesta: Ver si es nesesario en un futuro
-    // if (paquete_recibido->codigo_operacion == RESPUESTA_ACTUALIZAR_UBICACION){
-    //         printf("Recibi opcode de respuesta okfail\n");
-    //         //desserializo la respuesta
-    //         respuesta_ok_fail respuesta = deserializar_respuesta_ok_fail(paquete_recibido->stream);
-
-    //         //analizo respuesta
-    //         if (respuesta == RESPUESTA_OK)
-    //         {
-    //             printf("Recibi respuesta OK\n");
-    //         }
-    //         else if (respuesta == RESPUESTA_FAIL)
-    //         {
-    //             printf("Recibi respuesta FAIL\n");
-    //         }
-    //         else
-    //             printf("Recibi respuesta INVALIDA\n");
-    //     }
-    //     else
-    //         printf("Recibi opcode de respuesta INVALIDO\n");
 }
 
 
