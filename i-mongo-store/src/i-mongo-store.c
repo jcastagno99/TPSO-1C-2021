@@ -6,6 +6,7 @@ void handler_sabotaje(int signal)
 	char* puerto = itoa_propio(i_mongo_store_configuracion->PUERTO_DISCORDIADOR);
 	int conexion_discordiador = crear_conexion(i_mongo_store_configuracion ->IP_DISCORDIADOR, puerto);
 	posicion nueva_pos = get_proximo_sabotaje_y_avanzar_indice();
+	log_warning(logger_i_mongo_store, "Sabotaje detectado en %i %i", nueva_pos.pos_x, nueva_pos.pos_y);
 	void *stream = pserializar_posicion(nueva_pos.pos_x,nueva_pos.pos_y);
 	uint32_t size_paquete = 2 * sizeof(uint32_t);
 	enviar_paquete(conexion_discordiador, INICIAR_SABOTAJE, size_paquete, stream);
