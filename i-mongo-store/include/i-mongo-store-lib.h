@@ -75,6 +75,7 @@ char* ruta_info_blocks;
 char* ruta_info_blocks_aux;
 void* superbloque;
 void* blocks;
+void* blocks_mapeado;
 pthread_mutex_t superbloque_bitarray_mutex;
 int fd_bloques;
 int fd_superbloques;

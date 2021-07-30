@@ -29,7 +29,8 @@ void handler_sigint(int signal){
 	int tam_bloques = get_block_size();
 	int cant_bloques = get_block_amount(); 
 	munmap(superbloque,2*sizeof(uint32_t)+(cant_bloques/8) + 1);
-	munmap(blocks, tam_bloques*cant_bloques);
+	munmap(blocks_mapeado, tam_bloques*cant_bloques);
+	free(blocks);
 	list_destroy_and_destroy_elements(i_mongo_store_configuracion->POSICIONES_SABOTAJE,free);
 	free(i_mongo_store_configuracion->PUNTO_MONTAJE);
 	free(i_mongo_store_configuracion->IP_DISCORDIADOR);

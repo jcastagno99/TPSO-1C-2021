@@ -461,12 +461,14 @@ void inicializar_blocks(uint32_t block_size, uint32_t block_amount)
 		no_pude_abrir_archivo(ruta_blocks);
 	}
 	fallocate(fd_bloques, 0, 0, block_size * block_amount);
-	blocks = mmap(NULL, block_size * block_amount, PROT_WRITE | PROT_READ, MAP_SHARED, fd_bloques, 0);
+	blocks_mapeado = mmap(NULL, block_size * block_amount, PROT_WRITE | PROT_READ, MAP_SHARED, fd_bloques, 0);
 	if (blocks == MAP_FAILED)
 	{
 		no_pude_mapear_archivo(ruta_blocks);
 		exit(-1);
 	}
+	blocks = malloc(block_size * block_amount);
+	memcpy(blocks, blocks_mapeado, block_size * block_amount);
 }
 
 void inicializar_blocks_existente(uint32_t block_size, uint32_t block_amount)
@@ -476,12 +478,14 @@ void inicializar_blocks_existente(uint32_t block_size, uint32_t block_amount)
 	{
 		no_pude_abrir_archivo(ruta_blocks);
 	}
-	blocks = mmap(NULL, block_size * block_amount, PROT_WRITE | PROT_READ, MAP_SHARED, fd_bloques, 0);
+	blocks_mapeado = mmap(NULL, block_size * block_amount, PROT_WRITE | PROT_READ, MAP_SHARED, fd_bloques, 0);
 	if (blocks == MAP_FAILED)
 	{
 		no_pude_mapear_archivo(ruta_blocks);
 		exit(-1);
 	}
+	blocks = malloc(block_size * block_amount);
+	memcpy(blocks, blocks_mapeado, block_size * block_amount);
 }
 
 bool crear_directorio(char *carpeta)
@@ -554,7 +558,8 @@ void *sincronizar(void *tamanio)
 	while (1)
 	{	
 		msync(superbloque, tamanios[0], 0);
-		msync(blocks, tamanios[1], 0);
+		memcpy(blocks_mapeado, blocks, tamanios[1]);
+		msync(blocks_mapeado, tamanios[1], 0);
 		log_info(logger_i_mongo_store, "Se sincronizaron Blocks y SUperbloques");
 		sleep(i_mongo_store_configuracion->TIEMPO_SINCRONIZACION);
 	}
