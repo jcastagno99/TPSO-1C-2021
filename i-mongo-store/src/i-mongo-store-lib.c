@@ -545,9 +545,9 @@ bool existe_recurso(char *recurso)
 
 void *sincronizar(void *tamanio)
 { //como si fuera un array
+	uint32_t *tamanios = (uint32_t *)tamanio;
 	while (1)
-	{
-		uint32_t *tamanios = (uint32_t *)tamanio;
+	{	
 		msync(superbloque, tamanios[0], 0);
 		msync(blocks, tamanios[1], 0);
 		log_info(logger_i_mongo_store, "Se sincronizaron Blocks y SUperbloques");
