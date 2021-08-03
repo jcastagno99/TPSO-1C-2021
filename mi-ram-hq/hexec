@@ -2,5 +2,5 @@
 FILE=mi-ram-hq
 make $FILE
 if test -f "./$FILE"; then
-    valgrind --tool=helgrind ./$FILE 
+    valgrind --tool=helgrind --log-file="cfg/helgrind.log" ./$FILE cfg/mi-ram-hq.config cfg/mi-ram-hq.log
 fi

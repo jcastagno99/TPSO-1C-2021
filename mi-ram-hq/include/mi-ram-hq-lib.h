@@ -26,7 +26,7 @@
 #include <nivel-gui/nivel-gui.h>
 #include <nivel-gui/tad_nivel.h>
 #include <signal.h>
-//#include <fcntl.h>
+
 
 #define MAX_CLIENTS 128
 
@@ -46,7 +46,7 @@ typedef struct
 	
 }mi_ram_hq_config;
 
-//t_list * tabla_de_segmentos
+
 typedef struct
 {
 	bool libre;
@@ -55,9 +55,9 @@ typedef struct
 	uint32_t numero_segmento;
 	pthread_mutex_t* mutex_segmento;
 
-}t_segmento; //segmento
+}t_segmento;
 
-//t_list * patotas 
+ 
 typedef struct
 {
 	t_segmento * segmento_pcb;
@@ -65,12 +65,20 @@ typedef struct
 	t_list* segmentos_tripulantes;
 	pthread_mutex_t* mutex_segmentos_tripulantes;
 
-}t_segmentos_de_patota; //patota
+}t_segmentos_de_patota;
+
+typedef struct{
+
+	void* inicio;
+	bool libre;
+	pthread_mutex_t* mutex;
+
+}t_frame_en_swap;
 
 typedef struct{
 
 	void* inicio_memoria;
-	void* inicio_swap;
+	t_frame_en_swap* frame_swap;
 	uint32_t id_pagina;
 	uint8_t presente;
 	uint8_t fue_modificada;
@@ -144,7 +152,7 @@ t_list* segmentos_memoria;
 uint32_t numero_segmento_global;
 
 t_list* frames;
-int offset_swap;
+t_list* frames_swap;
 
 //------------Firmas de funciones------------
 
@@ -189,6 +197,7 @@ int obtener_indice_patota(uint32_t);
 t_frame_en_memoria* buscar_frame_libre();
 t_list* buscar_cantidad_frames_libres(int);
 int buscar_frame_y_pagina_con_tid_pid(int,int);
+t_frame_en_swap* buscar_frame_swap_libre();
 
 
 //Escribir en memoria un segmento
