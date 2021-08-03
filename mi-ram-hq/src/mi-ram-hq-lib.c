@@ -2640,7 +2640,9 @@ uint32_t calcular_memoria_libre(){
 	pthread_mutex_lock(&mutex_lru);
 	t_pagina_y_frame* pagina_a_quitar_con_su_frame = list_remove(historial_uso_paginas,0);
 	pthread_mutex_unlock(&mutex_lru);
+	pthread_mutex_lock(&mutex_frames);
 	actualizar_pagina(pagina_a_quitar_con_su_frame->pagina);
+	pthread_mutex_unlock(&mutex_frames);
 	//pagina_a_quitar_con_su_frame->pagina->presente = 0;
 	log_info(logger_ram_hq, "se ha elegido como victima a la pagina %i del proceso %i", pagina_a_quitar_con_su_frame->pagina->id_pagina,pagina_a_quitar_con_su_frame->frame->pid_duenio);
 	t_frame_en_memoria* a_retornar;
@@ -2688,7 +2690,7 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 	int indice = 0;
 	int valor_original_puntero = puntero_lista_frames_clock;
 	//ACA ROMPE PORQUE ACTUZLIAR PAGINA USA ESTE LOCK
-	//pthread_mutex_lock(&mutex_frames);
+	pthread_mutex_lock(&mutex_frames);
 	for (int i = 0;	i < frames->elements_count && pagina_con_frame_quitadas->pagina == NULL; i++) {
 		indice = i;
 		if(valor_original_puntero + i >= frames->elements_count)
@@ -2700,7 +2702,9 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 		una_pagina_con_su_frame->pagina = una_pagina_con_su_frame->frame->pagina_a_la_que_pertenece;
 
 		if (!una_pagina_con_su_frame->pagina->uso) {
+			//pthread_mutex_lock(&mutex_frames);
 			actualizar_pagina(una_pagina_con_su_frame->pagina);
+			//pthread_mutex_unlock(&mutex_frames);
 			pagina_con_frame_quitadas->frame = una_pagina_con_su_frame->frame;
 			pagina_con_frame_quitadas->pagina = pagina_con_frame_quitadas->frame->pagina_a_la_que_pertenece;
 			log_warning(logger_ram_hq,"Warning -1");
@@ -2721,14 +2725,16 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 		a_retornar = pagina_con_frame_quitadas->frame;
 		free(pagina_con_frame_quitadas);
 		free(una_pagina_con_su_frame);
-		//pthread_mutex_unlock(&mutex_frames);
+		pthread_mutex_unlock(&mutex_frames);
 		return a_retornar;
 	}
 	else{
 		a_retornar = list_get(frames,valor_original_puntero);
 		log_warning(logger_ram_hq,"Warning -2");
 		log_info(logger_ram_hq, "Se ha seleccionado como victima a la pagina %i del proceso %i", a_retornar->pagina_a_la_que_pertenece->id_pagina,a_retornar->pid_duenio);
+		//pthread_mutex_lock(&mutex_frames);
 		actualizar_pagina(a_retornar->pagina_a_la_que_pertenece);
+		//pthread_mutex_unlock(&mutex_frames);
 		a_retornar->pagina_a_la_que_pertenece->presente = 0;
 		if(puntero_lista_frames_clock + 1 == frames->elements_count){
 			puntero_lista_frames_clock = 0;
@@ -2737,10 +2743,10 @@ t_frame_en_memoria* iterar_clock_sobre_frames(){
 			puntero_lista_frames_clock ++;
 		free(pagina_con_frame_quitadas);
 		free(una_pagina_con_su_frame);
-		//pthread_mutex_unlock(&mutex_frames);
+		pthread_mutex_unlock(&mutex_frames);
 		return a_retornar;
 	}
-	//pthread_mutex_unlock(&mutex_frames);
+	pthread_mutex_unlock(&mutex_frames);
 }
 
 int buscar_frame_y_pagina_con_tid_pid(int id_pagina,int id_patota){
@@ -2761,18 +2767,18 @@ int buscar_frame_y_pagina_con_tid_pid(int id_pagina,int id_patota){
 
 t_frame_en_swap* buscar_frame_swap_libre(){
 	t_frame_en_swap* auxiliar;
-	pthread_mutex_lock(&mutex_frames);
+	//pthread_mutex_lock(&mutex_frames);
 	for(int i=0; i<frames_swap->elements_count; i++){
 		auxiliar = list_get(frames_swap,i);
 		pthread_mutex_lock(auxiliar->mutex);
 		if(auxiliar->libre){
 			pthread_mutex_unlock(auxiliar->mutex);
-			pthread_mutex_unlock(&mutex_frames);
+			//pthread_mutex_unlock(&mutex_frames);
 			return auxiliar;
 		}
 	  pthread_mutex_unlock(auxiliar->mutex);
 	}
-	pthread_mutex_unlock(&mutex_frames);
+	//pthread_mutex_unlock(&mutex_frames);
 	return NULL;
 }
 
