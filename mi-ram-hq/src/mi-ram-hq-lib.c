@@ -3,6 +3,7 @@
 
 pthread_mutex_t mutex_frames;
 pthread_mutex_t mutex_no_reemplazar;
+pthread_mutex_t mutex_mover_trip;
 
 void crear_estructuras_administrativas()
 {
@@ -18,8 +19,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_dump,NULL);
 	pthread_mutex_init(&mutex_frames,NULL);
 	pthread_mutex_init(&mutex_no_reemplazar,NULL);
-	
-
+	pthread_mutex_init(&mutex_mover_trip,NULL);
 	
 	crear_mapa ();
 	signal(SIGUSR2, sighandlerDump);
@@ -1273,8 +1273,10 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 				tripulante_aux->libre = true;
 				list_remove(auxiliar_patota->segmentos_tripulantes,i);
 
+				pthread_mutex_lock(&mutex_mover_trip);
 				item_borrar(nivel,obtener_caracter_mapa(tid_aux));
 				nivel_gui_dibujar(nivel);
+				pthread_mutex_unlock(&mutex_mover_trip);
 					
 
 				if(! auxiliar_patota->segmentos_tripulantes->elements_count){
@@ -1316,8 +1318,10 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 respuesta_ok_fail expulsar_tripulante_paginacion(uint32_t tripulante_tid)
 {
 	pthread_mutex_lock(&mutex_tabla_patotas);
+	pthread_mutex_lock(&mutex_mover_trip);
 	item_borrar(nivel,obtener_caracter_mapa(tripulante_tid));
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_mover_trip);
 	
 	t_tabla_de_paginas* patota = buscar_patota_con_tid_paginacion(tripulante_tid);
 
@@ -1502,8 +1506,10 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 				tripulante_aux->libre = true;
 				pthread_mutex_unlock(tripulante_aux->mutex_segmento);
 
+				pthread_mutex_lock(&mutex_mover_trip);
 				item_borrar(nivel,obtener_caracter_mapa(tid));
 				nivel_gui_dibujar(nivel);
+				pthread_mutex_unlock(&mutex_mover_trip);
 				
 				//obtengo su pid para informarlo
 				uint32_t pid;
@@ -2909,6 +2915,7 @@ void crear_mapa (){
 
 //actualizar_ubicacion
 void mover_tripulante_mapa (char simbolo,direccion dir){
+	pthread_mutex_lock(&mutex_mover_trip);
 	switch(dir) {
 		case ABAJO:
 			item_desplazar(nivel, simbolo, 0, -1);
@@ -2928,15 +2935,17 @@ void mover_tripulante_mapa (char simbolo,direccion dir){
 		
 	}
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_mover_trip);
 }
 
 //iniciar_patota
 void crear_tripulante_mapa (uint32_t tid,uint32_t x,uint32_t y){
-	
+	pthread_mutex_lock(&mutex_mover_trip);
 	personaje_crear(nivel, 'a'+tid-1, x, y);
 	//ver si se puede sacar este assert y asi no tira ese warning
 	//ASSERT_CREATE(nivel, 'a'+tid-1, trip_mem);
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_mover_trip);
 	return;
 }
 
