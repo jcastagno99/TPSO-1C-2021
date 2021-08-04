@@ -573,7 +573,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		pagina->presente = 1;
 		pagina->fue_modificada = 0;
 		pagina->uso = 1;
-		if(i == cantidad_paginas_a_usar - 1){
+		if(i == cantidad_paginas_a_usar){
 			pagina->bytes_usados = bytes_que_faltan;
 		}
 		else{
