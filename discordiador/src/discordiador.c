@@ -43,10 +43,10 @@ void inicializar_discordiador()
 	cargar_config();
 	// [TODO] Planificacion
 	hilos_pausables = list_create();
-	sem_init(&sem_planificador_a_largo_plazo, 0, 0);
-	sem_init(&sem_hilo_de_bloqueados, 0, 0);
-	list_add(hilos_pausables, &sem_planificador_a_largo_plazo);
-	list_add(hilos_pausables, &sem_hilo_de_bloqueados);
+	sem_init(&sem_planificador_a_largo_plazo,0,0);
+	sem_init(&sem_hilo_de_bloqueados,0,0);
+	list_add(hilos_pausables,&sem_planificador_a_largo_plazo);
+	list_add(hilos_pausables,&sem_hilo_de_bloqueados);
 
 	// [TODO] inicializar colas/listas y semaforos
 	cola_de_new = list_create();
@@ -215,11 +215,12 @@ void manejar_sabotaje(int pos_sab_x, int pos_sab_y, int conexion_imongo)
 	sabotaje = true;
 	log_warning(logger, "[ Sabotaje ] Iniciando...");
 	pausar_planificacion();
+	// sem_wait(semafor_sabotaje) *4
 	log_warning(logger, "[ Sabotaje ] Planificacion Pausada");
 	void* stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
 	enviar_paquete(conexion_imongo,RESPUESTA_INICIAR_SABOTAJE,sizeof(respuesta_ok_fail),stream_respuesta);
 	close(conexion_imongo);
-	sleep(tiempo_retardo_ciclo_cpu + 4);
+	sleep(tiempo_retardo_ciclo_cpu + 4); // [TODO] se borraria
 
 	// 2- Ordenar la cola de exec, agregar sus tripulantes a la lista de sabotaje y vaciar la cola. Lo mismo con la cola de Ready
 	list_sort(cola_de_exec, (void *)ordenar_por_tid);
@@ -398,10 +399,9 @@ void *planificador_a_largo_plazo()
 	while (1)
 	{
 		//si hay tripulantes enviados a NEW y la planificación está, actuará.
-		chequear_planificacion_pausada(&sem_planificador_a_largo_plazo, -1);
 		sem_wait(&sem_contador_cola_de_new);
-		chequear_planificacion_pausada(&sem_planificador_a_largo_plazo, -1);
-		
+		chequear_planificacion_pausada(&sem_planificador_a_largo_plazo,-1);
+
 		//chequear si alguno fue expulsado
 		int res = chequear_expulsion_de_tripulante(cola_de_new, &mutex_cola_de_new);
 		if( res ){
@@ -445,7 +445,7 @@ void *procesar_tripulante_fifo(void *temp)
 		// anomalia fue vencida con esta guasada pero funciona asi que no cuestiono los resultados
 		// algun dia le encontraremos la explicacion
 		// Por algún motivo ignoraba la primera vez al semaforo y no hacia el sem wait. Por que? kcsho
-		chequear_planificacion_pausada(&sem_procesador, id);
+		//chequear_planificacion_pausada(&sem_procesador, id);
 		sem_wait(&sem_contador_cola_de_ready);
 		chequear_planificacion_pausada(&sem_procesador, id);
 
@@ -523,7 +523,7 @@ void *procesar_tripulante_rr(void *temp)
 	
 	while (1)
 	{
-		chequear_planificacion_pausada(&sem_procesador, id);
+		//chequear_planificacion_pausada(&sem_procesador, id);
 		sem_wait(&sem_contador_cola_de_ready);
 		chequear_planificacion_pausada(&sem_procesador, id);
 
@@ -669,6 +669,11 @@ void atender_interrupciones(sem_t *sem, int id, dis_tripulante *tripulante)
 
 	if (planificacion_pausada)
 	{
+		int value;
+		sem_getvalue(sem, &value);
+		if (value  == 1)
+			sem_wait(sem);
+
 		if (sabotaje)
 		{
 			tripulante->estado = BLOCKED_SABOTAJE;
@@ -707,21 +712,29 @@ void chequear_planificacion_pausada(sem_t *sem, int id)
 {
 	if (planificacion_pausada)
 	{
+		int value;
+		sem_getvalue(sem, &value);
+		if (value  == 1)
+			sem_wait(sem);
+
+		sem_getvalue(sem, &value);
+		
 		if (id >= 0)
 		{
 			if (sabotaje)
-				log_warning(logger, "[ Procesador %i ] Pausado por sabotaje", id);
+				log_warning(logger, "[ Procesador %i ] Pausado por sabotaje | cont %i", id,value);
 			else
-				log_warning(logger, "[ Procesador %i ] Pausado", id);
+				log_warning(logger, "[ Procesador %i ] Pausado | cont %i", id,value);
 			
 		}
 		if (id == -1)
-			log_warning(logger, "[ Planificador ] Pausado");
+			log_warning(logger, "[ Planificador ] Pausado | cont %i",value);
+			
 		if (id == -2)
-			log_warning(logger, "[ Dispositivo E/S ] Pausado");
+			log_warning(logger, "[ Dispositivo E/S ] Pausado | cont %i",value);
 		
+		// sem_post(semaforo_sabotaje)
 		sem_wait(sem);
-		
 	}
 }
 
@@ -733,8 +746,12 @@ void pausar_planificacion()
 void iniciar_planificacion()
 {
 	void reanudar_hilo(sem_t * sem)
-	{
-		sem_post(sem);
+	{	
+		int value;
+		sem_getvalue(sem, &value);
+		if (value <= 0){
+			sem_post(sem);
+		}
 	}
 	planificacion_pausada = false;
 	list_iterate(hilos_pausables, (void *)reanudar_hilo);
