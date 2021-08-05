@@ -5,6 +5,9 @@ pthread_mutex_t mutex_frames;
 pthread_mutex_t mutex_no_reemplazar;
 pthread_mutex_t mutex_mover_trip;
 pthread_mutex_t mutex_dummy;
+pthread_mutex_t mutex_accion;
+char* accion;
+int socket_accion;
 
 void crear_estructuras_administrativas()
 {
@@ -22,6 +25,7 @@ void crear_estructuras_administrativas()
 	pthread_mutex_init(&mutex_no_reemplazar,NULL);
 	pthread_mutex_init(&mutex_mover_trip,NULL);
 	pthread_mutex_init(&mutex_dummy,NULL);
+	pthread_mutex_init(&mutex_accion,NULL);
 	
 
 	crear_mapa ();
@@ -289,6 +293,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			patota_stream_paginacion patota_con_tareas_y_tripulantes = orginizar_stream_paginacion(pid_con_tareas_y_tripulantes);
 			respuesta_ok_fail resultado = iniciar_patota_paginacion(patota_con_tareas_y_tripulantes);
 			pthread_mutex_unlock(&mutex_iniciar_patota);
+			pthread_mutex_lock(&mutex_accion);
+			socket_accion = *socket_hilo;
+			accion = "INICIAR_PATOTA";
 			log_info(logger_ram_hq,"Socket %i, INICIAR_PATOTA: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_INICIAR_PATOTA, sizeof(respuesta_ok_fail), respuesta);
@@ -300,6 +307,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			tripulante_y_posicion tripulante_y_posicion = deserializar_tripulante_y_posicion(paquete->stream);
 			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Iniciando proceso de actualizacion de datos",*socket_hilo);
 			respuesta_ok_fail resultado = actualizar_ubicacion_paginacion(tripulante_y_posicion);
+			pthread_mutex_lock(&mutex_accion);
+			socket_accion = *socket_hilo;
+			accion = "ACTUALIZAR_UBICACION";
 			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_UBICACION: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_UBICACION, sizeof(respuesta_ok_fail), respuesta);
@@ -311,6 +321,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
 			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Iniciando proceso de obtencion de datos",*socket_hilo);
 			char * proxima_tarea = obtener_proxima_tarea_paginacion(tripulante_pid);
+			pthread_mutex_lock(&mutex_accion);
+			socket_accion = *socket_hilo;
+			accion = "OBTENER_PROXIMA_TAREA";
 			uint32_t long_tarea = strlen(proxima_tarea)+1;
 			log_info(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: Devolviendo tarea obtenida: %s (de longitud %i)",*socket_hilo,proxima_tarea,long_tarea);
 			void *respuesta = serializar_tarea(proxima_tarea,long_tarea);
@@ -323,8 +336,10 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Comenzando deserializacion del mensaje",*socket_hilo);
 			uint32_t tripulante_pid = deserializar_pid(paquete->stream);
 			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Iniciando proceso borrado de datos",*socket_hilo);
-			//TODO : Armar la funcion que contiene la logica de OBTENER_PROXIMA_TAREA
 			respuesta_ok_fail resultado = expulsar_tripulante_paginacion(tripulante_pid);
+			pthread_mutex_lock(&mutex_accion);
+			socket_accion = *socket_hilo;
+			accion = "EXPULSAR_TRIPULANTE";
 			log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_EXPULSAR_TRIPULANTE, sizeof(respuesta_ok_fail), respuesta);
@@ -337,6 +352,9 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 			estado estado_nuevo = deserializar_estado_tcb (paquete->stream,&tripulante_tid);
 			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_ESTADO: Iniciando proceso de actualizacion de datos tid %i",*socket_hilo,tripulante_tid);
 			respuesta_ok_fail resultado = actualizar_estado_paginacion(tripulante_tid,estado_nuevo,*socket_hilo);
+			pthread_mutex_lock(&mutex_accion);
+			socket_accion = *socket_hilo;
+			accion = "ACTUALIZAR_ESTADO";
 			log_info(logger_ram_hq,"Socket %i, ACTUALIZAR_ESTADO: Resultado %i (0 ok 1 fail)",*socket_hilo,resultado);
 			void *respuesta = serializar_respuesta_ok_fail(resultado);
 			enviar_paquete(*socket_hilo, RESPUESTA_ACTUALIZAR_ESTADO, sizeof(respuesta_ok_fail), respuesta);
@@ -350,8 +368,8 @@ void *manejar_suscripciones_mi_ram_hq(int *socket_hilo)
 		}
 	}
 	if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "PAGINACION")){
-		//imprimir_dump_paginacion();
-		sighandlerDump(1);
+		imprimir_dump_paginacion(logger_ram_hq,"");
+		//sighandlerDump(1);
 		
 	} 
 	else if(!strcmp(mi_ram_hq_configuracion->ESQUEMA_MEMORIA, "SEGMENTACION")){
@@ -573,7 +591,7 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 		pagina->presente = 1;
 		pagina->fue_modificada = 0;
 		pagina->uso = 1;
-		if(i == cantidad_paginas_a_usar){
+		if(i == cantidad_paginas_a_usar - 1){
 			pagina->bytes_usados = bytes_que_faltan;
 		}
 		else{
@@ -2531,8 +2549,10 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
  void imprimir_dump_paginacion(t_log* log_dump,char * time){
 	pthread_mutex_lock(&mutex_dump);
-	log_info(log_dump,"--------------------------------------------------------------------------\n");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"--------------------------------------------------------------------------");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
+	log_info(log_dump,"Dump correspondiente a la accion %s, del socket %i \n",accion,socket_accion);
+	pthread_mutex_unlock(&mutex_accion);
 	pthread_mutex_lock(&mutex_frames);
 	for(int i=0; i<frames->elements_count && i<10; i++)	{
 		t_frame_en_memoria* frame = list_get(frames,i);
@@ -2559,6 +2579,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 		}
 		pthread_mutex_unlock(&mutex_lru);
 	}
+	log_info(log_dump,"--------------------------------------------------------------------------------\n");
   	pthread_mutex_unlock(&mutex_dump);
 }
 
@@ -2813,8 +2834,13 @@ void sighandlerDump(int signum) {
 		signal(SIGUSR2, sighandlerDump);
 		log_destroy(log_dump);	
 	}
-	else
-		imprimir_dump_paginacion(logger_ram_hq,time);
+	else{
+		t_log *log_dump = log_create(path_dump, "DUMP", 0, LOG_LEVEL_INFO);
+		imprimir_dump_paginacion(log_dump,time);
+		signal(SIGUSR2, sighandlerDump);
+		log_destroy(log_dump);
+	}
+
 	free(path_dump);
 	free (time);
 
