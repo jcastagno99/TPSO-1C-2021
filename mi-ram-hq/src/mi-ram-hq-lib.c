@@ -788,6 +788,7 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 
 		for(int k=0; k<auxiliar->cantidad_tripulantes; k++){
 
+			int bytes_leidos = 0;
 			double indice_a_primer_posicion = (indice_tripulantes + k * 21) / mi_ram_hq_configuracion->TAMANIO_PAGINA; //21 es lo que ocupa un TCB
 			double offset_pagina = modf(indice_a_primer_posicion,&indice_a_primer_posicion);
 			int offset_pagina_entero = offset_pagina * mi_ram_hq_configuracion->TAMANIO_PAGINA;
@@ -799,40 +800,46 @@ t_tabla_de_paginas* buscar_patota_con_tid_paginacion(uint32_t tid){
 			int bytes_escritos = 0;
 			int espacio_disponible_en_pagina = (mi_ram_hq_configuracion->TAMANIO_PAGINA - offset_pagina_entero);
 			int espacio_leido = 0;
-			if(bytes_a_leer > espacio_disponible_en_pagina && pagina_aux->presente){
-				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
-				espacio_leido += espacio_disponible_en_pagina;
-				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
-				bytes_escritos = espacio_disponible_en_pagina;
-				//pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
-				offset_pagina = 0;
-				
-			}
-			else if (bytes_a_leer <= espacio_disponible_en_pagina && pagina_aux->presente){
-				memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
-				if(tid_aux == tid){
-					pthread_mutex_unlock(pagina_aux->mutex_pagina);
-					pthread_mutex_unlock(&mutex_busqueda_patota);
-					return auxiliar;
+			while(bytes_leidos < 4){
+				if(bytes_a_leer > espacio_disponible_en_pagina && pagina_aux->presente){
+					memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,espacio_disponible_en_pagina);
+					espacio_leido += espacio_disponible_en_pagina;
+					bytes_escritos = espacio_disponible_en_pagina;
+					bytes_leidos = bytes_leidos + espacio_disponible_en_pagina;
+					espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+					pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
+					offset_pagina = 0;
 				}
-			}
-			else if(bytes_a_leer > espacio_disponible_en_pagina && !(pagina_aux->presente)){
-				memcpy(&tid_aux + espacio_leido,pagina_aux->frame_swap->inicio + offset_pagina_entero,espacio_disponible_en_pagina);
-				espacio_leido += espacio_disponible_en_pagina;
-				espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
-				bytes_escritos = espacio_disponible_en_pagina;
-				//pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
-				offset_pagina = 0;
-			}
-			else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)){
-				memcpy(&tid_aux + espacio_leido,pagina_aux->frame_swap->inicio + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
-				if(tid_aux == tid){
-					pthread_mutex_unlock(pagina_aux->mutex_pagina);
-					pthread_mutex_unlock(&mutex_busqueda_patota);
-					return auxiliar;
+				else if (bytes_a_leer <= espacio_disponible_en_pagina && pagina_aux->presente){
+					memcpy(&tid_aux + espacio_leido,pagina_aux->inicio_memoria + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
+					bytes_leidos = bytes_leidos + sizeof(uint32_t) - bytes_escritos;
+					if(tid_aux == tid){
+						pthread_mutex_unlock(pagina_aux->mutex_pagina);
+						pthread_mutex_unlock(&mutex_busqueda_patota);
+						return auxiliar;
+					}
 				}
+				else if(bytes_a_leer > espacio_disponible_en_pagina && !(pagina_aux->presente)){
+					memcpy(&tid_aux + espacio_leido,pagina_aux->frame_swap->inicio + offset_pagina_entero,espacio_disponible_en_pagina);
+					bytes_leidos = bytes_leidos + espacio_disponible_en_pagina;
+					espacio_leido += espacio_disponible_en_pagina;
+					bytes_escritos = espacio_disponible_en_pagina;
+					espacio_disponible_en_pagina =  mi_ram_hq_configuracion->TAMANIO_PAGINA;
+					pagina_aux = list_get(auxiliar->paginas,indice_a_primer_posicion+1);
+					offset_pagina = 0;
+				}
+				else if(bytes_a_leer <= espacio_disponible_en_pagina && !(pagina_aux->presente)){
+					memcpy(&tid_aux + espacio_leido,pagina_aux->frame_swap->inicio + offset_pagina_entero,sizeof(uint32_t) - bytes_escritos);
+					bytes_leidos = bytes_leidos + sizeof(uint32_t) - bytes_escritos;
+					if(tid_aux == tid){
+						pthread_mutex_unlock(pagina_aux->mutex_pagina);
+						pthread_mutex_unlock(&mutex_busqueda_patota);
+						return auxiliar;
+					}
+				}
+				pthread_mutex_unlock(pagina_aux->mutex_pagina);
 			}
-			pthread_mutex_unlock(pagina_aux->mutex_pagina);
+
 		}
 		
 	}
