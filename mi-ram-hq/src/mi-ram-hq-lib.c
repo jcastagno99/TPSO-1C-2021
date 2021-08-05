@@ -856,8 +856,8 @@ inicio_tcb* buscar_inicio_tcb(uint32_t tid,t_tabla_de_paginas* patota,double ind
 	inicio_tcb* retornar = malloc(sizeof(inicio_tcb));
 	t_pagina* auxiliar = list_get(patota->paginas,indice);
 	t_pagina* pagina_retorno = list_get(patota->paginas,indice);
-	uint32_t tid_aux;
-	uint32_t tid_aux_posta;
+	uint32_t tid_aux = 0;
+	uint32_t tid_aux_posta = 0;
 	int espacio_leido = 0;	
 	int bytes_a_leer = sizeof(uint32_t);
 	int offset_original = offset_pagina;
