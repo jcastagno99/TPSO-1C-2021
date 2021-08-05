@@ -98,7 +98,7 @@ void *procesar_tripulante_fifo(void *);
 void *procesar_tripulante_rr();
 void *ejecutar_tripulantes_bloqueados();
 void chequear_planificacion_pausada(sem_t *, int);
-void manejar_sabotaje(int, int, int);
+void manejar_sabotaje(int);
 int calcular_distancia(int, int, int, int);
 dis_tripulante *minimum(dis_tripulante *, dis_tripulante *);
 

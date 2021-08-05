@@ -199,12 +199,15 @@ void manejar_suscripciones_discordiador(int *socket_hilo)
 	t_paquete *paquete = recibir_paquete(fd);
 	
 	posicion pos = deserializar_posicion(paquete->stream);
-	manejar_sabotaje(pos.pos_x, pos.pos_y, fd);
+	printf("\033[1;32mPosiciones (%d,%d)\033[0m\n",pos.pos_x,pos.pos_y);
+	pos_sab_x = pos.pos_x;
+	pos_sab_y = pos.pos_y;
+	manejar_sabotaje(fd);
 
 	close(fd);
 }
 
-void manejar_sabotaje(int pos_sab_x, int pos_sab_y, int conexion_imongo)
+void manejar_sabotaje(int conexion_imongo)
 {
 	int cantidad_en_ejecucion = 0;
 	log_info(logger, "[ Discordiador ] Sabotaje en la ubicación (%i,%i)", pos_sab_x, pos_sab_y);
@@ -768,13 +771,6 @@ void catch_sigint_signal(int signal)
 {
 	terminar_programa();
 }
-
-// ITERADORES
-// void iterate_distancias(dis_tripulante *t)
-// {
-// 	int dis = calcular_distancia(t->pos_x, t->pos_y, pos_sab_x, pos_sab_y);
-// 	printf("Trip %d (%d,%d) -> (%d,%d) | distancia = %d \n", t->id, t->pos_x, t->pos_y, pos_sab_x, pos_sab_y, dis);
-// }
 
 void terminar_programa()
 {
