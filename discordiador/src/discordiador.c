@@ -203,8 +203,8 @@ void manejar_suscripciones_discordiador(int *socket_hilo)
 	pos_sab_x = pos.pos_x;
 	pos_sab_y = pos.pos_y;
 	manejar_sabotaje(fd);
-
-	close(fd);
+	pthread_exit(NULL);
+	//close(fd);
 }
 
 void manejar_sabotaje(int conexion_imongo)
