@@ -2549,7 +2549,7 @@ void recorrer_tcb_dump(uint32_t pid,t_list* tripulantes,t_log * log_dump){
 //Cuando un FRAME no tiene un proceso imprime 0, los estados son 1: Libre 0: ocupado, capaz hay que cambiar esto
  void imprimir_dump_paginacion(t_log* log_dump,char * time){
 	pthread_mutex_lock(&mutex_dump);
-	log_info(log_dump,"--------------------------------------------------------------------------");log_info(logger_ram_hq,"--------------------------------------------------------------------------\n");
+	log_info(log_dump,"--------------------------------------------------------------------------");log_info(log_dump,"--------------------------------------------------------------------------\n");
 	log_info(log_dump,"Dump: %s \n",time);
 	log_info(log_dump,"Dump correspondiente a la accion %s, del socket %i \n",accion,socket_accion);
 	pthread_mutex_unlock(&mutex_accion);
