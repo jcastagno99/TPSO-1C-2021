@@ -256,6 +256,7 @@ void manejar_sabotaje(int conexion_imongo)
 	tarea_sabotaje->tiempo_restante = duracion_sabotaje;
 	tarea_sabotaje->tiempo_total = duracion_sabotaje;
 	tarea_sabotaje->estado_tarea = EN_CURSO;
+	tarea_sabotaje->parametro=0;
 
 	tripulante->tarea_actual = tarea_sabotaje;
 

@@ -541,38 +541,20 @@ void notificar_inicio_tarea_imongo(int id_trip , dis_tarea *tarea){
     /*      id_trip : id del Tripulante
             tarea : "GENERAR_OXIGENO 10"
     */
-    char *tarea_imongo = string_new();
+    char *tarea_imongo = string_from_format("%s %i;%i;%i",tarea->nombre_tarea, tarea->parametro, tarea->pos_x, tarea->pos_y);
 
-    string_append(&tarea_imongo, tarea->nombre_tarea);
-    string_append(&tarea_imongo, " ");
-
-    char* tarea_parametro = string_itoa(tarea->parametro);
-    string_append(&tarea_imongo, tarea_parametro);
-    string_append(&tarea_imongo, ";");
-
-    char* tarea_pos_x = string_itoa(tarea->pos_x);
-    string_append(&tarea_imongo, tarea_pos_x);
-    string_append(&tarea_imongo, ";");
-
-    char* tarea_pos_y = string_itoa(tarea->pos_y);
-    string_append(&tarea_imongo, tarea_pos_y);
-
-
-    printf("\033[1;33m[ IMONGO ] TRIP %d INICIO TAREA : %s \033[0m\n",id_trip,tarea_imongo);
+    printf("\033[1;33m[ IMONGO ] TRIP %i INICIO TAREA : %s \033[0m\n",id_trip, tarea_imongo);
 
 	uint32_t tripulante_id = id_trip;
     int conexion_i_mongo_store = crear_conexion(ip_i_mongo_store, puerto_i_mongo_store);
 	op_code codigo = OPERAR_SOBRE_TAREA;
-	void* stream = pserializar_tripulante_con_tarea(tripulante_id,tarea_imongo);
+	void* stream = pserializar_tripulante_con_tarea(tripulante_id, tarea_imongo);
 	size_t size = strlen(tarea_imongo) + 1 + sizeof(uint32_t) + sizeof(uint32_t);
 	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
     // [ISSUE] recv()
     // [TODO] recibir el ok
     close(conexion_i_mongo_store);
     free(tarea_imongo);
-    free(tarea_parametro);
-    free(tarea_pos_x);
-    free(tarea_pos_y);
 }
 
 void notificar_fin_tarea_imongo(int id_trip , char* tarea){// char* nombre_tarea
