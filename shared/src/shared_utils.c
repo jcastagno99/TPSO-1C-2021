@@ -673,8 +673,11 @@ estado deserializar_estado_tcb(void* stream,uint32_t * tid){
 
 int crear_conexion(char *ip, char* puerto)
 {
+	int conn;
+
 	struct addrinfo hints;
-	struct addrinfo *server_info;
+	struct addrinfo *server_info, *p;
+
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -682,15 +685,39 @@ int crear_conexion(char *ip, char* puerto)
 	hints.ai_flags = AI_PASSIVE;
 
 	getaddrinfo(ip, puerto, &hints, &server_info);
+	for(p = server_info; p != NULL; p = p->ai_next)
+	{
+		conn = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+		//Si socket() falla, pasa al siguiente
+		if(conn == -1)
+			continue;
+		
+		//Si connect() funciona, deja de iterar
+		if(connect(conn, p->ai_addr, p->ai_addrlen) != -1)
+			break;
 
-	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
+		//Si socket() funciona pero connect() falla, cierra el socket y pasa al siguiente
+		close(conn); 
+	}
+	
+	if(conn != -1 && p != NULL)
+		return conn;
+	return -1;
+	
+	/*
+	for(p = server_info; p != NULL; p = p->ai_next) {
+	
+		int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
-	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
-		printf("error\n");
+		if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
+			printf("error\n");
 
-	freeaddrinfo(server_info);
+		freeaddrinfo(server_info);
+		return socket_cliente;
 
-	return socket_cliente;
+	}
+	 */
+	
 }
 
 //-----------------------------------------MANEJO DE PAQUETES------------------------------------------------------------

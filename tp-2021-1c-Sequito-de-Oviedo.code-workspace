@@ -28,6 +28,8 @@
 			"nivel-gui.h": "c",
 			"fcntl.h": "c",
 			"alterador.c": "c",
+			"list.h": "c",
+			"socket.h": "c"
 		}
 	}
 }
