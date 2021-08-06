@@ -697,9 +697,9 @@ int crear_conexion(char *ip, char* puerto)
 			break;
 
 		//Si socket() funciona pero connect() falla, cierra el socket y pasa al siguiente
-		close(conn); 
+		close(conn);
 	}
-	
+	printf("\033[1;33mEL RESULTADO DE CREAR LA CONEXION FUE DE %i\033[0m\n", conn);
 	if(conn != -1 && p != NULL)
 		return conn;
 	return -1;
@@ -793,8 +793,8 @@ t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream){
 	
 	memcpy(paquete->stream,stream,size);
 	printf("\033[1;31mA PUNTO DE ROMPER EN CREAR_PAQUETE OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
-
-	free(stream);
+	if(stream)
+		free(stream);
 	printf("\033[1;31mNO ME ROMPI OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 
 	return paquete;
@@ -803,7 +803,7 @@ t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream){
 t_paquete* error(int res){
 	op_code op_code = res == 0? SIN_CONEXION : ERROR;
 	int32_t err = -errno;
-	return crear_paquete(op_code,sizeof(int32_t),&err);
+	return crear_paquete(op_code,sizeof(int32_t),NULL);
 }
 
 void liberar_paquete(t_paquete* paquete){
