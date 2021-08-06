@@ -54,7 +54,9 @@ void iniciar_patota(char **str_split)
     uint32_t size_paquete;
     void *info = serializar_pid_con_tareas_y_tripulantes(patota_full,&size_paquete); 
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
+    pthread_mutex_lock(&mutex);
     enviar_paquete(conexion_mi_ram_hq, INICIAR_PATOTA, size_paquete, info);
+    pthread_mutex_unlock(&mutex);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     close(conexion_mi_ram_hq);
 
@@ -308,7 +310,9 @@ dis_tarea* pedir_tarea_miriam(uint32_t tid)
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     void *info = pserializar_tid(tid); 
     uint32_t size_paquete = sizeof(uint32_t);
+    pthread_mutex_lock(&mutex);
     enviar_paquete(conexion_mi_ram_hq, OBTENER_PROXIMA_TAREA, size_paquete, info);
+    pthread_mutex_unlock(&mutex);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     char* tarea_recibida = deserializar_tarea(paquete_recibido->stream);
     close(conexion_mi_ram_hq);
@@ -361,7 +365,9 @@ void notificar_movimiento_a_miram(dis_tripulante *trip){
     int conexion_mi_ram_hq = crear_conexion(ip_mi_ram_hq, puerto_mi_ram_hq);
     void * info = serializar_tripulante_y_posicion(tripulante_posicion);
     uint32_t size_paquete = sizeof(uint32_t) *3;
-    enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info); 
+    pthread_mutex_lock(&mutex);
+    enviar_paquete(conexion_mi_ram_hq, ACTUALIZAR_UBICACION, size_paquete, info);
+    pthread_mutex_unlock(&mutex);
     t_paquete *paquete_recibido = recibir_paquete(conexion_mi_ram_hq);
     liberar_paquete(paquete_recibido);
     close(conexion_mi_ram_hq);
@@ -531,7 +537,9 @@ void guardar_movimiento_en_imongo(dis_tripulante *trip, int pos_vieja_x, int pos
 	op_code codigo = REGISTRAR_MOVIMIENTO;
 	void* stream = pserializar_movimiento_tripulante(trip->id,pos_vieja_x,pos_vieja_y,trip->pos_x,trip->pos_y); 
 	size_t size = 5 * sizeof(uint32_t);
-	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);    
+    pthread_mutex_lock(&mutex);
+	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
+    pthread_mutex_unlock(&mutex);
     // [ISSUE] recv()
     //[TODO] recibir el ok
     close(conexion_i_mongo_store);
@@ -565,7 +573,9 @@ void notificar_inicio_tarea_imongo(int id_trip , dis_tarea *tarea){
 	op_code codigo = OPERAR_SOBRE_TAREA;
 	void* stream = pserializar_tripulante_con_tarea(tripulante_id,tarea_imongo);
 	size_t size = strlen(tarea_imongo) + 1 + sizeof(uint32_t) + sizeof(uint32_t);
+    pthread_mutex_lock(&mutex);
 	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
+    pthread_mutex_unlock(&mutex);
     // [ISSUE] recv()
     // [TODO] recibir el ok
     close(conexion_i_mongo_store);
@@ -586,7 +596,9 @@ void notificar_fin_tarea_imongo(int id_trip , char* tarea){// char* nombre_tarea
     op_code codigo = REGISTRAR_FIN_TAREA;
 	void* stream = pserializar_tripulante_con_tarea(tripulante_id,tarea);
 	size_t size = strlen(tarea) + 1 + sizeof(uint32_t) + sizeof(uint32_t);
+    pthread_mutex_lock(&mutex);
 	enviar_paquete(conexion_i_mongo_store, codigo, size, stream);
+    pthread_mutex_unlock(&mutex);
     // [ISSUE] recv()
     //[TODO] recibir el ok
     close(conexion_i_mongo_store);
@@ -599,7 +611,9 @@ void obtener_bitacora(int id){
 	op_code codigo = OBTENER_BITACORA;
 	void* stream = serializar_pid(tripulante_id);
 	size_t size = sizeof(uint32_t);
+    pthread_mutex_lock(&mutex);
 	enviar_paquete(conexion_i_mongo_store,codigo,size,stream);
+    pthread_mutex_unlock(&mutex);
 
     t_paquete* respuesta = recibir_paquete(conexion_i_mongo_store);
 	char* resultado = deserializar_recurso(respuesta->stream);
