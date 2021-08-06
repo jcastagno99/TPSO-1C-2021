@@ -202,9 +202,11 @@ void manejar_suscripciones_discordiador(int *socket_hilo)
 	printf("\033[1;32mPosiciones (%d,%d)\033[0m\n",pos.pos_x,pos.pos_y);
 	pos_sab_x = pos.pos_x;
 	pos_sab_y = pos.pos_y;
+
+	liberar_paquete(paquete);
 	manejar_sabotaje(fd);
 	pthread_exit(NULL);
-	//close(fd);
+	//close(fd); esto rompia XD era doble
 }
 
 void manejar_sabotaje(int conexion_imongo)
@@ -280,6 +282,8 @@ void manejar_sabotaje(int conexion_imongo)
 	close(socket_respuesta);
 	// 7- Mandar a todos a ready en el orden de la lista esa local de sabotaje
 	list_iterate(cola_sabotaje, (void *)enviar_a_ready);
+
+	list_destroy(cola_sabotaje);
 
 	// 8- Reiniciar la planificacion
 	log_warning(logger, "[ Sabotaje ] Fin de sabotaje");
