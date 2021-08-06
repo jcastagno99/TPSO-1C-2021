@@ -1475,7 +1475,10 @@ pthread_mutex_t* buscar_mutex_con_tid(uint32_t tid){
 }
 
 int realizar_fsck(){	
-	if(sabotaje_block_count()) return 1;
+	if(sabotaje_block_count()){
+		sabotaje_blocks();
+		return 1;
+	} 
 	if(sabotaje_superbloque()) return 1;
 	if(sabotaje_size()) return 1;
 	if(sabotaje_blocks()) return 1;
@@ -1518,7 +1521,7 @@ bool reparar_sabotaje_blocks_en_archivo(char *file_path){
 	t_config *archivo = config_create(full_path);
 	free(full_path);
 	printf("[ I-mongo ] Analizando el archivo %s...", file_path);
-	/*char** bloques = config_get_array_value(archivo,"BLOCKS");
+	char** bloques = config_get_array_value(archivo,"BLOCKS");
 	int cant_bloques_archivo = config_get_int_value(archivo,"BLOCK_COUNT");
 	for(int i = 0; i< cant_bloques_archivo;i++){
 		if(atoi(bloques[i]) >= get_block_amount()){
@@ -1541,6 +1544,7 @@ bool reparar_sabotaje_blocks_en_archivo(char *file_path){
 			log_error(logger_i_mongo_store, "[ I-Mongo ] Hay un sabotaje de BLOCKS o de Bitmap en %s", file_path);
 			memcpy(un_bloque, blocks + (get_block_size()*atoi(bloques[j])), get_block_size());
 			if(encontrar_anterior_barra_cero(un_bloque, get_block_size()) == -1){
+				log_error(logger_i_mongo_store, "[ I-Mongo ] Al final no habia sabotaje de block_count");
 				log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Blocks detectado en %s . Causa: Bloque libre asignado. Corrigiendo...", file_path);
 				char* nueva_cant_bloques = itoa_propio(cant_bloques_archivo - 1);
 				config_set_value(archivo,"BLOCK_COUNT",nueva_cant_bloques);
@@ -1557,7 +1561,7 @@ bool reparar_sabotaje_blocks_en_archivo(char *file_path){
 	}
 	free(un_bloque);
 	bitarray_destroy(bitarray);
-	liberar_lista_string(bloques);*/
+	liberar_lista_string(bloques);
 	char *string_a_hashear = armar_string_para_MD5(archivo);
 	char *hash = obtener_MD5(string_a_hashear, archivo);
 	char *md5 = config_get_string_value(archivo, "MD5");
@@ -1668,7 +1672,8 @@ void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal){
 	int i = 0;
 	while (used_blocks[i]){
 		int block = atoi(used_blocks[i]);
-		bitmap_temporal[block] = 1;
+		if(block < get_block_amount())
+			bitmap_temporal[block] = 1;
 		i++;
 	}
 	liberar_lista_string(used_blocks);
@@ -1894,8 +1899,8 @@ void armar_nuevos_blocks_sin_bloque_con_indice(char** bloques,t_config* archivo,
 		config_set_value(archivo,"BLOCKS","[]");
 	}
 	else{
-		char* base = malloc(longitud_numeros_bloques + cant_bloques - 1 + 1);
-		base[longitud_numeros_bloques + cant_bloques - 1] = '\0';
+		char* base = malloc(longitud_numeros_bloques + cant_bloques - 1 + 1 + 1);
+		base[longitud_numeros_bloques + cant_bloques] = '\0';
 		base[0] = '[';
 		base[1] = '\0';
 		while(bloques[i] != NULL){
@@ -1906,7 +1911,7 @@ void armar_nuevos_blocks_sin_bloque_con_indice(char** bloques,t_config* archivo,
 			}
 			i++;
 		}
-		base[longitud_numeros_bloques + cant_bloques - 2] = ']';
+		base[longitud_numeros_bloques + cant_bloques - 1] = ']';
 		config_set_value(archivo,"BLOCKS",base);
 		free(base);
 	}
