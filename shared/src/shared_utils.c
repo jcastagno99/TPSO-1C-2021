@@ -770,7 +770,7 @@ int enviar_paquete(int socket, op_code op_code,uint32_t size, void* stream){
 	memcpy(buffer+offset,paquete->stream, paquete->size);
 	int res = send(socket, buffer , sizeof(op_code) + sizeof(size_t) + paquete->size, 0);
 	if(res <0){
-		perror("ERROR ENVIANDO MENSAJE");
+		printf("ERROR ENVIANDO MENSAJE %i", op_code);
 		res = -errno;
 	}
 	free(buffer);	
