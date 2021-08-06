@@ -1,7 +1,6 @@
 #include "discordiador.h"
 int main(void)
 {
-	pthread_mutex_init(&mutex, NULL);
 	signal(SIGINT, catch_sigint_signal);
 	//inicializacion del modulo
 	inicializar_discordiador();
