@@ -793,8 +793,7 @@ void actualizar_estado_miriam(int tid,estado est){
 	if(respuesta == RESPUESTA_FAIL)
 	 	printf("\033[1;31m[RESPUESTA_FAIL] discordiador.c Linea 781 \033[0m\n");
 	
-	free(paquete_recibido->stream);
-	free(paquete_recibido);
+	liberar_paquete(paquete_recibido);
     close(conexion_mi_ram_hq);
 }
 
