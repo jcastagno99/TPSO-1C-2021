@@ -700,6 +700,7 @@ int crear_conexion(char *ip, char* puerto)
 		close(conn);
 	}
 	//printf("\033[1;33mEL RESULTADO DE CREAR LA CONEXION FUE DE %i\033[0m\n", conn);
+	freeaddrinfo(server_info);
 	if(conn != -1 && p != NULL)
 		return conn;
 	return -1;
