@@ -490,7 +490,7 @@ respuesta_ok_fail iniciar_patota_segmentacion(pid_con_tareas_y_tripulantes_miria
 respuesta_ok_fail 
 iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulantes)
 {
-	uint32_t pid;
+	uint32_t pid = 0;
 	memcpy(&pid,patota_con_tareas_y_tripulantes.stream,sizeof(uint32_t));
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	t_tabla_de_paginas* patota = buscar_patota_paginacion(pid);
@@ -553,9 +553,9 @@ iniciar_patota_paginacion(patota_stream_paginacion patota_con_tareas_y_tripulant
 	//pthread_mutex_unlock(&mutex_tabla_patotas);
 
 	for(int i=0; i<patota->cantidad_tripulantes; i++){
-		uint32_t tid;
-		uint32_t pos_x;
-		uint32_t pos_y;
+		uint32_t tid = 0;
+		uint32_t pos_x = 0;
+		uint32_t pos_y = 0;
 		int offset = 8 + patota_con_tareas_y_tripulantes.tamanio_tareas + (i * 21);
 		memcpy(&tid,patota_con_tareas_y_tripulantes.stream + offset,4);
 		offset += 5;
@@ -651,14 +651,14 @@ respuesta_ok_fail actualizar_ubicacion_segmentacion(tripulante_y_posicion tripul
 			pthread_mutex_lock(&mutex_tabla_de_segmentos);
 			segmento_tripulante_auxiliar = list_get(auxiliar_patota->segmentos_tripulantes,j);
 			pthread_mutex_unlock(&mutex_tabla_de_segmentos);
-			uint32_t tid_aux;
+			uint32_t tid_aux = 0;
 			pthread_mutex_lock(segmento_tripulante_auxiliar -> mutex_segmento);
 			memcpy(&tid_aux,segmento_tripulante_auxiliar -> inicio_segmento,sizeof(uint32_t)); 
 			if(tid_aux == tripulante_con_posicion.tid){
 				
 				//obtengo posicion actual
-				uint32_t pos_x;
-				uint32_t pos_y;
+				uint32_t pos_x = 0;
+				uint32_t pos_y = 0;
 				uint32_t offset_x = sizeof(uint32_t) + sizeof(char);
 				uint32_t offset_y = offset_x + sizeof(uint32_t);
 				
@@ -1076,7 +1076,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 
 
 	int espacio_leido = 0;
-	uint32_t indice_proxima_tarea;
+	uint32_t indice_proxima_tarea = 0;
 	t_frame_en_memoria* frame;
 	
 	pthread_mutex_lock(&mutex_no_reemplazar);
@@ -1170,6 +1170,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 	tarea_ram* tarea_contador;
 	tarea_ram* tarea_especifica = list_get(patota->tareas,indice_proxima_tarea);
 	proxima_tarea = malloc(tarea_especifica->tamanio);
+	strcpy(proxima_tarea,"");
 	t_pagina* auxiliar_pagina;
 	double tamanio_hasta_tarea = 2*(sizeof(uint32_t));
 	for(int i=0; i<indice_proxima_tarea; i++){
@@ -1262,7 +1263,7 @@ char * obtener_proxima_tarea_paginacion(uint32_t tripulante_tid)
 char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 {
 	t_segmento* tripulante_aux;
-	uint32_t tid_aux;
+	uint32_t tid_aux = 0;
 	t_segmentos_de_patota* auxiliar_patota = buscar_patota_con_tid(tripulante_tid,socket);
 	if(!auxiliar_patota){
 		log_error(logger_ram_hq,"Socket %i, OBTENER_PROXIMA_TAREA: El tripulante %d no esta dado de alta en ninguna patota", socket,tripulante_tid);
@@ -1272,7 +1273,8 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 	}
 	//obtengo las tareas de la patota
 	char* tareas = malloc(auxiliar_patota->segmento_tarea->tamanio_segmento);
-	
+	strcpy(tareas,"");
+
 	pthread_mutex_lock(&mutex_memoria);
 	pthread_mutex_lock(auxiliar_patota->segmento_tarea->mutex_segmento);
 	memcpy(tareas,auxiliar_patota->segmento_tarea->inicio_segmento,auxiliar_patota->segmento_tarea->tamanio_segmento); //Me traigo todo el contenido del segmento de tareas
@@ -1322,7 +1324,7 @@ char* obtener_proxima_tarea_segmentacion(uint32_t tripulante_tid, int socket)
 
 				if(! auxiliar_patota->segmentos_tripulantes->elements_count){
 					// si la patota esta vacia la elimino
-					uint32_t pid;
+					uint32_t pid  = 0;
 					pthread_mutex_lock(&mutex_memoria);
 					pthread_mutex_lock(auxiliar_patota->segmento_pcb->mutex_segmento);
 					memcpy(&pid,auxiliar_patota->segmento_pcb->inicio_segmento,sizeof(uint32_t));
@@ -1513,7 +1515,7 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 {
 	t_segmentos_de_patota* patota_aux;
 	t_segmento* tripulante_aux;
-	uint32_t tid_aux;
+	uint32_t tid_aux = 0;
 	log_info(logger_ram_hq,"Socket %i, EXPULSAR_TRIPULANTE: Buscando el tripulante %d",socket,tid);
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	for(int i=0 ; i<patotas->elements_count; i++){
@@ -1553,7 +1555,7 @@ respuesta_ok_fail expulsar_tripulante_segmentacion(uint32_t tid,int socket)
 				pthread_mutex_unlock(&mutex_mover_trip);
 				
 				//obtengo su pid para informarlo
-				uint32_t pid;
+				uint32_t pid = 0;
 				pthread_mutex_lock(patota_aux->segmento_pcb->mutex_segmento);
 				memcpy(&pid,patota_aux->segmento_pcb->inicio_segmento,sizeof(uint32_t));
 				pthread_mutex_unlock(patota_aux->segmento_pcb->mutex_segmento);
@@ -1782,7 +1784,7 @@ respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int soc
 {
 	t_segmentos_de_patota* patota_aux;
 	t_segmento* tripulante_aux;
-	uint32_t tid_aux;
+	uint32_t tid_aux = 0;
 	
 	char estado = obtener_char_estado(est);
 
@@ -1806,7 +1808,7 @@ respuesta_ok_fail actualizar_estado_segmentacion(uint32_t tid,estado est,int soc
 
 			if(tid_aux == tid){
 				//Busco pid para informarlo
-				uint32_t pid;
+				uint32_t pid = 0;
 				pthread_mutex_lock(&mutex_memoria);
 				pthread_mutex_lock(patota_aux->segmento_pcb->mutex_segmento);
 				memcpy(&pid,patota_aux->segmento_pcb->inicio_segmento,sizeof(uint32_t));
@@ -1928,7 +1930,7 @@ t_tabla_de_paginas* buscar_patota_paginacion(uint32_t pid){
 	pthread_mutex_lock(&mutex_busqueda_patota);
 	t_tabla_de_paginas* auxiliar;
 	t_pagina* auxiliar_pagina;
-	uint32_t pid_auxiliar;
+	uint32_t pid_auxiliar = 0;
 	uint32_t espacio_disponible_pagina = mi_ram_hq_configuracion->TAMANIO_PAGINA - 0; // 0 es la posicion donde arranca el dato que estoy buscando dentro de la pagina
 	uint32_t espacio_a_leer = 4;
 	uint32_t offset = 0;
@@ -2001,7 +2003,7 @@ t_list* buscar_cantidad_frames_libres(int cantidad){
 
 t_segmentos_de_patota* buscar_patota(uint32_t pid){
 	t_segmentos_de_patota* auxiliar;
-	uint32_t pid_auxiliar;
+	uint32_t pid_auxiliar = 0;
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	for(int i=0; i<patotas->elements_count; i++){
 		pthread_mutex_lock(&mutex_tabla_de_segmentos);
@@ -2032,8 +2034,8 @@ t_segmentos_de_patota* buscar_patota_con_tid(uint32_t tid,int socket){
 		auxiliar_patota = list_get(patotas,i);
 		pthread_mutex_lock(auxiliar_patota -> mutex_segmentos_tripulantes);
 		for(int j=0; j<auxiliar_patota->segmentos_tripulantes->elements_count; j++){
-			uint32_t tid_aux;
-			uint32_t pid_aux;
+			uint32_t tid_aux = 0;
+			uint32_t pid_aux = 0;
 			
 
 			pthread_mutex_lock(&mutex_tabla_de_segmentos);
@@ -2434,7 +2436,7 @@ bool ordenar_direcciones_de_memoria(void* p1, void* p2){
 }
 
 void recorrer_pcb(t_segmento * pcb){
-	uint32_t pid;
+	uint32_t pid = 0;
 	pthread_mutex_lock(pcb ->mutex_segmento);
 	memcpy(&pid, pcb->inicio_segmento, sizeof(uint32_t));
 	log_info(logger_ram_hq,"Patota pid = %i\n",pid);
@@ -2444,6 +2446,9 @@ void recorrer_tareas(t_segmento * tareas){
 	pthread_mutex_lock(tareas ->mutex_segmento);
 	
 	char* auxiliar = malloc (tareas->tamanio_segmento);
+
+	strcpy(auxiliar,"");
+
 	memcpy(auxiliar, tareas->inicio_segmento, tareas->tamanio_segmento);
 	
 	log_info(logger_ram_hq,"Lista de tareas: \n");
@@ -2520,7 +2525,7 @@ void imprimir_dump(t_log* log_dump,char * time){
 }
 
 uint32_t obtener_patota_memoria(t_segmento * pcb){
-	uint32_t pid;
+	uint32_t pid = 0;
 	//pthread_mutex_lock(pcb->mutex_segmento);
 	memcpy(&pid, pcb->inicio_segmento, sizeof(uint32_t));
 	//pthread_mutex_unlock(pcb->mutex_segmento);
@@ -2528,7 +2533,7 @@ uint32_t obtener_patota_memoria(t_segmento * pcb){
 }
 
 void recorrer_pcb_dump(t_segmento* pcb){
-	uint32_t pid;
+	uint32_t pid = 0;
 	//pthread_mutex_lock(pcb->mutex_segmento);
 	
 	memcpy(&pid, pcb->inicio_segmento, sizeof(uint32_t));
@@ -2626,7 +2631,7 @@ void actualizarTareaActual(t_segmentos_de_patota* auxiliar_patota,uint32_t tripu
 		if(tid == tripulante_tid){			
 		
 			int offset = sizeof(uint32_t) + sizeof(char) + sizeof(uint32_t) + sizeof(uint32_t);
-			uint32_t tareaActual;
+			uint32_t tareaActual = 0;
 			
 			pthread_mutex_lock(&mutex_memoria);
 			pthread_mutex_lock(tripulante->mutex_segmento);
@@ -3072,7 +3077,7 @@ void borrar_patota(uint32_t pid){
 	pthread_mutex_lock(&mutex_tabla_patotas);
 	for(int i=0;i<patotas->elements_count;i++){
 		t_segmentos_de_patota* auxiliar_patota = list_get(patotas,i);
-		uint32_t pid_aux;
+		uint32_t pid_aux = 0;
 		pthread_mutex_lock(&mutex_memoria);
 		pthread_mutex_lock(auxiliar_patota->segmento_pcb->mutex_segmento);
 		memcpy(&pid_aux,auxiliar_patota->segmento_pcb->inicio_segmento,sizeof(uint32_t));
