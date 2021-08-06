@@ -293,6 +293,7 @@ void manejar_sabotaje(int conexion_imongo)
 		sem_post(&sem_contador_cola_de_ready);
 	}
 	log_warning(logger, "[ Sabotaje ] Ya iniciamos la planificacion!!!");
+	free(tarea_sabotaje);
 }
 
 int calcular_distancia(int pos_x1, int pos_y1, int pos_x2, int pos_y2)
