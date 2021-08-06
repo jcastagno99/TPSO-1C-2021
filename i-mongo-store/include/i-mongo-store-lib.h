@@ -149,15 +149,16 @@ void desbloquear_recurso_correspondiente(char* recurso);
 posicion get_proximo_sabotaje_y_avanzar_indice();
 int realizar_fsck();
 bool reparar_block_count_saboteado(char *file_path);
-bool reparar_sabotaje_md5_en_archivo(char *file_path);
+bool reparar_sabotaje_blocks_en_archivo(char *file_path);
 bool sabotaje_block_count();
 bool reparar_sabotaje_superbloque_block_count(uint32_t nueva_cant);
 bool sabotaje_superbloque();
-bool sabotaje_md5();
+bool sabotaje_blocks();
 bool sabotaje_bitmap();
 bool sabotaje_size();
 bool estoy_saboteado;
 bool es_el_bloque_corrupto(int nro_bloque);
 void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal);
 int get_block_amount_aux();
+void armar_nuevos_blocks_sin_bloque_con_indice(char** lista_bloques, t_config* archivo, int indice_bloque);
 #endif /* I_MONGO_STORE_LIB_H */

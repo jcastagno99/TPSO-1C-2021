@@ -1043,7 +1043,6 @@ int get_block_amount()
 		FILE* fd = fopen(ruta_info_blocks, "r+");
 		fgets(buffer,499,fd);
 		char** cosas_del_comando = string_split(buffer, " ");
-		printf("\033[1;31m Rojo %s \033[0m\n",cosas_del_comando[4]);
 		int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
 		int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
 		liberar_lista_string(cosas_del_comando);
@@ -1479,7 +1478,7 @@ int realizar_fsck(){
 	if(sabotaje_block_count()) return 1;
 	if(sabotaje_superbloque()) return 1;
 	if(sabotaje_size()) return 1;
-	if(sabotaje_md5()) return 1;
+	if(sabotaje_blocks()) return 1;
 	if(sabotaje_bitmap()) return 1;
 	return -1;
 }
@@ -1514,11 +1513,51 @@ bool reparar_sabotaje_block_count_en_archivo(char *file_path){
 
 }
 
-bool reparar_sabotaje_md5_en_archivo(char *file_path){
+bool reparar_sabotaje_blocks_en_archivo(char *file_path){
 	char *full_path = string_from_format("/home/utnso/polus/Files/%s", file_path);
 	t_config *archivo = config_create(full_path);
 	free(full_path);
 	printf("[ I-mongo ] Analizando el archivo %s...", file_path);
+	/*char** bloques = config_get_array_value(archivo,"BLOCKS");
+	int cant_bloques_archivo = config_get_int_value(archivo,"BLOCK_COUNT");
+	for(int i = 0; i< cant_bloques_archivo;i++){
+		if(atoi(bloques[i]) >= get_block_amount()){
+			log_error(logger_i_mongo_store, "[ I-Mongo ] Al final no habia sabotaje de block_count");
+			log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Blocks detectado en %s . Causa: Bloque invalido. Corrigiendo...", file_path);
+			char* nueva_cant_bloques = itoa_propio(cant_bloques_archivo - 1);
+			config_set_value(archivo,"BLOCK_COUNT",nueva_cant_bloques);
+			armar_nuevos_blocks_sin_bloque_con_indice(bloques,archivo,i);
+			config_save(archivo);
+			config_destroy(archivo);
+			liberar_lista_string(bloques);
+			free(nueva_cant_bloques);
+			return true;
+		}
+	}
+	t_bitarray *bitarray = bitarray_create_with_mode(superbloque+2*sizeof(uint32_t), get_block_amount()/8, MSB_FIRST);
+	char* un_bloque = malloc(get_block_size());
+	for(int j = 0; j< cant_bloques_archivo;j++){
+		if(!bitarray_test_bit(bitarray,atoi(bloques[j]))){
+			log_error(logger_i_mongo_store, "[ I-Mongo ] Hay un sabotaje de BLOCKS o de Bitmap en %s", file_path);
+			memcpy(un_bloque, blocks + (get_block_size()*atoi(bloques[j])), get_block_size());
+			if(encontrar_anterior_barra_cero(un_bloque, get_block_size()) == -1){
+				log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Blocks detectado en %s . Causa: Bloque libre asignado. Corrigiendo...", file_path);
+				char* nueva_cant_bloques = itoa_propio(cant_bloques_archivo - 1);
+				config_set_value(archivo,"BLOCK_COUNT",nueva_cant_bloques);
+				armar_nuevos_blocks_sin_bloque_con_indice(bloques,archivo,j);				
+				config_save(archivo);
+				config_destroy(archivo);
+				liberar_lista_string(bloques);
+				free(nueva_cant_bloques);
+				bitarray_destroy(bitarray);
+				free(un_bloque);
+				return true;
+			}
+		}
+	}
+	free(un_bloque);
+	bitarray_destroy(bitarray);
+	liberar_lista_string(bloques);*/
 	char *string_a_hashear = armar_string_para_MD5(archivo);
 	char *hash = obtener_MD5(string_a_hashear, archivo);
 	char *md5 = config_get_string_value(archivo, "MD5");
@@ -1531,7 +1570,7 @@ bool reparar_sabotaje_md5_en_archivo(char *file_path){
 
 	}else{
 		free(hash);
-		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje MD5 detectado en %s . Corrigiendo...", file_path);
+		log_error(logger_i_mongo_store, "[ I-Mongo ] Sabotaje Blocks detectado en %s . Causa: MD5. Corrigiendo...", file_path);
 		int block_size = get_block_size();
 		int size = config_get_int_value(archivo, "SIZE");
 		char **array_blocks = config_get_array_value(archivo, "BLOCKS");
@@ -1735,14 +1774,14 @@ bool sabotaje_bitmap(){
 }
 
 
-bool sabotaje_md5(){
+bool sabotaje_blocks(){
 	DIR *d;
 	struct dirent *dir;
 	d = opendir("/home/utnso/polus/Files");
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
 			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				if(reparar_sabotaje_md5_en_archivo(dir->d_name)){
+				if(reparar_sabotaje_blocks_en_archivo(dir->d_name)){
 					closedir(d);
 					return true;
 				}
@@ -1750,7 +1789,7 @@ bool sabotaje_md5(){
 		}
 		closedir(d);
 	}
-	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje MD5.");
+	log_warning(logger_i_mongo_store, "[ I-Mongo ] No se detecto el sabotaje Blocks.");
 	return false;
 }
 
@@ -1789,7 +1828,6 @@ bool sabotaje_superbloque(){
 	fgets(buffer,499,fd);
 	fclose(fd);
 	char** cosas_del_comando = string_split(buffer, " ");
-	printf("\033[1;31m Rojo %s \033[0m\n",cosas_del_comando[4]);
 	int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
 	int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
 	int cant_segun_superbloque = get_block_amount_aux();
@@ -1830,4 +1868,46 @@ int get_block_amount_aux(){
 	uint32_t ba;
 	memcpy(&ba, superbloque + sizeof(uint32_t), sizeof(uint32_t));
 	return ba;
+}
+
+void armar_nuevos_blocks_sin_bloque_con_indice(char** bloques,t_config* archivo,int indice){
+	int cant_bloques = 0;
+	int i = 0;
+	int longitud_numeros_bloques = 0;
+	while(bloques[i] != NULL){
+		cant_bloques++;
+		i++;
+	}
+	i = 0;
+	char* un_numero;
+	while(bloques[i] != NULL){
+		if(i != indice){
+			longitud_numeros_bloques += strlen(bloques[i]);
+		}
+		i++;
+	}
+	i = 0;
+	if(cant_bloques == 0){
+		config_set_value(archivo,"BLOCKS","[]");
+	}
+	else if(cant_bloques == 1){
+		config_set_value(archivo,"BLOCKS","[]");
+	}
+	else{
+		char* base = malloc(longitud_numeros_bloques + cant_bloques - 1 + 1);
+		base[longitud_numeros_bloques + cant_bloques - 1] = '\0';
+		base[0] = '[';
+		base[1] = '\0';
+		while(bloques[i] != NULL){
+			if(i != indice){
+				un_numero = bloques[i];
+				strcat(base,un_numero);
+				strcat(base,",");
+			}
+			i++;
+		}
+		base[longitud_numeros_bloques + cant_bloques - 2] = ']';
+		config_set_value(archivo,"BLOCKS",base);
+		free(base);
+	}
 }
