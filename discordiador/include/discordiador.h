@@ -53,6 +53,7 @@ pthread_mutex_t mutex_cola_de_ready;
 pthread_mutex_t mutex_cola_de_exec;
 pthread_mutex_t mutex_cola_de_block;
 pthread_mutex_t mutex_tarea;
+pthread_mutex_t mutex;
 
 // Contadores
 sem_t sem_contador_cola_iniciar_patota;
