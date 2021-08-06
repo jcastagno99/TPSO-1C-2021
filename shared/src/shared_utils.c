@@ -803,7 +803,7 @@ t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream){
 
 t_paquete* error(int res){
 	op_code op_code = res == 0? SIN_CONEXION : ERROR;
-	int32_t err = -errno;
+	//int32_t err = -errno;
 	return crear_paquete(op_code,sizeof(int32_t),NULL);
 }
 
