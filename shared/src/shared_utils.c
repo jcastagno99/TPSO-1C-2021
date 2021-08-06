@@ -699,7 +699,7 @@ int crear_conexion(char *ip, char* puerto)
 		//Si socket() funciona pero connect() falla, cierra el socket y pasa al siguiente
 		close(conn);
 	}
-	printf("\033[1;33mEL RESULTADO DE CREAR LA CONEXION FUE DE %i\033[0m\n", conn);
+	//printf("\033[1;33mEL RESULTADO DE CREAR LA CONEXION FUE DE %i\033[0m\n", conn);
 	if(conn != -1 && p != NULL)
 		return conn;
 	return -1;
@@ -768,17 +768,17 @@ int enviar_paquete(int socket, op_code op_code,uint32_t size, void* stream){
 	memcpy(buffer+offset, &paquete->size, sizeof(size_t));
 	offset+= sizeof(size_t);
 	memcpy(buffer+offset,paquete->stream, paquete->size);
-	printf("\033[1;32mEnviando paquete con CODIGO DE OPERACION %lu SIZE %lu\033[0m\n", (unsigned long)op_code, (unsigned long)size);
+	//printf("\033[1;32mEnviando paquete con CODIGO DE OPERACION %lu SIZE %lu\033[0m\n", (unsigned long)op_code, (unsigned long)size);
 	int res = send(socket, buffer , sizeof(op_code) + sizeof(size_t) + paquete->size, 0);
 	if(res <0){
-		printf("ERROR ENVIANDO MENSAJE %i\n", op_code);
+		//printf("ERROR ENVIANDO MENSAJE %i\n", op_code);
 		res = -errno;
 	}
-	printf("\033[1;32mENVIE PAQUETE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
+	//printf("\033[1;32mENVIE PAQUETE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 	free(buffer);
-	printf("\033[1;32mHICE EL PRIMER FREE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
+	//printf("\033[1;32mHICE EL PRIMER FREE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 	liberar_paquete(paquete);
-	printf("\033[1;32mHICE EL SEGUNDO FREE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
+	//printf("\033[1;32mHICE EL SEGUNDO FREE con CODIGO DE OPERACION %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 	
 
 	return res;
@@ -792,10 +792,10 @@ t_paquete* crear_paquete(op_code op_code, uint32_t size, void* stream){
 	paquete->stream = malloc(size);
 	
 	memcpy(paquete->stream,stream,size);
-	printf("\033[1;31mA PUNTO DE ROMPER EN CREAR_PAQUETE OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
+	//printf("\033[1;31mA PUNTO DE ROMPER EN CREAR_PAQUETE OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 	if(stream)
 		free(stream);
-	printf("\033[1;31mNO ME ROMPI OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
+	//printf("\033[1;31mNO ME ROMPI OPCODE %i SIZE %lu\033[0m\n", op_code, (unsigned long)size);
 
 	return paquete;
 }
