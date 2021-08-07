@@ -560,7 +560,6 @@ void *sincronizar(void *tamanio)
 		msync(superbloque, tamanios[0], 0);
 		memcpy(blocks_mapeado, blocks, tamanios[1]);
 		msync(blocks_mapeado, tamanios[1], 0);
-		log_info(logger_i_mongo_store, "Se sincronizaron Blocks y SUperbloques");
 		sleep(i_mongo_store_configuracion->TIEMPO_SINCRONIZACION);
 	}
 }
