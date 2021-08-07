@@ -1046,6 +1046,7 @@ int get_block_amount()
 		int tamanio_blocks_ims = atoi(cosas_del_comando[4]);
 		int cant_segun_blocks = tamanio_blocks_ims / get_block_size();
 		liberar_lista_string(cosas_del_comando);
+		fclose(fd);
 		return cant_segun_blocks;
 	}
 
@@ -1085,7 +1086,6 @@ bool es_el_bloque_corrupto(int nro_bloque){
 	int total_block_amount = get_block_amount();
 	int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
 	memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
-	log_warning(logger_i_mongo_store,"examino si es el bloque corrupto");
 	d = opendir("/home/utnso/polus/Bitacoras");
 
 	if (d) {
@@ -1110,7 +1110,6 @@ bool es_el_bloque_corrupto(int nro_bloque){
 		}
 		closedir(d);
 	}
-	log_warning(logger_i_mongo_store,"voy a evaluar si segun el bitmap temporal esta ocupado");
 	if(bitmap_temporal[nro_bloque]){
 		free(bitmap_temporal);
 		return 1;
@@ -1666,10 +1665,8 @@ bool reparar_sabotaje_size_en_archivo(char *file_path){
 }
 
 void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal){
-	log_warning(logger_i_mongo_store,"entre a bitmap_temporal");
 	t_config *archivo = config_create(full_path);
 	char **used_blocks = config_get_array_value(archivo, "BLOCKS");
-	log_warning(logger_i_mongo_store,"por examinar bloques");
 	int i = 0;
 	while (used_blocks[i] != NULL){
 		int block = atoi(used_blocks[i]);
@@ -1680,7 +1677,6 @@ void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal){
 	}
 	liberar_lista_string(used_blocks);
 	config_destroy(archivo);
-	log_warning(logger_i_mongo_store,"salgo de examinar bloques");
 }
 
 bool sabotaje_block_count(){
