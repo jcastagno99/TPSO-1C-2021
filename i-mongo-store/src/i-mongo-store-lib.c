@@ -139,6 +139,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 			pthread_mutex_t *mutex = buscar_mutex_con_tid(tct.tid);
 			pthread_mutex_lock(mutex);
 			resultado2 = realizar_fsck();
+			//estoy_saboteado = 0;
 			pthread_mutex_unlock(mutex);
 		}
 
@@ -303,7 +304,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		codigo_respuesta = RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO;
 		stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
 		tamanio_respuesta = sizeof(respuesta_ok_fail);
-		estoy_saboteado = 0;
+		estoy_saboteado = 0; //Caso que falle, comentar esto
 	}
 	break;
 
