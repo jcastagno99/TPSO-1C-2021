@@ -281,7 +281,6 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 
 	case REGISTRAR_SABOTAJE_RESUELTO:
 	{
-		estoy_saboteado = 0;
 		uint32_t tid;
 		memcpy(&tid, stream, sizeof(uint32_t));
 		agregar_a_lista_bitacoras_si_es_necesario(tid);
@@ -304,6 +303,7 @@ void *manejar_suscripciones_i_mongo_store(int *socket_envio)
 		codigo_respuesta = RESPUESTA_REGISTRAR_SABOTAJE_RESUELTO;
 		stream_respuesta = serializar_respuesta_ok_fail(RESPUESTA_OK);
 		tamanio_respuesta = sizeof(respuesta_ok_fail);
+		estoy_saboteado = 0;
 	}
 	break;
 
@@ -1080,41 +1080,54 @@ int get_primer_bloque_libre()
 }
 
 bool es_el_bloque_corrupto(int nro_bloque){
-	DIR *d;
-	struct dirent *dir;
-	int total_block_amount = get_block_amount();
-	int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
-	memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
-	d = opendir("/home/utnso/polus/Bitacoras");
+	if(bloque_corrupto == - 1){
+		DIR *d;
+		struct dirent *dir;
+		int total_block_amount = get_block_amount();
+		int *bitmap_temporal = malloc(total_block_amount*sizeof(int));
+		memset(bitmap_temporal, 0, total_block_amount*sizeof(int));
+		d = opendir("/home/utnso/polus/Bitacoras");
 
-	if (d) {
-		while ((dir = readdir(d)) != NULL) {
-			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				char *full_path = string_from_format("/home/utnso/polus/Bitacoras/%s", dir->d_name);
-				cargar_bitmap_temporal(full_path, bitmap_temporal);
-				free(full_path);
+		if (d) {
+			while ((dir = readdir(d)) != NULL) {
+				if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+					char *full_path = string_from_format("/home/utnso/polus/Bitacoras/%s", dir->d_name);
+					cargar_bitmap_temporal(full_path, bitmap_temporal);
+					free(full_path);
+				}
+			}
+			closedir(d);
+		}
+
+		d = opendir("/home/utnso/polus/Files");
+		if (d) {
+			while ((dir = readdir(d)) != NULL) {
+				if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
+					char *full_path = string_from_format("/home/utnso/polus/Files/%s", dir->d_name);
+					cargar_bitmap_temporal(full_path, bitmap_temporal);
+					free(full_path);
+				}
+			}
+			closedir(d);
+		}
+		t_bitarray *bit_array = bitarray_create_with_mode(superbloque + 2*sizeof(uint32_t),total_block_amount/8,MSB_FIRST);
+		for (int i = 0; i < total_block_amount; i++)
+		{
+			if(bitarray_test_bit(bit_array, i) != bitmap_temporal[i]){
+				if(bitmap_temporal[i]){
+					bloque_corrupto = i;
+					free(bitmap_temporal);
+					bitarray_destroy(bit_array);
+					return nro_bloque == bloque_corrupto;
+				}
 			}
 		}
-		closedir(d);
-	}
-
-	d = opendir("/home/utnso/polus/Files");
-	if (d) {
-		while ((dir = readdir(d)) != NULL) {
-			if(!string_equals_ignore_case(dir->d_name, ".") && !string_equals_ignore_case(dir->d_name, "..")){
-				char *full_path = string_from_format("/home/utnso/polus/Files/%s", dir->d_name);
-				cargar_bitmap_temporal(full_path, bitmap_temporal);
-				free(full_path);
-			}
-		}
-		closedir(d);
-	}
-	if(bitmap_temporal[nro_bloque]){
+		bloque_corrupto = -2;
 		free(bitmap_temporal);
-		return 1;
+		bitarray_destroy(bit_array);
+		return false;
 	}else{
-		free(bitmap_temporal);
-		return 0;
+		return nro_bloque == bloque_corrupto;
 	}
 }
 

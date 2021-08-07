@@ -158,6 +158,7 @@ bool sabotaje_bitmap();
 bool sabotaje_size();
 bool estoy_saboteado;
 bool es_el_bloque_corrupto(int nro_bloque);
+int bloque_corrupto;
 void cargar_bitmap_temporal(char *full_path, int *bitmap_temporal);
 int get_block_amount_aux();
 void armar_nuevos_blocks_sin_bloque_con_indice(char** lista_bloques, t_config* archivo, int indice_bloque);

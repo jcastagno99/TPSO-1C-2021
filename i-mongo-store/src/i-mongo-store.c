@@ -2,6 +2,7 @@
 void handler_sabotaje(int signal)
 {
 	estoy_saboteado = 1;
+	bloque_corrupto = -1;
 	printf("\033[1;33mSabotaje detectado. Enviando información a Discordiador...\033[0m\n");
 	char* puerto = itoa_propio(i_mongo_store_configuracion->PUERTO_DISCORDIADOR);
 	int conexion_discordiador = crear_conexion(i_mongo_store_configuracion ->IP_DISCORDIADOR, puerto);
